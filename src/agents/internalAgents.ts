@@ -10,6 +10,7 @@ import type {
   SupportedGame,
 } from '../types/aipetros.ts';
 import { computeCompositeDNA } from '../utils/aipetrosRules.ts';
+import { matchKnowledgeTopics } from './coachKnowledge.ts';
 
 export interface ImageInspectionResult {
   format: 'png' | 'jpeg' | 'webp' | 'unknown';
@@ -460,38 +461,71 @@ export function runCoachSymbioteAgent(params: {
   const heldCount = territories.filter((t) => t.controllingClub === profile.clubName).length;
   const activeEscrow = escrows.find((e) => e.status === 'active_locked');
 
-  if (q.includes('chess') || q.includes('blitz') || q.includes('rapid') || q.includes('rating') || q.includes('mate')) {
-    return `${chessAcc?.handle ?? profile.handle} is sitting at ${chessAcc?.ratingValue ?? '1742 · 1690'} with ${dna.trapAnticipation}/100 Trap Anticipation. Run 2 rounds of the 10-second Chess Tactics drill to push Endgame Composure (${dna.endgameComposure}) past 86 and sharpen final-third decisions in EA FC.`;
+  const isFa = /[\u0600-\u06FF]/.test(params.message);
+
+  // Personal grounding header — every answer starts from the user's REAL numbers
+  const groundingFa = `آمار واقعی تو: OVR ${ovr} · قوی‌ترین: ${strongest.name} (${strongest.val}) · ضعیف‌ترین: ${weakest.name} (${weakest.val})`;
+  const groundingEn = `Your real telemetry: OVR ${ovr} · strongest: ${strongest.name} (${strongest.val}) · weakest: ${weakest.name} (${weakest.val})`;
+  const grounding = isFa ? groundingFa : groundingEn;
+
+  const matchLineFa = latest
+    ? `آخرین بازی: ${latest.result === 'win' ? 'برد' : latest.result === 'loss' ? 'باخت' : 'مساوی'} ${latest.scoreDisplay} مقابل ${latest.opponent} (${latest.metricsSummary}).`
+    : '';
+  const matchLineEn = latest
+    ? `Last match: ${latest.result} ${latest.scoreDisplay} vs ${latest.opponent} (${latest.metricsSummary}).`
+    : '';
+  const matchLine = isFa ? matchLineFa : matchLineEn;
+
+  // 1) Match the question against the structured knowledge base
+  const realmHint = q.includes('chess') || q.includes('blitz') || q.includes('chess') ? 'strategy' : undefined;
+  const topics = matchKnowledgeTopics(params.message, realmHint, 3);
+
+  if (topics.length > 0) {
+    const parts: string[] = [grounding];
+    if (matchLine) parts.push(matchLine);
+    for (const { topic } of topics) {
+      const lessons = isFa ? topic.lessonsFa : topic.lessonsEn;
+      const title = isFa ? topic.titleFa : topic.titleEn;
+      parts.push(`📚 ${title}:\n• ${lessons.slice(0, 3).join('\n• ')}`);
+      parts.push(`🏋️ دریل پیشنهادی: ${topic.drills[0]}${topic.drills[1] ? ` + ${topic.drills[1]}` : ''}`);
+    }
+    const extra =
+      q.includes('escrow') || q.includes('contract')
+        ? activeEscrow
+          ? `\n🔒 ${activeEscrow.playerHandle} needs ${activeEscrow.winsRequired - activeEscrow.winsCompleted} more win(s) to unlock ${activeEscrow.lockedPoints} Pts.`
+          : ''
+        : '';
+    return parts.join('\n') + extra;
   }
 
-  if (
-    q.includes('pass') ||
-    q.includes('through') ||
-    q.includes('fc') ||
-    q.includes('fifa') ||
-    q.includes('cam') ||
-    q.includes('goal') ||
-    q.includes('assist')
-  ) {
-    return `Your Spatial Passing (${dna.spatialPassing}) and Vision (${dna.tacticalVision}) already anchor ${profile.clubName} at OVR ${ovr}. Delay your final R1/triangle ball half a beat until the center-back steps out, and test timing in the Through-Ball Lane drill.`;
+  // 2) Specialized flows that need live state (chess, club economy)
+  if (q.includes('chess') || q.includes('blitz') || q.includes('rating') || q.includes('رنک') || q.includes('شطرنج')) {
+    const accLine = chessAcc
+      ? `${chessAcc.handle}: rating ${chessAcc.ratingValue}`
+      : 'no linked chess account yet — add one to track your real rating';
+    return isFa
+      ? `${grounding}\n${accLine}\n• ۲ راند دریل ۱۰ ثانیه‌ای Chess Tactics بزن تا Trap Anticipation (${dna.trapAnticipation}) و Endgame Composure (${dna.endgameComposure}) بالای ۸۶ برود.\n• شروع بازی را با سه اصل (مرکز، دبیلمنت، امنیت شاه) تمرین کن.`
+      : `${grounding}\n${accLine}\n• Run 2 rounds of the 10-second Chess Tactics drill to push Trap Anticipation (${dna.trapAnticipation}) and Endgame Composure (${dna.endgameComposure}) past 86.\n• Drill the opening principles: center, development, king safety.`;
   }
 
-  if (q.includes('press') || q.includes('late') || q.includes('75') || q.includes('turnover') || q.includes('defen') || q.includes('weak')) {
-    return `Your lowest DNA trait is ${weakest.name} (${weakest.val}/100) compared to ${strongest.name} (${strongest.val}/100). After minute 75, drop manual second-man press and hold central lanes—cutting forced passes raises Risk Discipline directly.`;
-  }
-
-  if (q.includes('club') || q.includes('sector') || q.includes('map') || q.includes('escrow') || q.includes('contract')) {
+  if (q.includes('club') || q.includes('sector') || q.includes('escrow') || q.includes('کلاب') || q.includes('امتیاز')) {
     const escrowLine = activeEscrow
-      ? ` ${activeEscrow.playerHandle} needs ${activeEscrow.winsRequired - activeEscrow.winsCompleted} more win(s) to unlock ${activeEscrow.lockedPoints} Pts.`
+      ? isFa
+        ? ` ${activeEscrow.playerHandle} به ${activeEscrow.winsRequired - activeEscrow.winsCompleted} برد دیگر برای بازکردن ${activeEscrow.lockedPoints} امتیاز نیاز دارد.`
+        : ` ${activeEscrow.playerHandle} needs ${activeEscrow.winsRequired - activeEscrow.winsCompleted} more win(s) to unlock ${activeEscrow.lockedPoints} Pts.`
       : '';
-    return `${profile.clubName} currently controls ${heldCount} global sectors with ${profile.wallet.platformPoints.toLocaleString()} club points.${escrowLine} Claiming an adjacent European sector adds daily bonus yield immediately.`;
+    return isFa
+      ? `${grounding}\n${profile.clubName} الان ${heldCount} سکتور جهانی و ${profile.wallet.platformPoints.toLocaleString()} امتیاز کلاب دارد.${escrowLine}\n• سکتور همسایه‌ی اروپایی را claim کن تا بازده روزانه فوری اضافه شود.`
+      : `${grounding}\n${profile.clubName} controls ${heldCount} global sectors with ${profile.wallet.platformPoints.toLocaleString()} club points.${escrowLine}\n• Claim an adjacent European sector to add daily yield immediately.`;
   }
 
-  if (latest) {
-    return `Based on your ${latest.scoreDisplay} fixture vs ${latest.opponent} (${latest.metricsSummary}) and OVR ${ovr}: lean on ${strongest.name} (${strongest.val}) in transition while tightening ${weakest.name} (${weakest.val}). Launch a 10s Match Drill below to gain +180 XP right now.`;
-  }
-
-  return `OVR ${ovr} profile ready: prioritize ${weakest.name} (${weakest.val}/100) during high-tempo phases while maintaining your ${strongest.name} (${strongest.val}/100) edge.`;
+  // 3) Deep fallback — analyze the real match history trend, no canned fluff
+  const recent = matches.slice(0, 5);
+  const wins = recent.filter((m) => m.result === 'win').length;
+  const trend = recent.length ? `${wins}/${recent.length} wins in the last ${recent.length} verified matches` : 'no verified matches yet';
+  return isFa
+    ? `${grounding}\nروند: ${isFa ? wins + ' برد از ' + recent.length + ' بازی آخر' : trend}.${matchLine ? ' ' + matchLine : ''}\nبرنامه‌ی امروز (۳۰ دقیقه):\n1) ۵ دقیقه warmup روی ${strongest.name}\n2) ۲۰ دقیقه دریل هدفمند روی ${weakest.name} (${weakest.val}/100)\n3) ۵ دقیقه مرور باخت‌های اخیر\nسوالی دقیق‌تر داری؟ بگو کدوم بخش (ایم، دفاع، پاس، اقتصاد، تیلت…) تا درس کاملش رو بدم.`
+    : `${grounding}\nTrend: ${trend}.${matchLine ? ' ' + matchLine : ''}\nToday's 30-minute plan:\n1) 5-min warmup on ${strongest.name}\n2) 20-min targeted drill on ${weakest.name} (${weakest.val}/100)\n3) 5-min review of recent losses\nAsk me something specific (aim, defense, passing, economy, tilt, meta…) and I'll give you the full lesson.`;
 }
 
 /**

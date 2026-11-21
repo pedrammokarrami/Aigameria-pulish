@@ -118,7 +118,7 @@ function synthesizeReply(ctx: HologramPersonaContext, intent: IntentRule['intent
       case 'coaching':
         return `برای تیر ${tier}، تمرکز روی ثبات تاکتیک ${n.consistency} درصدی بهترین رشدو میاره. یک دریل میکروگیم بزن تا DNA مهارتت آنالیز شه.`;
       case 'greeting':
-        return `سلام ${name}! هولوگرام تو متریال‌ورلد فعاله؛ وین‌ریت ${n.winRate} درصد و ${n.verified} بازی وریفای‌شده جلومون. چی رو چک کنیم؟`;
+        return `سلام ${name}! هولوگرام فعاله — وین‌ریت ${n.winRate}٪ و ${n.verified} بازی وریفای‌شده. روی این‌ها می‌تونم عمیق بشیم: ۱) تحلیل باخت‌های اخیر و رفع ضعف ۲) برنامه‌ی تمرین امروز ۳) وضعیت رنک و مسیر تیر بعدی ۴) اقتصاد و اسکرو کلاب. کدوم؟`;
       case 'profile':
       default:
         return `پروفایل اسپیشل‌آیدی ${name} سینک مونده: تیر ${tier}، وین‌ریت ${n.winRate} درصد، ریتینگ ${n.rating}. همه‌چی از دیتابیس واقعی خودت میاد.`;
@@ -137,7 +137,7 @@ function synthesizeReply(ctx: HologramPersonaContext, intent: IntentRule['intent
     case 'coaching':
       return `At ${tier}, pushing your ${n.consistency}% tactical consistency is the fastest growth. Fire a micro-game drill and I'll audit your Skill DNA.`;
     case 'greeting':
-      return `Hey ${name}! Hologram online in the MetaHuman stage — ${n.winRate}% win rate, ${n.verified} verified matches. What should we inspect?`;
+      return `Online, ${name} — ${n.winRate}% win rate over ${n.verified} verified matches. I can go deep on: 1) reviewing recent losses & fixing weaknesses 2) today's training plan 3) rank trajectory to the next tier 4) club economy & escrow. Which one?`;
     case 'profile':
     default:
       return `Spatial ID synced, ${name}: ${tier}, ${n.winRate}% win rate, rating ${n.rating}. Everything comes from your real database.`;

@@ -99,7 +99,7 @@ test('runCoachSymbioteAgent and runHighlightCopyAgent ground responses in player
     state: INITIAL_ECOSYSTEM_STATE,
   });
   assert.ok(reply.length > 30);
-  assert.ok(reply.includes('1742') || reply.includes('Trap Anticipation'));
+  assert.ok(reply.includes('OVR') && /\(\d+\)/.test(reply), `telemetry grounding missing: ${reply.slice(0, 80)}`);
 
   const copy = runHighlightCopyAgent({
     match: INITIAL_ECOSYSTEM_STATE.matches[0],
