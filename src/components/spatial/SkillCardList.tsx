@@ -2,10 +2,13 @@ import React from 'react';
 import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getSkillCategoryLabel, getSkillTitle } from '../../utils/i18nEngine';
-import type { LobbySkillCardItem } from '../../utils/lobbySkillCatalog';
+import type { LobbySkillCardItem, LobbyGameId } from '../../utils/lobbySkillCatalog';
+import { LiveWebAnswer } from './LiveWebAnswer';
 
 interface SkillCardListProps {
   skills: LobbySkillCardItem[];
+  gameId: LobbyGameId;
+  searchQuery: string;
   onSelectSkill: (skill: LobbySkillCardItem) => void;
   onResetFilters: () => void;
 }
@@ -30,6 +33,8 @@ function renderBidiSafeTitle(title: string): React.ReactNode {
 
 export const SkillCardList: React.FC<SkillCardListProps> = ({
   skills,
+  gameId,
+  searchQuery,
   onSelectSkill,
   onResetFilters,
 }) => {
@@ -56,6 +61,7 @@ export const SkillCardList: React.FC<SkillCardListProps> = ({
             <p className="text-[13px] font-bold text-white/90 leading-relaxed">
               {copy.noSkillsFound}
             </p>
+            {searchQuery.trim().length >= 3 && <LiveWebAnswer gameId={gameId} searchQuery={searchQuery} />}
             <button
               type="button"
               onClick={onResetFilters}

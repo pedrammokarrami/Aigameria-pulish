@@ -1282,6 +1282,8 @@ export function App() {
 
             <SkillCardList
               skills={filteredLobbySkills}
+              gameId={lobbyGameId}
+              searchQuery={lobbySearchQuery}
               onSelectSkill={handleSelectLobbySkill}
               onResetFilters={() => {
                 setLobbyCategoryId('all');

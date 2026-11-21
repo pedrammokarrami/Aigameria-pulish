@@ -106,7 +106,7 @@ export const LOBBY_SKILLS_BY_GAME: Record<LobbyGameId, LobbySkillCardItem[]> = {
       categoryId: 'attack',
       categoryLabelFa: 'تاکتیک حمله',
       combos: ['L1', 'R1', 'X', '4-2-3-1', '۴-۲-۳-۱'],
-      keywords: ['پرس', 'حمله', 'تاکتیک', 'سوییچ', 'press', 'attack', '4231'],
+      keywords: ['پرس', 'حمله', 'تاکتیک', 'سوییچ', 'press', 'attack', '4231', 'ترکیب', 'فرماسیون', 'بهترین', 'formation', 'lineup'],
       problemQuery: 'شکستن پرس سنگین ۴-۲-۳-۱',
     },
     {
@@ -118,7 +118,7 @@ export const LOBBY_SKILLS_BY_GAME: Record<LobbyGameId, LobbySkillCardItem[]> = {
       categoryId: 'pass',
       categoryLabelFa: 'تکنیک پاس',
       combos: ['L1', 'R1', '△', 'L1+R1+△', 'triangle', 'مثلث'],
-      keywords: ['پاس', 'عمقی', 'تروبال', 'فرار', 'through ball', 'pass'],
+      keywords: ['پاس', 'عمقی', 'تروبال', 'فرار', 'through ball', 'pass', 'ترکیب', 'ساخت'],
       problemQuery: 'پاس عمقی دقیق L1+R1+△',
     },
     {
@@ -130,7 +130,7 @@ export const LOBBY_SKILLS_BY_GAME: Record<LobbyGameId, LobbySkillCardItem[]> = {
       categoryId: 'shoot',
       categoryLabelFa: 'تکنیک شوت',
       combos: ['R1', '◯', 'R1+◯', 'circle', 'دایره', 'green timed'],
-      keywords: ['شوت', 'کاتدار', 'فینس', 'زمانبندی', 'سبز', 'finesse', 'shot'],
+      keywords: ['شوت', 'کاتدار', 'فینس', 'زمانبندی', 'سبز', 'finesse', 'shot', 'بهترین'],
       problemQuery: 'شوت کاتدار زمانبندی سبز',
     },
     {
@@ -142,8 +142,32 @@ export const LOBBY_SKILLS_BY_GAME: Record<LobbyGameId, LobbySkillCardItem[]> = {
       categoryId: 'defense',
       categoryLabelFa: 'دفاع',
       combos: ['L2', 'R1', '71', '۷۱', 'jockey'],
-      keywords: ['دفاع', 'عمق', 'تاکتیک', 'آفساید', 'تنظیمات', 'defense', 'depth'],
+      keywords: ['دفاع', 'عمق', 'تاکتیک', 'آفساید', 'تنظیمات', 'defense', 'depth', 'ترکیب', 'فرماسیون', 'سطح', 'line'],
       problemQuery: 'تنظیمات دفاعی و عمق ۷۱',
+    },
+    {
+      id: 'fc27-05',
+      num: '05',
+      gameId: 'fc27',
+      topicId: 'sp-formation',
+      titleFa: 'بهترین فرماسیون و ترکیب تیم',
+      categoryId: 'attack',
+      categoryLabelFa: 'فرماسیون',
+      combos: ['4-2-3-1', '۴-۲-۳-۱', '4-3-3'],
+      keywords: ['بهترین', 'ترکیب', 'فرماسیون', 'formation', 'lineup', '4231', '433', 'چینش', 'سیستم'],
+      problemQuery: 'بهترین ترکیب فرماسیون تیم',
+    },
+    {
+      id: 'fc27-06',
+      num: '06',
+      gameId: 'fc27',
+      topicId: 'sp-sbc',
+      titleFa: 'راهنمای SBC و ساخت اسکواد',
+      categoryId: 'attack',
+      categoryLabelFa: 'SBC',
+      combos: ['SBC'],
+      keywords: ['sbc', 'اس‌بی‌سی', 'اس بی سی', 'چلنج', 'اسکواد', 'پک', 'challenge', 'بهترین', 'درست کردن'],
+      problemQuery: 'بهترین حالت درست کردن SBC',
     },
   ],
   cs2: [
@@ -350,6 +374,23 @@ export function getLobbyGameTab(gameId: LobbyGameId): LobbyGameTab {
   return LOBBY_GAME_TABS.find((tab) => tab.id === gameId) ?? LOBBY_GAME_TABS[0];
 }
 
+/** Persian search tokens → English aliases used in the skill catalog. */
+const SEARCH_TOKEN_ALIASES: Record<string, string[]> = {
+  'ترکیب': ['formation', 'lineup', 'ترکیب'],
+  'فرماسیون': ['formation', 'فرماسیون', 'ترکیب'],
+  'بهترین': ['بهترین', 'best'],
+  'تشکیل': ['formation', 'ترکیب'],
+  'sbc': ['sbc', 'اس‌بی‌سی', 'اس بی سی', 'چلنج', 'پک'],
+  'اس‌بی‌سی': ['sbc', 'اس‌بی‌سی', 'اس بی سی'],
+  'چلنج': ['sbc', 'challenge', 'چلنج'],
+  'شوت': ['شوت', 'shot', 'finesse', 'کاتدار'],
+  'پاس': ['پاس', 'pass', 'تروبال'],
+  'دفاع': ['دفاع', 'defense', 'عمق'],
+  'حمله': ['حمله', 'attack', 'پرس'],
+  'ایم': ['ایم', 'aim', 'اسنایپ'],
+  'اسکواد': ['اسکواد', 'sbc', 'ترکیب'],
+};
+
 export function filterLobbySkills(
   gameId: LobbyGameId,
   categoryId: string,
@@ -358,23 +399,40 @@ export function filterLobbySkills(
   const skills = LOBBY_SKILLS_BY_GAME[gameId] ?? LOBBY_SKILLS_BY_GAME.fc27;
   const normalizedQuery = normalizeLobbySearchText(searchQuery);
 
-  return skills.filter((skill) => {
-    if (categoryId && categoryId !== 'all' && skill.categoryId !== categoryId) {
-      return false;
+  if (categoryId && categoryId !== 'all') {
+    const scoped = skills.filter((skill) => skill.categoryId === categoryId);
+    if (scoped.length > 0 || normalizedQuery) {
+      return rankSkills(scoped, normalizedQuery);
     }
-    if (!normalizedQuery) return true;
+  }
+  return rankSkills(skills, normalizedQuery);
+}
 
-    const haystack = normalizeLobbySearchText(
-      [
-        skill.num,
-        skill.titleFa,
-        skill.categoryLabelFa,
-        ...skill.combos,
-        ...skill.keywords,
-      ].join(' ')
-    );
-
-    const tokens = normalizedQuery.split(' ').filter(Boolean);
-    return tokens.every((token) => haystack.includes(token));
-  });
+/**
+ * Forgiving token ranking: a skill matches when at least one token hits the
+ * haystack (directly or via alias). Skills matching MORE tokens rank higher,
+ * so “بهترین ترکیب فرماسیون” surfaces the formation topic first.
+ */
+function rankSkills(skills: LobbySkillCardItem[], normalizedQuery: string): LobbySkillCardItem[] {
+  if (!normalizedQuery) return skills;
+  const tokens = normalizedQuery.split(' ').filter(Boolean);
+  const expanded = new Set<string>();
+  for (const token of tokens) {
+    expanded.add(token);
+    for (const alias of SEARCH_TOKEN_ALIASES[token] ?? []) {
+      expanded.add(normalizeLobbySearchText(alias));
+    }
+  }
+  const scored = skills
+    .map((skill) => {
+      const haystack = normalizeLobbySearchText(
+        [skill.num, skill.titleFa, skill.categoryLabelFa, ...skill.combos, ...skill.keywords].join(' ')
+      );
+      let score = 0;
+      for (const token of expanded) if (haystack.includes(token)) score += 1;
+      return { skill, score };
+    })
+    .filter((entry) => entry.score > 0);
+  scored.sort((a, b) => b.score - a.score);
+  return scored.map((entry) => entry.skill);
 }

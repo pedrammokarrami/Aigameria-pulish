@@ -55,6 +55,13 @@ export default defineConfig(() => {
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      // Proxy API + WS to the AIPETROS backend (tsx server.ts on :3000).
+      // Without this, dev-mode fetch('/api/…') hits the SPA fallback and agents get nothing.
+      proxy: {
+        '/api': 'http://localhost:3000',
+        '/health': 'http://localhost:3000',
+        '/ws': { target: 'ws://localhost:3000', ws: true },
+      },
     },
   };
 });

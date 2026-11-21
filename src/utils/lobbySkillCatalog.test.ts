@@ -21,7 +21,7 @@ test('all 4 lobby game tabs have categories and 4 unclipped Persian skills', () 
     const skills = LOBBY_SKILLS_BY_GAME[tab.id];
     assert.ok(categories.length >= 5, `${tab.id} should have at least 5 filter chips`);
     assert.equal(categories[0].id, 'all');
-    assert.equal(skills.length, 4, `${tab.id} should have 4 skill cards`);
+    assert.ok(skills.length >= 4, `${tab.id} should have at least 4 skill cards`);
     for (const skill of skills) {
       assert.ok(skill.titleFa.length > 6);
       assert.ok(!skill.titleFa.includes('...'), `Title must not be truncated: ${skill.titleFa}`);
