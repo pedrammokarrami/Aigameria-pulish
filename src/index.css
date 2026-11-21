@@ -1,115 +1,379 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-html,
-body,
-#root {
-  height: 100%;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  background: #000;
-  color: #e8e4dc;
-  font-family: 'Segoe UI', 'Vazirmatn', system-ui, -apple-system, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root,
+  [data-realm="shooter"] {
+    --font-display: 'Chakra Petch', 'Barlow Condensed', system-ui, sans-serif;
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+    --realm-bg: #07080a;
+    --realm-accent: #ff8a00;
+    --realm-accent-secondary: #f59e0b;
+    --realm-text: #f5f7fa;
+    --realm-muted: rgba(245, 247, 250, 0.62);
+  }
+
+  [data-realm="sports"] {
+    --font-display: 'Barlow Condensed', system-ui, sans-serif;
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+    --realm-bg: #050d09;
+    --realm-accent: #ccff00;
+    --realm-accent-secondary: #34d399;
+    --realm-text: #ffffff;
+    --realm-muted: rgba(255, 255, 255, 0.68);
+  }
+
+  [data-realm="strategy"] {
+    --font-display: 'Outfit', system-ui, sans-serif;
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+    --realm-bg: #050811;
+    --realm-accent: #38bdf8;
+    --realm-accent-secondary: #eab308;
+    --realm-text: #f1f5f9;
+    --realm-muted: rgba(241, 245, 249, 0.64);
+  }
+
+  [data-realm="story"] {
+    --font-display: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Cormorant Garamond', Georgia, serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+    --realm-bg: #0e0907;
+    --realm-accent: #dc2626;
+    --realm-accent-secondary: #f5f0e6;
+    --realm-text: #f7f3eb;
+    --realm-muted: rgba(247, 243, 235, 0.68);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    font-family: var(--font-sans);
+    background-color: var(--realm-bg);
+    color: var(--realm-text);
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .font-mono-tabular {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
 }
 
-::selection {
-  background: rgba(240, 169, 56, 0.35);
+/* Frameless transparent HUD helper (NO backdrop-blur over WebGL canvases!) */
+.hud-ghost-surface {
+  background: linear-gradient(90deg, rgba(6, 8, 11, 0.72) 0%, rgba(6, 8, 11, 0.32) 78%, rgba(6, 8, 11, 0) 100%);
 }
 
-/* ------------------------------------------------------------------ */
-/*  Brushed dark metal — procedural material, no external assets      */
-/* ------------------------------------------------------------------ */
-.brushed-metal {
+.hud-pill-clear {
+  background: rgba(6, 9, 13, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+/* EA SPORTS FC 27 Global Slanted Parallelogram Blade, Chamfered Card & FUT Shield System */
+.fc-slant,
+.fc27-blade {
+  transform: skewX(-12deg);
+  border-radius: 0px;
+}
+
+.fc-unslant,
+.fc27-unskew {
+  display: inline-flex;
+  align-items: center;
+  transform: skewX(12deg);
+}
+
+.fc27-unskew-block {
+  display: block;
+  transform: skewX(12deg);
+}
+
+.fc27-menu-blade {
+  transform: skewX(-12deg);
+  background: linear-gradient(100deg, rgba(6, 9, 13, 0.92) 0%, rgba(12, 18, 24, 0.78) 100%);
+  border-left: 4px solid rgba(255, 255, 255, 0.25);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.fc27-menu-blade:hover {
+  transform: translateX(6px) skewX(-12deg);
+  background: linear-gradient(100deg, rgba(14, 20, 28, 0.96) 0%, rgba(20, 28, 36, 0.88) 100%);
+}
+
+.fc27-key-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+/* FC 27 Chamfered Obsidian Carbon Panel & Cards (Zero-clipping mobile & desktop) */
+.fc27-panel {
   background:
-    /* fine horizontal brush strokes */
     repeating-linear-gradient(
-      92deg,
-      rgba(255, 255, 255, 0.028) 0px,
-      rgba(255, 255, 255, 0) 1px,
-      rgba(0, 0, 0, 0.035) 2px,
-      rgba(255, 255, 255, 0) 3px,
-      rgba(255, 255, 255, 0.02) 4px
+      -45deg,
+      rgba(255, 255, 255, 0.018) 0px,
+      rgba(255, 255, 255, 0.018) 2px,
+      transparent 2px,
+      transparent 10px
     ),
-    /* broad machining bands */
+    linear-gradient(165deg, rgba(11, 15, 21, 0.86) 0%, rgba(6, 9, 14, 0.92) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+}
+
+.fc27-card {
+  position: relative;
+  background:
     repeating-linear-gradient(
-      88deg,
-      rgba(255, 255, 255, 0.045) 0px,
-      rgba(0, 0, 0, 0.02) 7px,
-      rgba(255, 255, 255, 0.06) 14px,
-      rgba(0, 0, 0, 0.03) 21px
+      -45deg,
+      rgba(255, 255, 255, 0.022) 0px,
+      rgba(255, 255, 255, 0.022) 2px,
+      transparent 2px,
+      transparent 9px
     ),
-    /* base metal */
-    radial-gradient(120% 120% at 30% 20%, #43413e 0%, #35322f 38%, #26241f 68%, #1a1815 100%);
+    linear-gradient(155deg, rgba(18, 24, 34, 0.92) 0%, rgba(9, 13, 19, 0.96) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-top: 2px solid rgba(255, 255, 255, 0.22);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.16s ease, background-color 0.16s ease;
 }
 
-/* beveled ring — machined chamfer around each button */
-.bevel-ring {
+.fc27-card:hover {
+  border-color: rgba(204, 255, 0, 0.45);
+}
+
+.fc27-card-volt {
+  position: relative;
   background:
-    linear-gradient(
-      145deg,
-      rgba(255, 255, 255, 0.34) 0%,
-      rgba(255, 255, 255, 0.07) 22%,
-      rgba(0, 0, 0, 0.12) 55%,
-      rgba(0, 0, 0, 0.5) 100%
-    );
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.35),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.65);
+    repeating-linear-gradient(
+      -45deg,
+      rgba(204, 255, 0, 0.045) 0px,
+      rgba(204, 255, 0, 0.045) 2px,
+      transparent 2px,
+      transparent 9px
+    ),
+    linear-gradient(155deg, rgba(22, 33, 14, 0.92) 0%, rgba(9, 13, 18, 0.96) 100%);
+  border: 1px solid rgba(204, 255, 0, 0.65);
+  border-top: 2px solid #ccff00;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  box-shadow: 0 10px 28px rgba(204, 255, 0, 0.14);
 }
 
-/* spatial frosted glass center */
-.frosted-glass {
+.fc27-card-gold {
+  position: relative;
   background:
-    radial-gradient(90% 90% at 50% 15%, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.02) 45%, rgba(0, 0, 0, 0.18) 100%);
-  backdrop-filter: blur(10px) saturate(120%);
-  -webkit-backdrop-filter: blur(10px) saturate(120%);
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.22),
-    inset 0 -6px 14px rgba(0, 0, 0, 0.35),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    repeating-linear-gradient(
+      -45deg,
+      rgba(245, 197, 66, 0.05) 0px,
+      rgba(245, 197, 66, 0.05) 2px,
+      transparent 2px,
+      transparent 9px
+    ),
+    linear-gradient(150deg, rgba(52, 41, 14, 0.92) 0%, rgba(16, 15, 14, 0.97) 58%, rgba(36, 28, 10, 0.95) 100%);
+  border: 1px solid rgba(245, 197, 66, 0.65);
+  border-top: 2px solid #f5c542;
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  box-shadow: 0 14px 32px rgba(245, 197, 66, 0.16);
 }
 
-/* engraved icon inside the button */
-.icon-engraved {
-  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.8)) drop-shadow(0 -1px 0 rgba(255, 255, 255, 0.18));
-}
-
-/* top / bottom cinematic letterbox vignette */
-.cinema-vignette {
+.fc27-card-live {
+  position: relative;
   background:
-    radial-gradient(140% 110% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.55) 100%),
-    linear-gradient(to top, rgba(0, 0, 0, 0.82) 0%, transparent 30%),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.6) 0%, transparent 22%);
+    repeating-linear-gradient(
+      -45deg,
+      rgba(255, 46, 84, 0.045) 0px,
+      rgba(255, 46, 84, 0.045) 2px,
+      transparent 2px,
+      transparent 9px
+    ),
+    linear-gradient(155deg, rgba(44, 12, 22, 0.92) 0%, rgba(11, 12, 18, 0.97) 100%);
+  border: 1px solid rgba(255, 46, 84, 0.65);
+  border-top: 2px solid #ff2e54;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  box-shadow: 0 12px 28px rgba(255, 46, 84, 0.18);
 }
 
-/* film grain overlay */
-.grain::after {
-  content: '';
-  position: absolute;
-  inset: -50%;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
-  animation: grain-shift 0.9s steps(4) infinite;
-  pointer-events: none;
+.fc27-fut-shield {
+  clip-path: polygon(10% 0%, 90% 0%, 100% 10%, 100% 84%, 50% 100%, 0% 84%, 0% 10%);
 }
 
-@keyframes grain-shift {
-  0% { transform: translate(0, 0); }
-  25% { transform: translate(-2%, 1.5%); }
-  50% { transform: translate(1.5%, -2%); }
-  75% { transform: translate(-1.5%, -1%); }
-  100% { transform: translate(0, 0); }
+.fc27-chamfer-sm {
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
 }
 
-/* subtle flicker of the active halo — physically motivated light wobble */
-@keyframes halo-breathe {
-  0%, 100% { opacity: 0.85; }
-  50% { opacity: 1; }
+.fc27-tab-bar {
+  background: rgba(8, 12, 18, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-bottom: 2px solid rgba(204, 255, 0, 0.25);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
 }
-.halo-breathe {
-  animation: halo-breathe 3.2s ease-in-out infinite;
+
+.fc27-btn-volt {
+  background: #ccff00;
+  color: #05070b;
+  font-weight: 900;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), filter 0.15s ease;
+}
+
+.fc27-btn-volt:hover {
+  filter: brightness(1.06);
+}
+
+.fc27-btn-dark {
+  background: rgba(16, 22, 32, 0.94);
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.fc27-btn-dark:hover {
+  background: rgba(26, 35, 48, 0.98);
+  border-color: rgba(204, 255, 0, 0.5);
+}
+
+/* RDR2 Distressed Ink Text Shadow */
+[data-realm="story"] .rdr-ink {
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.92), 0 0 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Glowing audio visualizer wave synced to 3D Coach */
+@keyframes voiceWave {
+  0%, 100% {
+    transform: scaleY(0.25);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.voice-wave-bar {
+  animation: voiceWave 0.68s ease-in-out infinite;
+  transform-origin: center;
+}
+
+/* Motion-Graphics Stage Entrance & SVG Telestrator Animations */
+@keyframes motionStageEnter {
+  0% {
+    opacity: 0;
+    transform: translate3d(-24px, 14px, 0) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes motionDrawVector {
+  0% {
+    stroke-dashoffset: 320;
+    opacity: 0.2;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes motionPopNode {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(0.82);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes motionScannerSweep {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.75;
+  }
+  100% {
+    transform: translateY(380%);
+    opacity: 0;
+  }
+}
+
+.motion-stage-enter {
+  animation: motionStageEnter 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.motion-vector-path {
+  stroke-dasharray: 320;
+  stroke-dashoffset: 320;
+  animation: motionDrawVector 1.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.motion-callout-pop {
+  opacity: 0;
+  animation: motionPopNode 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.motion-scanner-bar {
+  animation: motionScannerSweep 2.6s ease-in-out infinite;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-wave-bar,
+  .motion-stage-enter,
+  .motion-vector-path,
+  .motion-callout-pop,
+  .motion-scanner-bar {
+    animation: none !important;
+    opacity: 1 !important;
+    stroke-dashoffset: 0 !important;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
