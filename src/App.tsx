@@ -1211,6 +1211,10 @@ export function App() {
                 setClipProblemQuery(q);
                 fetchProClipsAgent(selectedGame, q, false);
               }}
+              onAskCoachQuestion={(q) => {
+                setClipProblemQuery(q);
+                fetchProClipsAgent(selectedGame, q, false);
+              }}
               onRefreshAgents={() => {
                 fetchMotionCoachAgent(selectedGame, true);
                 fetchProClipsAgent(selectedGame, clipProblemQuery, true);

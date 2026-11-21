@@ -35,6 +35,7 @@ import type { RealmId } from '../../types/spatial';
 import { CoachWorld3D } from './CoachWorld3D';
 import { MotionCoachCard } from './MotionCoachCard';
 import { CoachAnswerBoard } from './CoachAnswerBoard';
+import { CoachSessionPanel } from './CoachSessionPanel';
 import type { CoachAnswerBlock } from '../../utils/coachSearchRules';
 
 export interface UploadedCoachMedia {
@@ -65,6 +66,7 @@ interface RealClipCoachRoomProps {
   isListeningVoice: boolean;
   isAnalyzingUpload: boolean;
   answerBlock?: CoachAnswerBlock;
+  onAskCoachQuestion?: (question: string) => void;
   onSelectGame: (game: { id: string; name?: string; realm?: RealmId; steamAppId?: number }) => void;
   onSubmitProblemQuery: (query: string) => void;
   onRefreshAgents: () => void;
@@ -101,6 +103,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
   isListeningVoice,
   isAnalyzingUpload,
   answerBlock,
+  onAskCoachQuestion,
   onSelectGame,
   onSubmitProblemQuery,
   onRefreshAgents,
@@ -588,6 +591,20 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
           </section>
 
           {/* ---------- LAYER 3: CENTER 3D HOLOGRAPHIC CONTROLLER & COACHING HERO CARD ---------- */}
+          <CoachSessionPanel
+            gameId={motionPayload.gameId}
+            gameName={motionPayload.gameName}
+            realm={activeRealm}
+            problemQuery={problemQuery}
+            accentHex={accent}
+            onSubmitQuestion={(q) => {
+              if (onAskCoachQuestion) {
+                onAskCoachQuestion(q);
+              } else {
+                onSubmitProblemQuery(q);
+              }
+            }}
+          />
           {answerBlock && <CoachAnswerBoard answerBlock={answerBlock} accentHex={accent} />}
           <MotionCoachCard
             payload={motionPayload}

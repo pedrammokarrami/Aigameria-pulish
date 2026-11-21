@@ -10,6 +10,7 @@ import {
   runScoreboardVisionAgent,
   runTacticalDrillAgent,
 } from './src/agents/internalAgents.ts';
+import { buildCoachSession } from './src/agents/coachSession.ts';
 import { INITIAL_ECOSYSTEM_STATE } from './src/data/seedData.ts';
 import type {
   ChaosTournament,
@@ -1168,6 +1169,30 @@ async function startServer() {
     } catch (err) {
       res.status(500).json({
         error: err instanceof Error ? err.message : 'ProClipAnalyzerAgent failed.',
+      });
+    }
+  });
+
+  // 21b. Professional Coach Session — one question, one complete class (5 modules, per-module clips)
+  app.get('/api/ai/coach-session', async (req, res) => {
+    try {
+      const gameId = normalizeCoachGameId(req.query.gameId);
+      const gameName = typeof req.query.name === 'string' ? req.query.name.trim() : undefined;
+      const userQuery = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+      const rawRealm = String(req.query.realm ?? '');
+      const realm: RealmId =
+        rawRealm === 'sports' || rawRealm === 'shooter' || rawRealm === 'strategy' || rawRealm === 'story'
+          ? rawRealm
+          : 'sports';
+      const force = req.query.force === '1' || req.query.force === 'true';
+      const session = await buildCoachSession(
+        { gameId, gameName, realm, query: userQuery },
+        { state: getEcosystemState(), force }
+      );
+      res.json({ session });
+    } catch (err) {
+      res.status(500).json({
+        error: err instanceof Error ? err.message : 'Coach session failed.',
       });
     }
   });
