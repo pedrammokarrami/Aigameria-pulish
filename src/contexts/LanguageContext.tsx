@@ -6,6 +6,7 @@ import {
   findWorldLanguage,
   getUiCopy,
 } from '../utils/i18nEngine';
+import { installGlobalLanguageOverride } from '../utils/languageOverride';
 
 const LANGUAGE_STORAGE_KEY = 'aipetros-language-v1';
 
@@ -60,6 +61,10 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       document.documentElement.lang = language.code;
       document.documentElement.dataset.lang = language.code;
     }
+    // Global override: hardcoded Persian UI strings follow the chosen language too.
+    const base = language.code.toLowerCase();
+    const isNativeFa = base === 'fa' || base === 'prs' || base.startsWith('fa-');
+    installGlobalLanguageOverride(language.code, !isNativeFa);
   }, [language.code]);
 
   const setLanguageCode = useCallback((code: string) => {
