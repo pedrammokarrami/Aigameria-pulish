@@ -1,4 +1,5 @@
 import type { RealmId } from '../types/spatial.ts';
+import { gatherLiveWebIntel } from './liveWebIntel.ts';
 import {
   type AdkAgentBadge,
   type AdkLiveWebSource,
@@ -193,10 +194,25 @@ export async function runAdkMultiAgentConsultation(req: AdkConsultRequest): Prom
   const visionLatency = Math.max(19, Date.now() - visionStart);
 
   const patchStart = Date.now();
-  const [liveSources, baseIntel] = await Promise.all([
+  const [liveSources, extraLive, baseIntel] = await Promise.all([
     fetchLiveCompetitiveWebSources(req.realm, baseTopic.searchQuery),
+    // Second fan-out: global live intel (fa+en Wikipedia, global Reddit, HN, Steam news)
+    gatherLiveWebIntel(baseTopic.searchQuery, {
+      gameName: req.realm === 'sports' ? 'EA SPORTS FC 27' : undefined,
+    }),
     Promise.resolve(buildAdkMicroIntelForTopic(baseTopic)),
   ]);
+  // Merge the extra global sources into the topic's live web list.
+  const existingUrls = new Set(liveSources.map((s) => s.url));
+  for (const s of extraLive.sources) {
+    if (liveSources.length >= 5) break;
+    if (existingUrls.has(s.url)) continue;
+    liveSources.push({
+      title: s.title,
+      url: s.url,
+      source: s.source === 'wikipedia' ? 'Wikipedia' : s.source === 'reddit' ? 'Reddit' : s.source === 'steamnews' ? 'Steam News' : 'Hacker News',
+    });
+  }
   const patchLatency = Math.max(24, Date.now() - patchStart);
 
   const topicWithVectors =

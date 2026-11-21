@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import {
   runCoachSymbioteAgent,
+  runCoachSymbioteAgentLive,
   runHighCourtProsecutorAgent,
   runHighlightCopyAgent,
   runScoreboardVisionAgent,
@@ -54,6 +55,7 @@ import { getDb, dbHealth, logSecurityEvent } from './src/server/db';
 import { getEcosystemState, mutateEcosystemState } from './src/server/stateStore';
 import { cacheInvalidateTag } from './src/server/cache';
 import {
+  asyncRoute,
   corsGuard,
   requestContext,
   securityHeaders,
@@ -826,22 +828,17 @@ async function startServer() {
     });
   });
 
-  // 12. Internal AI Coach Symbiote Agent
-  app.post('/api/ai/symbiote', (req, res) => {
-    try {
-      const message = String(req.body?.message ?? '').trim();
-      const activeSection = String(req.body?.activeSection ?? 'gamer-id');
-      if (!message) {
-        return res.status(400).json({ error: 'Message is required.' });
-      }
-      const reply = runCoachSymbioteAgent({ message, activeSection, state });
-      res.json({ reply });
-    } catch (err) {
-      res.status(500).json({
-        error: err instanceof Error ? err.message : 'Internal coach response failed.',
-      });
+  // 12. Internal AI Coach Symbiote Agent — live-web powered
+  app.post('/api/ai/symbiote', asyncRoute(async (req, res) => {
+    const message = String(req.body?.message ?? '').trim();
+    const activeSection = String(req.body?.activeSection ?? 'gamer-id');
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required.' });
     }
-  });
+    const gameName = String(req.body?.gameName ?? '').trim() || undefined;
+    const { reply, live } = await runCoachSymbioteAgentLive({ message, activeSection, state, gameName });
+    res.json({ reply, liveSources: live.sources.length, online: live.online, tookMs: live.tookMs });
+  }));
 
   // 13. Internal Highlight Copywriter Agent
   app.post('/api/ai/highlight-copy', (req, res) => {

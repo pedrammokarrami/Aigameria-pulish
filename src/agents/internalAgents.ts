@@ -11,6 +11,7 @@ import type {
 } from '../types/aipetros.ts';
 import { computeCompositeDNA } from '../utils/aipetrosRules.ts';
 import { matchKnowledgeTopics } from './coachKnowledge.ts';
+import { gatherLiveWebIntel, formatLiveIntelSection, type LiveIntelResult } from './liveWebIntel.ts';
 
 export interface ImageInspectionResult {
   format: 'png' | 'jpeg' | 'webp' | 'unknown';
@@ -526,6 +527,29 @@ export function runCoachSymbioteAgent(params: {
   return isFa
     ? `${grounding}\nروند: ${isFa ? wins + ' برد از ' + recent.length + ' بازی آخر' : trend}.${matchLine ? ' ' + matchLine : ''}\nبرنامه‌ی امروز (۳۰ دقیقه):\n1) ۵ دقیقه warmup روی ${strongest.name}\n2) ۲۰ دقیقه دریل هدفمند روی ${weakest.name} (${weakest.val}/100)\n3) ۵ دقیقه مرور باخت‌های اخیر\nسوالی دقیق‌تر داری؟ بگو کدوم بخش (ایم، دفاع، پاس، اقتصاد، تیلت…) تا درس کاملش رو بدم.`
     : `${grounding}\nTrend: ${trend}.${matchLine ? ' ' + matchLine : ''}\nToday's 30-minute plan:\n1) 5-min warmup on ${strongest.name}\n2) 20-min targeted drill on ${weakest.name} (${weakest.val}/100)\n3) 5-min review of recent losses\nAsk me something specific (aim, defense, passing, economy, tilt, meta…) and I'll give you the full lesson.`;
+}
+
+/**
+ * Async symbiote — live-web powered. Runs the deterministic engine and, in
+ * parallel, fans out to public sources (Wikipedia/Reddit/HN/Steam) so every
+ * answer is grounded in current online intel. Never throws: offline → KB-only.
+ */
+export async function runCoachSymbioteAgentLive(params: {
+  message: string;
+  activeSection: string;
+  state: EcosystemState;
+  gameName?: string;
+  fetcher?: typeof fetch;
+}): Promise<{ reply: string; live: LiveIntelResult }> {
+  const isFa = /[\u0600-\u06FF]/.test(params.message);
+  const [baseReply, intel] = await Promise.all([
+    Promise.resolve(runCoachSymbioteAgent(params)),
+    gatherLiveWebIntel(params.message, { gameName: params.gameName, fetcher: params.fetcher }),
+  ]);
+  const liveSection = formatLiveIntelSection(intel, isFa);
+  // Live sources first — the user asked for real-time online knowledge.
+  const reply = liveSection ? `${liveSection}\n\n${baseReply}` : baseReply;
+  return { reply, live: intel };
 }
 
 /**

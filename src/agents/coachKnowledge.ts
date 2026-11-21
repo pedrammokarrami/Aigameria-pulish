@@ -227,6 +227,46 @@ const KB: CoachKnowledgeTopic[] = [
 
   /* ---------------- strategy (chess/RTS) ---------------- */
   {
+    id: 'sp-formation',
+    realm: 'sports',
+    titleFa: 'فرماسیون و ترکیب تیم',
+    titleEn: 'Formation & Team Setup',
+    keywords: ['formation', 'lineup', 'setup', 'squad', 'فرماسیون', 'ترکیب', 'چینش', 'سیستم', '4213', '4231', '4321'],
+    lessonsFa: [
+      'بهترین فرماسیون به سبک بازی تو بستگی داره: 4-2-3-1 برای کنترل وسط، 4-3-3 برای پرس بالا و وینگ‌های سریع، 4-2-1-3 برای فشار حداکثری.',
+      'در فرماسیون‌های سه نفره میانی همیشه یک هافبک دفاعی (CDM) بمونه تا ضدحمله نخوری.',
+      'تاکتیک سفارشی: عرض دفاع ۴۰، ارتفاع خط ۶۰، پرس بعد از پاس عرضی و پوشش میانی برای قطع پاس بین خطوط.',
+    ],
+    lessonsEn: [
+      'Best formation depends on your style: 4-2-3-1 for central control, 4-3-3 for high press with fast wingers, 4-2-1-3 for max pressure.',
+      'In 3-man midfields always keep one CDM home or counters will punish you.',
+      'Custom tactics: defense width 40, line height 60, press after a sideways pass, and between-the-lines coverage on the CM.',
+    ],
+    drills: ['Formation Fit Scrim', 'Custom Tactics Reps'],
+    mistakesFa: ['کپی فرماسیون پرو بدون سبک خودت', 'دو CDM بدون مهاجم نوک'],
+    proRef: 'Meta formations shift per patch — check live news before finals.',
+  },
+  {
+    id: 'sp-sbc',
+    realm: 'sports',
+    titleFa: 'SBC و ساخت اسکواد چلنج',
+    titleEn: 'SBC & Squad Building Challenges',
+    keywords: ['sbc', 'squad building', 'challenge', 'challenges', 'اس‌بی‌سی', 'اس بی سی', 'چلنج', 'اسکواد بیلدینگ', 'پک', 'استار مارک'],
+    lessonsFa: [
+      'قانون طلایی SBC: حداقل هزینه — از کارت‌های untradeable و بازیکنان لیگ کم‌مصرف استفاده کن؛ هرگز کارت اصلی کلاب را فدیه نکن.',
+      'قبل از ثبت SBC، ارزش بازگشتی پک را حساب کن: اگر کمتر از ۸۰٪ ورودی بود، نزن.',
+      'SBCهای پرارزش (marquee matchups) را با کمترین ریتینگ فloor کامل کن؛ حداکثر پاداش از لیگ‌های ارزان.',
+    ],
+    lessonsEn: [
+      'Golden SBC rule: minimum cost — use untradeables and low-demand league players; never sacrifice main club cards.',
+      'Before submitting, check pack expected return: if below 80% of input, skip it.',
+      'Complete high-value SBCs with the lowest rating floor; max rewards from cheap leagues.',
+    ],
+    drills: ['SBC Budget Planner'],
+    mistakesFa: ['فرستادن کارت گران tradeable', 'نادیده گرفتن قید لیگ'],
+    proRef: 'Track live SBC releases & community solutions from trading communities online.',
+  },
+  {
     id: 'st-opening',
     realm: 'strategy',
     titleFa: 'شروع بازی و اصول افتتاح',
