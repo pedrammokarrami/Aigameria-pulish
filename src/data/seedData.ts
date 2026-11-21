@@ -268,7 +268,7 @@ export const INITIAL_ECOSYSTEM_STATE: EcosystemState = {
       prizePoolPoints: 12500,
       participantsCount: 28,
       maxParticipants: 32,
-      activeChaosRule: 'Minute 70+ Mutator: Zero Sprint Passes Inside Final Third (Gemini Vision Checked)',
+      activeChaosRule: 'Minute 70+ Mutator: Zero Sprint Passes Inside Final Third (Internal Vision Checked)',
       roundLabel: 'Quarterfinals · Tonight 20:30 UTC',
       joined: true,
       chaosVerifiedCount: 14,

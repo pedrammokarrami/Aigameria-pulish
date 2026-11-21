@@ -277,12 +277,11 @@ export async function runMotionCoachAgent(
     realm?: RealmId;
     steamAppId?: number;
   },
-  options: { force?: boolean; geminiApiKey?: string; fetcher?: typeof fetch; nowMs?: number } = {}
+  options: { force?: boolean; fetcher?: typeof fetch; nowMs?: number } = {}
 ): Promise<MotionCoachPayload> {
   const normId = normalizeCoachGameId(input.gameId);
   const meta = await syncLatestGameMeta(normId, {
     force: options.force,
-    geminiApiKey: options.geminiApiKey,
     gameName: input.gameName,
     realm: input.realm,
     steamAppId: input.steamAppId,

@@ -55,7 +55,6 @@ export interface SyncMetaOptions {
   force?: boolean;
   fetcher?: typeof fetch;
   nowMs?: number;
-  geminiApiKey?: string;
   gameName?: string;
   realm?: RealmId;
   steamAppId?: number;

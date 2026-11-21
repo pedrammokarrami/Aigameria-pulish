@@ -178,7 +178,7 @@ export const MotionGraphicsStage: React.FC<MotionGraphicsStageProps> = ({
             type="button"
             data-testid="refresh-live-adk-btn"
             onClick={onRefreshLiveAdk}
-            title="بروزرسانی زنده ایجنت‌های @google/adk"
+            title="بروزرسانی زنده ایجنت‌های داخلی AIGAMERIA"
             className="fc27-blade px-2.5 py-1 text-[10px] font-mono-tabular font-bold text-white/90 hover:text-white bg-white/10 cursor-pointer"
           >
             <span className="fc27-unskew flex items-center gap-1">
@@ -254,7 +254,7 @@ export const MotionGraphicsStage: React.FC<MotionGraphicsStageProps> = ({
               <MousePointerClick className="w-3.5 h-3.5 shrink-0" style={{ color: cfg.accentHex }} />
               <span className="truncate">
                 {isLoadingSearch
-                  ? '۴ ایجنت @google/adk در حال استخراج دیتای زنده وب...'
+                  ? '۴ ایجنت داخلی در حال استخراج دیتای زنده وب...'
                   : 'روی هر جای عکس کلیک کن تا VisionAgent از همان‌جا خط و دایره بکشد'}
               </span>
             </span>
@@ -410,14 +410,14 @@ export const MotionGraphicsStage: React.FC<MotionGraphicsStageProps> = ({
         </div>
       </div>
 
-      {/* 3. Official @google/adk Multi-Agent Panel in EA SPORTS FC 27 Slanted Blade Style */}
+      {/* 3. Internal Multi-Agent Panel in EA SPORTS FC 27 Slanted Blade Style */}
       <div
         dir="rtl"
         data-testid="adk-multi-agent-panel"
         className="bg-[#05080C]/95 border border-white/15 p-3 flex flex-col gap-2.5 shadow-2xl"
         style={{ borderRight: `4px solid ${cfg.accentHex}` }}
       >
-        {/* Top Row: 4 Specialized @google/adk Agents Switcher in FC 27 Slanted Blades */}
+        {/* Top Row: 4 Internal Deterministic Agents Switcher in FC 27 Slanted Blades */}
         <div className="flex items-center justify-between flex-wrap gap-1.5 border-b border-white/10 pb-2">
           <div className="flex items-center flex-wrap gap-1.5">
             <span
@@ -644,7 +644,7 @@ export const MotionGraphicsStage: React.FC<MotionGraphicsStageProps> = ({
               </div>
             </div>
 
-            {/* Real Live Reddit & Web Sources Fetched by @google/adk MetaPatchNotesAgent */}
+            {/* Real Live Reddit & Web Sources Fetched by Internal MetaPatchNotesAgent */}
             <div className="fc27-card p-3 flex flex-col justify-between">
               <div className="font-mono-tabular text-[10px] font-black text-[#CCFF00] flex items-center gap-1 pb-1.5 border-b border-white/10">
                 <Globe className="w-3 h-3" />

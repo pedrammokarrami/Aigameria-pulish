@@ -9,7 +9,7 @@ test('runAdkMultiAgentConsultation orchestrates all 4 ADK sub-agents and populat
   });
 
   assert.ok(result.adkIntel);
-  assert.equal(result.adkIntel.framework, 'Google ADK (@google/adk) · Live Multi-Agent Pipeline');
+  assert.equal(result.adkIntel.framework, 'AIGAMERIA Internal Agent Mesh · Deterministic Rule Pipeline');
   assert.equal(result.adkIntel.agentsTrace.length, 4);
   assert.equal(result.adkIntel.agentsTrace[0].agentName, 'VisionTelestratorAgent');
   assert.equal(result.adkIntel.agentsTrace[1].agentName, 'MetaPatchNotesAgent');

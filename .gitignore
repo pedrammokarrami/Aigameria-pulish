@@ -1,3 +1,6 @@
 node_modules
 dist
 .env
+
+# local data dir (SQLite database + runtime artifacts)
+.data/

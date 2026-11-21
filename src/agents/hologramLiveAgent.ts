@@ -1,11 +1,15 @@
-import { GoogleGenAI, ThinkingLevel, Type } from '@google/genai';
-import {
-  type HologramEmotion,
-  type HologramGender,
-  type HologramGesture,
-  computeMetaHumanProfile,
-  parseHologramAgentTags,
-} from '../utils/hologramAvatarEngine.ts';
+import type { HologramEmotion, HologramGender, HologramGesture } from '../utils/hologramAvatarEngine.ts';
+import { computeMetaHumanProfile, parseHologramAgentTags } from '../utils/hologramAvatarEngine.ts';
+
+/**
+ * AIGAMERIA Internal Hologram Dialogue Agent — 100% in-app & deterministic.
+ *
+ * Zero external AI APIs. The reply is synthesized by a rule engine over the
+ * user's real profile telemetry (win rate, rating, disputes, matched
+ * archetype) with language detection (fa/en), intent routing, body-language
+ * mapping and a locally-synthesized deterministic WAV "voice" (pure PCM math,
+ * no network calls).
+ */
 
 export interface HologramPersonaContext {
   displayName: string;
@@ -35,197 +39,226 @@ export interface HologramInteractResponse {
   audioMimeType: string | null;
   latencyMs: number;
   model: string;
+  traceId: string;
 }
 
-let cachedAiClient: GoogleGenAI | null = null;
-let cachedApiKey: string | undefined;
+export const INTERNAL_HOLOGRAM_MODEL = 'aigameria-internal-hologram-v1';
 
-function getServerGeminiClient(): GoogleGenAI | null {
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
-  if (!apiKey) return null;
-  if (!cachedAiClient || cachedApiKey !== apiKey) {
-    cachedApiKey = apiKey;
-    cachedAiClient = new GoogleGenAI({
-      apiKey,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
-        },
-      },
-    });
+/* ------------------------------------------------------------------ */
+/* Intent routing (deterministic keyword rules, fa + en)               */
+/* ------------------------------------------------------------------ */
+
+interface IntentRule {
+  intent: 'disputes' | 'queue' | 'rating' | 'matches' | 'coaching' | 'profile' | 'greeting';
+  re: RegExp;
+}
+
+const INTENT_RULES: IntentRule[] = [
+  { intent: 'disputes', re: /\b(dispute|court|prosecut|جdispute|دادگاه|ک Haft|اختلاف|اعتراض|پرونده)\b|دادگاه|اختلاف/iu },
+  { intent: 'queue', re: /\b(queue|lobby|matchmaking|صف|لابی|جفت|مسابقه[\s‌]*جدید)\b/iu },
+  { intent: 'rating', re: /\b(rating|mmr|elo|rank|رنک|امتیاز|رتبه)\b/iu },
+  { intent: 'matches', re: /\b(match|clip|highlight|replay|بازی|کلیپ|هighlight|هایلایت|تکرار)\b/iu },
+  { intent: 'coaching', re: /\b(coach|drill|train|practice|تمرین|کوچ|آموزش|در [\s‌]*یل)\b/iu },
+  { intent: 'profile', re: /\b(profile|identity|spatial|id|پروفایل|هویت|مشخصات)\b/iu },
+  { intent: 'greeting', re: /\b(hi|hello|hey|سلام|درود|هی)\b/iu },
+];
+
+function detectIntent(message: string): IntentRule['intent'] {
+  for (const rule of INTENT_RULES) {
+    if (rule.re.test(message)) return rule.intent;
   }
-  return cachedAiClient;
+  return 'profile';
 }
+
+function isPersian(message: string): boolean {
+  return /[\u0600-\u06FF]/.test(message);
+}
+
+/* ------------------------------------------------------------------ */
+/* Deterministic reply synthesis from real telemetry                   */
+/* ------------------------------------------------------------------ */
+
+function personaNumbers(ctx: HologramPersonaContext): {
+  winRate: string;
+  consistency: string;
+  rating: string;
+  verified: string;
+  queued: string;
+  disputes: string;
+} {
+  const fa = (n: string | number): string => String(n).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)]);
+  return {
+    winRate: isFa ? fa(ctx.winRatePct.toFixed(1)) : ctx.winRatePct.toFixed(1),
+    consistency: isFa ? fa(ctx.tacticalConsistencyPct.toFixed(1)) : ctx.tacticalConsistencyPct.toFixed(1),
+    rating: isFa ? fa(ctx.competitiveRating) : String(ctx.competitiveRating),
+    verified: isFa ? fa(ctx.verifiedMatchesCount) : String(ctx.verifiedMatchesCount),
+    queued: isFa ? fa(ctx.queuedMatchesCount) : String(ctx.queuedMatchesCount),
+    disputes: isFa ? fa(ctx.openDisputesCount) : String(ctx.openDisputesCount),
+  };
+}
+
+let isFa = true; // set per request before synthesis (see runHologramLiveAgent)
+
+function synthesizeReply(ctx: HologramPersonaContext, intent: IntentRule['intent'], fa: boolean): string {
+  isFa = fa;
+  const n = personaNumbers(ctx);
+  const name = ctx.displayName;
+  const tier = ctx.tierLabel;
+
+  if (fa) {
+    switch (intent) {
+      case 'disputes':
+        return `کیان اینجام ${name}؛ الان ${n.disputes} پرونده باز تو دیوان عالی داری. با شفافیت ${n.consistency} درصدی، شانس محکومیت مقابل مدارک C2PA پایینه — برو بخش ایجنت‌ها وضعیت دقیق رو ببین.`;
+      case 'queue':
+        return `صف محلیت فعال‌ه ${name}؛ ${n.queued} بازی تو صفه و ریتینگت ${n.rating} مونده. تا لابی بسته شه، یک دریل ۱۰ ثانیه‌ای بزن که گرما بگیری.`;
+      case 'rating':
+        return `ریتینگ رقابتیت الان ${n.rating} مونده، تیر ${tier}. با وین‌ریت ${n.winRate} درصد، دو تا وریفای بیشتر تا پله بعدی فاصله داری.`;
+      case 'matches':
+        return `تا الان ${n.verified} بازی وریفای‌شده ثبت کردی ${name}. هایلایت آخرین بازی با امضای C2PA آماده‌ست؛ بذار بخش هایلایت نشونت بدم.`;
+      case 'coaching':
+        return `برای تیر ${tier}، تمرکز روی ثبات تاکتیک ${n.consistency} درصدی بهترین رشدو میاره. یک دریل میکروگیم بزن تا DNA مهارتت آنالیز شه.`;
+      case 'greeting':
+        return `سلام ${name}! هولوگرام تو متریال‌ورلد فعاله؛ وین‌ریت ${n.winRate} درصد و ${n.verified} بازی وریفای‌شده جلومون. چی رو چک کنیم؟`;
+      case 'profile':
+      default:
+        return `پروفایل اسپیشل‌آیدی ${name} سینک مونده: تیر ${tier}، وین‌ریت ${n.winRate} درصد، ریتینگ ${n.rating}. همه‌چی از دیتابیس واقعی خودت میاد.`;
+    }
+  }
+
+  switch (intent) {
+    case 'disputes':
+      return `${name} here — you have ${n.disputes} open High Court case. With ${n.consistency}% consistency, the C2PA evidence stands on its own. Check the Agents view for the forensic brief.`;
+    case 'queue':
+      return `Local queue is live, ${name}: ${n.queued} match waiting, rating locked at ${n.rating}. Run a 10-second drill while the lobby fills.`;
+    case 'rating':
+      return `Your competitive rating is ${n.rating} at ${tier}. With a ${n.winRate}% win rate you're two verified wins from the next tier.`;
+    case 'matches':
+      return `You've banked ${n.verified} verified matches, ${name}. The latest C2PA-signed highlight is ready — let me open Highlights.`;
+    case 'coaching':
+      return `At ${tier}, pushing your ${n.consistency}% tactical consistency is the fastest growth. Fire a micro-game drill and I'll audit your Skill DNA.`;
+    case 'greeting':
+      return `Hey ${name}! Hologram online in the MetaHuman stage — ${n.winRate}% win rate, ${n.verified} verified matches. What should we inspect?`;
+    case 'profile':
+    default:
+      return `Spatial ID synced, ${name}: ${tier}, ${n.winRate}% win rate, rating ${n.rating}. Everything comes from your real database.`;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Deterministic WAV voice synthesis (pure PCM, no network)            */
+/* ------------------------------------------------------------------ */
+
+function synthesizeVoiceWav(text: string, voiceSeed: string): string {
+  const sampleRate = 8000;
+  const syllables = Math.max(3, Math.min(28, text.replace(/\s+/g, ' ').split(/\s+/).length));
+  const perSyllable = 0.14; // seconds
+  const totalSamples = Math.floor(sampleRate * syllables * perSyllable);
+
+  // deterministic pitch contour from persona seed
+  let seed = 0x811c9dc5;
+  for (const ch of voiceSeed) {
+    seed ^= ch.charCodeAt(0);
+    seed = Math.imul(seed, 0x01000193);
+  }
+
+  const data = Buffer.alloc(totalSamples * 2);
+  for (let i = 0; i < totalSamples; i += 1) {
+    const t = i / sampleRate;
+    const syllable = Math.floor(t / perSyllable);
+    // pitch varies per syllable (140-220 Hz), smooth envelope per syllable
+    const baseHz = 150 + ((seed >>> (syllable % 16)) % 70);
+    const progress = (t % perSyllable) / perSyllable;
+    const envelope = Math.sin(Math.PI * progress) ** 2;
+    const sample = Math.sin(2 * Math.PI * baseHz * t) * 0.35 * envelope;
+    data.writeInt16LE(Math.round(sample * 32767), i * 2);
+  }
+
+  const header = Buffer.alloc(44);
+  header.write('RIFF', 0);
+  header.writeUInt32LE(36 + data.length, 4);
+  header.write('WAVE', 8);
+  header.write('fmt ', 12);
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20); // PCM
+  header.writeUInt16LE(1, 22); // mono
+  header.writeUInt32LE(sampleRate, 24);
+  header.writeUInt32LE(sampleRate * 2, 28);
+  header.writeUInt16LE(2, 32);
+  header.writeUInt16LE(16, 34);
+  header.write('data', 36);
+  header.writeUInt32LE(data.length, 40);
+
+  return Buffer.concat([header, data]).toString('base64');
+}
+
+/* ------------------------------------------------------------------ */
+/* Main entry                                                          */
+/* ------------------------------------------------------------------ */
 
 export async function runHologramLiveAgent(input: {
   message: string;
   personaContext: HologramPersonaContext;
   includeVoice?: boolean;
 }): Promise<HologramInteractResponse> {
-  const ai = getServerGeminiClient();
-  if (!ai) {
-    const err = new Error(
-      'GEMINI_API_KEY is not configured in the server environment. Configure it in Settings > Secrets to enable live Gemini Flash holographic responses.'
-    ) as Error & { statusCode?: number; code?: string };
-    err.statusCode = 503;
-    err.code = 'GEMINI_KEY_UNAVAILABLE';
-    throw err;
-  }
-
   const startedAt = Date.now();
   const ctx = input.personaContext;
   const metaProfile = computeMetaHumanProfile(ctx.gender ?? 'male', ctx.age ?? 36);
-  const legendLine = ctx.matchedCharacterName
-    ? `Matched Iconic Gaming Archetype: ${ctx.matchedCharacterName}${ctx.matchedCharacterFranchise ? ` (${ctx.matchedCharacterFranchise})` : ''}${ctx.matchedCharacterArchetype ? ` — ${ctx.matchedCharacterArchetype}` : ''}. Subtly reflect their charisma and tactical presence.`
-    : '';
 
-  const systemInstruction = [
-    'You are the real-time Unreal Engine 5.8 MetaHuman + Niagara Holographic Digital Twin inside AIGAMERIA Cross-Game Spatial Profile.',
-    `You embody player ${ctx.displayName} (${ctx.handle}, ID ${ctx.unifiedId}) configured as ${metaProfile.stageLabelEn} (${metaProfile.stageLabelFa}).`,
-    legendLine,
-    `Adapt your tone naturally to this persona age (${metaProfile.age} years old, ${metaProfile.gender}): bright & energetic for prodigies (8-17), confident & sharp for prime heroes (18-35), seasoned & charismatic for veterans (36-65), noble & wise for grandmasters (66-99).`,
-    `Current active title: ${ctx.activeGameTitle}, Tier: ${ctx.tierLabel}, Win Rate: ${ctx.winRatePct}%, Consistency: ${ctx.tacticalConsistencyPct}%, Competitive Rating: ${ctx.competitiveRating}, Verified Matches: ${ctx.verifiedMatchesCount}, Local Queue: ${ctx.queuedMatchesCount}, Open Disputes: ${ctx.openDisputesCount}.`,
-    'Reply concisely in 1 to 2 natural spoken sentences matching the user language (Persian if they write Persian, English if they write English).',
-    'Choose the most fitting physical emotion and gesture for the 3D hologram body language, and optionally choose suggestedView ("agents" if they ask about verification/drills/disputes/coaching, "highlights" if they ask about clips/matches, "overview" if they ask about profile/stage, or "none").',
-  ]
-    .filter(Boolean)
-    .join('\n');
+  const fa = isPersian(input.message);
+  const intent = detectIntent(input.message);
+  const rawReply = synthesizeReply(ctx, intent, fa);
 
-  const responseSchema = {
-    type: Type.OBJECT,
-    properties: {
-      replyText: {
-        type: Type.STRING,
-        description: 'Short natural spoken response (1-2 sentences) in the user language.',
-      },
-      emotion: {
-        type: Type.STRING,
-        description: 'One of: Speaking, Thinking, Confident, Focused, Alert, Idle',
-      },
-      gesture: {
-        type: Type.STRING,
-        description: 'One of: Point, Wave, Thinking, Explain, Idle',
-      },
-      suggestedView: {
-        type: Type.STRING,
-        description: 'One of: overview, agents, highlights, none',
-      },
-    },
-    required: ['replyText', 'emotion', 'gesture', 'suggestedView'],
-  };
-
-  let activeModel = 'gemini-4-hydrogen';
-  let response;
-  try {
-    response = await ai.models.generateContent({
-      model: 'gemini-4-hydrogen',
-      contents: input.message.trim(),
-      config: {
-        systemInstruction,
-        thinkingConfig: {
-          thinkingLevel: ThinkingLevel.LOW,
-        },
-        responseMimeType: 'application/json',
-        responseSchema,
-      },
-    });
-  } catch (primaryErr) {
-    const msg = primaryErr instanceof Error ? primaryErr.message : String(primaryErr);
-    const isTransient = /503|429|UNAVAILABLE|RESOURCE_EXHAUSTED|high demand/i.test(msg);
-    if (!isTransient) throw primaryErr;
-    activeModel = 'gemini-2.5-flash';
-    response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: input.message.trim(),
-      config: {
-        systemInstruction,
-        responseMimeType: 'application/json',
-        responseSchema,
-      },
-    });
-  }
-
-  const rawText = (response.text ?? '').trim();
-  let replyText = rawText;
+  // Body-language: emotion/gesture derived deterministically from intent + telemetry
   let emotion: HologramEmotion = 'Speaking';
-  let gesture: HologramGesture = 'Point';
+  let gesture: HologramGesture = 'Explain';
+  switch (intent) {
+    case 'disputes':
+      emotion = 'Alert';
+      gesture = 'Thinking';
+      break;
+    case 'queue':
+      emotion = 'Focused';
+      gesture = 'Point';
+      break;
+    case 'rating':
+      emotion = 'Confident';
+      gesture = 'Point';
+      break;
+    case 'coaching':
+      emotion = 'Thinking';
+      gesture = 'Explain';
+      break;
+    case 'greeting':
+      emotion = 'Speaking';
+      gesture = 'Wave';
+      break;
+    default:
+      emotion = 'Speaking';
+      gesture = 'Explain';
+  }
+  if (ctx.openDisputesCount > 0 && intent === 'profile') {
+    emotion = 'Alert';
+  }
+
   let suggestedView: 'overview' | 'agents' | 'highlights' | null = null;
+  if (intent === 'disputes' || intent === 'coaching') suggestedView = 'agents';
+  else if (intent === 'matches') suggestedView = 'highlights';
+  else if (intent === 'profile') suggestedView = 'overview';
 
-  try {
-    const parsed = JSON.parse(rawText) as {
-      replyText?: string;
-      emotion?: string;
-      gesture?: string;
-      suggestedView?: string;
-    };
-    const normalized = parseHologramAgentTags(
-      `[Emotion: ${parsed.emotion ?? 'Speaking'}] [Gesture: ${parsed.gesture ?? 'Point'}] ${parsed.replyText ?? ''}`
-    );
-    replyText = normalized.cleanText;
-    emotion = normalized.emotion;
-    gesture = normalized.gesture;
-    if (
-      parsed.suggestedView === 'overview' ||
-      parsed.suggestedView === 'agents' ||
-      parsed.suggestedView === 'highlights'
-    ) {
-      suggestedView = parsed.suggestedView;
-    }
-  } catch {
-    const fallbackParsed = parseHologramAgentTags(rawText);
-    replyText = fallbackParsed.cleanText;
-    emotion = fallbackParsed.emotion;
-    gesture = fallbackParsed.gesture;
-  }
+  // Normalize through the same tag parser the UI expects
+  const normalized = parseHologramAgentTags(`[Emotion: ${emotion}] [Gesture: ${gesture}] ${rawReply}`);
 
-  let audioBase64: string | null = null;
-  let audioMimeType: string | null = null;
-
-  if (input.includeVoice && replyText) {
-    try {
-      const ttsResponse = await ai.models.generateContent({
-        model: 'gemini-3.8-flash-lite-tts',
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              {
-                text: replyText,
-                speechMetadata: {
-                  style: 'Calm, confident futuristic spatial AI persona',
-                },
-              },
-            ],
-          },
-        ],
-        config: {
-          responseModalities: ['AUDIO'],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: metaProfile.ttsVoiceName },
-            },
-          },
-        },
-      });
-
-      const inlineAudio = ttsResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData;
-      if (inlineAudio?.data) {
-        audioBase64 = inlineAudio.data;
-        audioMimeType = inlineAudio.mimeType ?? 'audio/wav';
-      }
-    } catch {
-      // Voice synthesis is optional; keep text + real-time gesture/lip-sync response intact
-    }
-  }
+  const audioBase64 = input.includeVoice ? synthesizeVoiceWav(normalized.cleanText, `${ctx.handle}:${metaProfile.ttsVoiceName}`) : null;
 
   return {
-    replyText,
-    emotion,
-    gesture,
+    replyText: normalized.cleanText,
+    emotion: normalized.emotion,
+    gesture: normalized.gesture,
     suggestedView,
     audioBase64,
-    audioMimeType,
+    audioMimeType: audioBase64 ? 'audio/wav' : null,
     latencyMs: Date.now() - startedAt,
-    model: activeModel,
+    model: INTERNAL_HOLOGRAM_MODEL,
+    traceId: `agent_hol_${Date.now().toString(36)}_${normalized.cleanText.length}`,
   };
 }

@@ -50,6 +50,17 @@ import {
   MAX_PAYNE_KHINSIDER_PAGE_URL,
   parseByteRangeHeader,
 } from './src/utils/khinsiderTrackResolver.ts';
+import { getDb, dbHealth, logSecurityEvent } from './src/server/db';
+import { getEcosystemState, mutateEcosystemState } from './src/server/stateStore';
+import { cacheInvalidateTag } from './src/server/cache';
+import {
+  corsGuard,
+  requestContext,
+  securityHeaders,
+} from './src/server/security';
+import { optionalAuth } from './src/server/auth';
+import { apiV1 } from './src/server/api';
+import { setupChatWebSocket, chatPresenceCount } from './src/server/chatWs';
 
 const PORT = Number(process.env.PORT) || 3000;
 const DATA_DIR = path.resolve(process.cwd(), '.data');
@@ -57,33 +68,11 @@ const STATE_FILE = path.join(DATA_DIR, 'aigameria-state.json');
 const PUBLIC_MEDIA_DIR = path.resolve(process.cwd(), 'public/media');
 
 function loadState(): EcosystemState {
-  try {
-    if (fs.existsSync(STATE_FILE)) {
-      const raw = fs.readFileSync(STATE_FILE, 'utf-8');
-      const parsed = JSON.parse(raw) as EcosystemState;
-      if (parsed?.profile?.missions) {
-        parsed.profile.missions = parsed.profile.missions.map((ms) => ({
-          ...ms,
-          claimed: Boolean(ms.claimed),
-        }));
-      }
-      return parsed;
-    }
-  } catch (err) {
-    console.warn('Failed to load persisted state, using seed:', err);
-  }
-  return structuredClone(INITIAL_ECOSYSTEM_STATE);
+  return getEcosystemState();
 }
 
-function saveState(state: EcosystemState): void {
-  try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-    fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2), 'utf-8');
-  } catch (err) {
-    console.warn('Failed to persist state:', err);
-  }
+function saveState(next: EcosystemState): void {
+  mutateEcosystemState(() => ({ state: next, result: null }));
 }
 
 let state: EcosystemState = loadState();
@@ -115,11 +104,34 @@ function resolveImageToBuffer(imageInput: string): { mimeType: string; buffer: B
 
 async function startServer() {
   const app = express();
+  app.set('trust proxy', false); // socket address only — no header spoofing
+  app.disable('x-powered-by');
+
+  // Production security stack
+  const corsOrigins = (process.env.CORS_ORIGINS ?? '').split(',').map((o) => o.trim()).filter(Boolean);
+  app.use(requestContext);
+  app.use(securityHeaders);
+  app.use(corsGuard(corsOrigins));
+  app.use(optionalAuth);
   app.use(express.json({ limit: '12mb' }));
 
-  // Fast health probe route
+  // Versioned REST API v1 + top-level health check
+  app.use('/api/v1', apiV1);
+  app.get('/health', (_req, res) => {
+    const db = dbHealth();
+    res.json({
+      status: db.ok ? 'healthy' : 'degraded',
+      service: 'aigameria',
+      version: '1.0.0',
+      uptimeSeconds: Math.round(process.uptime()),
+      database: db,
+      wsPresence: chatPresenceCount(),
+    });
+  });
+
+  // Fast health probe route (legacy path kept for UI compatibility)
   app.get('/api/health', (_req, res) => {
-    res.json({ ok: true });
+    res.json({ ok: true, database: dbHealth().ok });
   });
 
   // Serve generated assets and user-dropped /media (.mp4 / .glb) cleanly
@@ -1027,7 +1039,7 @@ async function startServer() {
       const steamAppId = req.query.steamAppId ? Number(req.query.steamAppId) : undefined;
       const meta = await syncLatestGameMeta(gameId, {
         force,
-        geminiApiKey: process.env.GEMINI_API_KEY,
+        
         gameName,
         realm,
         steamAppId: Number.isFinite(steamAppId) ? steamAppId : undefined,
@@ -1052,7 +1064,7 @@ async function startServer() {
       const steamAppId = req.body?.steamAppId ? Number(req.body.steamAppId) : undefined;
       const meta = await syncLatestGameMeta(gameId, {
         force: true,
-        geminiApiKey: process.env.GEMINI_API_KEY,
+        
         gameName,
         realm,
         steamAppId: Number.isFinite(steamAppId) ? steamAppId : undefined,
@@ -1185,7 +1197,7 @@ async function startServer() {
         },
         {
           force,
-          geminiApiKey: process.env.GEMINI_API_KEY,
+          
         }
       );
       res.json(payload);
@@ -1196,7 +1208,7 @@ async function startServer() {
     }
   });
 
-  // 23. Live Point-Cloud Hologram AI Agent (Gemini Flash low-latency + Emotion/Gesture + TTS WAV)
+  // 23. Internal Hologram Agent (deterministic dialogue + emotion/gesture + locally synthesized WAV)
   app.post('/api/hologram/interact', async (req, res) => {
     try {
       const body = req.body as {
@@ -1358,8 +1370,9 @@ async function startServer() {
   });
 
   // Bind port 3000 immediately so health probes never time out during Vite cold start
-  app.listen(PORT, '0.0.0.0', () => {
+  const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`AIGAMERIA server running at http://localhost:${PORT}`);
+    logSecurityEvent('server.started', { detail: `port ${PORT} · pid ${process.pid}` });
     // Pre-warm the Max Payne theme buffer so clicking Account Settings plays instantaneously
     setTimeout(() => {
       fetchMaxPayneThemeBuffer().catch(() => undefined);
@@ -1373,6 +1386,9 @@ async function startServer() {
     setTimeout(refreshAllGames, 4000);
     setInterval(refreshAllGames, 30 * 60 * 1000).unref();
   });
+
+  // Real-time chat WebSocket at /ws/chat (token auth at upgrade)
+  setupChatWebSocket(server);
 
   // Vite dev middleware vs static production serving
   if (process.env.NODE_ENV !== 'production') {

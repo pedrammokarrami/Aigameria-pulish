@@ -15,7 +15,7 @@ interface StadiumTurntableProps {
   pins?: TurntableVideoPin[];
 }
 
-const DEFAULT_STADIUM_VIDEO_SRC = '/assets/aistudio/gemini_generated_video_9528C2CF_39592eeb.mp4';
+const DEFAULT_STADIUM_VIDEO_SRC = '/assets/aistudio/spatial_stadium_loop_9528C2CF_39592eeb.mp4';
 
 const DEFAULT_PINS: TurntableVideoPin[] = [
   { label: 'ST · PENALTY BOX', top: '38%', right: '26%', accent: 'primary' },

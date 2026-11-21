@@ -216,7 +216,7 @@ export const GAME_THEMES: Record<TournamentGameId, GameThemeConfig> = {
       ruleBadgeFa: '۱۶ باشگاه در لیگ • صعود ۴ تیم برتر به پلی‌آف',
     },
     turntableVideo: {
-      src: '/assets/aistudio/gemini_generated_video_9528C2CF_39592eeb.mp4',
+      src: '/assets/aistudio/spatial_stadium_loop_9528C2CF_39592eeb.mp4',
       ariaLabelFa: 'نمای سه‌بعدی تعاملی استادیوم FC 27 — برای چرخش افقی بکشید',
       pins: [
         { label: 'ST · PENALTY BOX', top: '38%', right: '26%', accent: 'primary' },

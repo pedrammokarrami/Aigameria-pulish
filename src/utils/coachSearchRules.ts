@@ -58,7 +58,9 @@ export interface AdkLiveWebSource {
 
 export interface AdkMultiAgentReport {
   orchestratorId: string;
-  framework: 'Google ADK (@google/adk) · Live Multi-Agent Pipeline';
+  framework:
+    | 'AIGAMERIA Internal Agent Mesh · Deterministic Rule Pipeline'
+    | 'Google ADK (@google/adk) · Live Multi-Agent Pipeline';
   patchVersion: string;
   inputComboFa: string;
   frameTimingFa: string;
@@ -70,6 +72,8 @@ export interface AdkMultiAgentReport {
   liveSources?: AdkLiveWebSource[];
   lastUpdatedIso?: string;
   isLiveGemini?: boolean;
+  /** Audit: how focal coordinates were derived (tap / image_scan / topic_default). */
+  coordSource?: 'tap' | 'image_scan' | 'topic_default';
 }
 
 export interface CoachConsultationTopic {
@@ -1450,7 +1454,7 @@ export function buildAdkMicroIntelForTopic(topic: CoachConsultationTopic): AdkMu
   if (preset) {
     return {
       orchestratorId: `adk-root-${topic.id}`,
-      framework: 'Google ADK (@google/adk) · Live Multi-Agent Pipeline',
+      framework: 'AIGAMERIA Internal Agent Mesh · Deterministic Rule Pipeline',
       ...preset,
       agentsTrace: defaultAgents,
       lastUpdatedIso: new Date().toISOString(),
@@ -1463,7 +1467,7 @@ export function buildAdkMicroIntelForTopic(topic: CoachConsultationTopic): AdkMu
 
   return {
     orchestratorId: `adk-custom-${topic.id}`,
-    framework: 'Google ADK (@google/adk) · Live Multi-Agent Pipeline',
+    framework: 'AIGAMERIA Internal Agent Mesh · Deterministic Rule Pipeline',
     patchVersion: baseRealmPreset.patchVersion,
     inputComboFa: `اجرای دقیق برای «${topic.titleFa}»: ${baseRealmPreset.inputComboFa}`,
     frameTimingFa: baseRealmPreset.frameTimingFa,
