@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Award, Check, Lock, ShieldCheck, Sparkles, Wallet, X } from 'lucide-react';
-import type { GamerProfile } from '../../types/aigameria';
+import type { GamerProfile } from '../../types/aipetros';
 
 interface TacticalVaultDrawerProps {
   open: boolean;

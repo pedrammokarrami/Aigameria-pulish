@@ -1,4 +1,4 @@
-import type { EcosystemState } from '../types/aigameria';
+import type { EcosystemState } from '../types/aipetros';
 
 export const INITIAL_ECOSYSTEM_STATE: EcosystemState = {
   profile: {

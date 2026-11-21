@@ -7,14 +7,14 @@ import {
   type VerifiedMatchRecord,
 } from '../data/offlineAgentsData';
 
-const STORAGE_KEY = 'aigameria-crossgame-identity-v1';
+const STORAGE_KEY = 'aipetros-crossgame-identity-v1';
 
 /**
  * Deterministic lightweight FNV-1a + salted SHA-style hex digest
  * so offline scoreboard verification works consistently without external crypto servers.
  */
 export function computeOfflineIntegrityHash(matchId: string, finalScore: string, gameTitle: string): string {
-  const payload = `${matchId}|${finalScore}|${gameTitle}|AIGAMERIA_OFFLINE_NODE`;
+  const payload = `${matchId}|${finalScore}|${gameTitle}|AIPETROS_OFFLINE_NODE`;
   let h1 = 0x811c9dc5;
   let h2 = 0x01000193;
   for (let i = 0; i < payload.length; i += 1) {

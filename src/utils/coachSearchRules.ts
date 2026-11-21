@@ -59,7 +59,7 @@ export interface AdkLiveWebSource {
 export interface AdkMultiAgentReport {
   orchestratorId: string;
   framework:
-    | 'AIGAMERIA Internal Agent Mesh · Deterministic Rule Pipeline'
+    | 'AIPETROS Internal Agent Mesh · Deterministic Rule Pipeline'
     | 'Google ADK (@google/adk) · Live Multi-Agent Pipeline';
   patchVersion: string;
   inputComboFa: string;
@@ -124,7 +124,7 @@ export const REALM_CONSULTATION_TOPICS: Record<RealmId, CoachConsultationTopic[]
           id: 'vid-sh-2',
           title: 'Tier-1 Operator Entry Pathing & Crosshair Placement',
           clipUrl: '/media/lobby-bg.mp4',
-          channelLabel: 'AIGAMERIA Web Archive',
+          channelLabel: 'AIPETROS Web Archive',
           duration: '00:52',
         },
       ],
@@ -1454,7 +1454,7 @@ export function buildAdkMicroIntelForTopic(topic: CoachConsultationTopic): AdkMu
   if (preset) {
     return {
       orchestratorId: `adk-root-${topic.id}`,
-      framework: 'AIGAMERIA Internal Agent Mesh · Deterministic Rule Pipeline',
+      framework: 'AIPETROS Internal Agent Mesh · Deterministic Rule Pipeline',
       ...preset,
       agentsTrace: defaultAgents,
       lastUpdatedIso: new Date().toISOString(),
@@ -1467,7 +1467,7 @@ export function buildAdkMicroIntelForTopic(topic: CoachConsultationTopic): AdkMu
 
   return {
     orchestratorId: `adk-custom-${topic.id}`,
-    framework: 'AIGAMERIA Internal Agent Mesh · Deterministic Rule Pipeline',
+    framework: 'AIPETROS Internal Agent Mesh · Deterministic Rule Pipeline',
     patchVersion: baseRealmPreset.patchVersion,
     inputComboFa: `اجرای دقیق برای «${topic.titleFa}»: ${baseRealmPreset.inputComboFa}`,
     frameTimingFa: baseRealmPreset.frameTimingFa,

@@ -12,7 +12,7 @@ import {
 
 test('validateEmailAddress accepts valid emails and rejects malformed inputs', () => {
   assert.equal(validateEmailAddress('elikhademi68@gmail.com').valid, true);
-  assert.equal(validateEmailAddress('player.pro@aigameria.gg').valid, true);
+  assert.equal(validateEmailAddress('player.pro@aipetros.gg').valid, true);
   assert.equal(validateEmailAddress('').valid, false);
   assert.equal(validateEmailAddress('invalid-email').valid, false);
   assert.equal(validateEmailAddress('missing@tld').valid, false);

@@ -522,7 +522,7 @@ export const VIRAL_HIGHLIGHTS: ViralHighlightItem[] = [
     realm: 'strategy',
     title: 'Queen Sacrifice into Mating Net in 7 Seconds',
     playerHandle: 'Vortex_UK',
-    gameTitle: 'AIGAMERIA Blitz',
+    gameTitle: 'AIPETROS Blitz',
     duration: '0:12',
     viewsCount: '33.7K',
     hudStats: [

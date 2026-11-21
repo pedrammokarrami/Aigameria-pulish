@@ -241,6 +241,12 @@ export interface UiCopy {
   mapPingedDone: string;
   mapNoResults: string;
   mapYouAreHere: string;
+  // Boot & section loading states
+  bootStageFonts: string;
+  bootStageCache: string;
+  bootStageServer: string;
+  bootStageReady: string;
+  sectionWarming: string;
   // Store Modal
   storeTitleGame: string;
   storeSubtitleGame: string;
@@ -334,6 +340,11 @@ const EN_COPY: UiCopy = {
   navStore: 'Store',
   mapTitleGame: 'Night City Cyber Grid Map',
   mapSubtitleGame: 'Nearby players, esports arenas, drops & cyberware shops around you',
+  bootStageFonts: 'Preparing the spatial engine',
+  bootStageCache: 'Caching worlds & assets',
+  bootStageServer: 'Syncing with the server',
+  bootStageReady: 'Everything is cached — launching',
+  sectionWarming: 'Preparing this space',
   mapTitleCinema: 'Theatrical Treasure Map',
   mapSubtitleCinema: 'Secret screening clubs, cinephiles nearby & collector vaults',
   mapTitleAudio: 'Harmonic Stage & Vinyl Map',
@@ -442,6 +453,11 @@ const FA_COPY: UiCopy = {
   navStore: 'فروشگاه',
   mapTitleGame: 'نقشه تاکتیکال سایبرپانک',
   mapSubtitleGame: 'کاربران، کلاب‌های گیمینگ، تورنمنت‌ها و فروشگاه‌های اطراف شما',
+  bootStageFonts: 'آماده‌سازی موتور فضایی',
+  bootStageCache: 'کش کردن دنیاها و فایل‌ها',
+  bootStageServer: 'همگام‌سازی با سرور',
+  bootStageReady: 'همه‌چیز کش شد — در حال اجرا',
+  sectionWarming: 'در حال آماده‌سازی این فضا',
   mapTitleCinema: 'نقشه گنج سینمایی',
   mapSubtitleCinema: 'کلاب‌های مخفی اکران، سینمادوستان و گنجینه فروشگاه‌های فیلم اطراف',
   mapTitleAudio: 'نقشه موسیقی و سالن‌های صدا',

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * AIGAMERIA E2E + Security test suite.
+ * AIPETROS E2E + Security test suite.
  * Runs against a live server (default http://localhost:3000) exactly like a
  * real user: auth → account linking → ingest & publish → internal agents →
  * caching → WebSocket chat → security assertions (IDOR, SSRF, rate limit,
@@ -76,11 +76,11 @@ async function waitFor(predicate, timeoutMs = 5000, interval = 150) {
 }
 
 async function main() {
-  console.log(`\nAIGAMERIA E2E suite → ${BASE}\n`);
+  console.log(`\nAIPETROS E2E suite → ${BASE}\n`);
 
   /* ---------------- 1. Auth ---------------- */
 
-  const email = `qa_${Date.now()}@aigameria.test`;
+  const email = `qa_${Date.now()}@aipetros.test`;
   const password = 'SuperSecure#2026';
 
   let r = await api('POST', '/api/v1/auth/register', { body: { email, password, displayName: 'QA Runner' } });
@@ -111,7 +111,7 @@ async function main() {
   const t2b = r.json?.data?.token;
 
   // register second user for IDOR checks
-  const emailB = `qa_b_${Date.now()}@aigameria.test`;
+  const emailB = `qa_b_${Date.now()}@aipetros.test`;
   r = await api('POST', '/api/v1/auth/register', { body: { email: emailB, password, displayName: 'QA B' } });
   const tB = r.json?.data?.token;
 
@@ -189,7 +189,7 @@ async function main() {
 
   r = await api('POST', '/api/v1/agents/coach-consult', { token: t1, body: { realm: 'shooter', query: 'sh-smoke-exec' } });
   const consult1 = r.json?.data?.topic;
-  record('agents/coach-consult returns internal mesh report', r.status === 200 && consult1?.adkIntel?.framework === 'AIGAMERIA Internal Agent Mesh · Deterministic Rule Pipeline' ? 'PASS' : 'FAIL');
+  record('agents/coach-consult returns internal mesh report', r.status === 200 && consult1?.adkIntel?.framework === 'AIPETROS Internal Agent Mesh · Deterministic Rule Pipeline' ? 'PASS' : 'FAIL');
 
   r = await api('POST', '/api/v1/agents/coach-consult', { token: t1, body: { realm: 'shooter', query: 'sh-smoke-exec' } });
   record('agents/coach-consult caches second call', r.json?.meta?.cached === true ? 'PASS' : 'FAIL');
@@ -202,7 +202,7 @@ async function main() {
 
   r = await api('POST', '/api/hologram/interact', { body: { message: 'سلام! وضعیت رنک من چیه؟', personaContext: { displayName: 'QA', competitiveRating: 2480, winRatePct: 68.4 }, includeVoice: true } });
   const hologram = r.json;
-  record('hologram agent is internal (no Gemini) + local WAV', r.status === 200 && hologram?.model === 'aigameria-internal-hologram-v1' && hologram?.audioBase64?.startsWith('UklGR') ? 'PASS' : 'FAIL', `model=${hologram?.model} status=${r.status}`);
+  record('hologram agent is internal (no Gemini) + local WAV', r.status === 200 && hologram?.model === 'aipetros-internal-hologram-v1' && hologram?.audioBase64?.startsWith('UklGR') ? 'PASS' : 'FAIL', `model=${hologram?.model} status=${r.status}`);
 
   /* ---------------- 5. Caching ---------------- */
 

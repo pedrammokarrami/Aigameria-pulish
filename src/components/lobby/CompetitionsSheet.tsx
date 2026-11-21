@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
 import { CheckCircle2, Flag, Gavel, ShieldAlert, Trophy, X } from 'lucide-react';
-import type { EcosystemState } from '../../types/aigameria';
+import type { EcosystemState } from '../../types/aipetros';
 
 interface CompetitionsSheetProps {
   state: EcosystemState;

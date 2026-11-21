@@ -2,7 +2,7 @@ import type { HologramEmotion, HologramGender, HologramGesture } from '../utils/
 import { computeMetaHumanProfile, parseHologramAgentTags } from '../utils/hologramAvatarEngine.ts';
 
 /**
- * AIGAMERIA Internal Hologram Dialogue Agent — 100% in-app & deterministic.
+ * AIPETROS Internal Hologram Dialogue Agent — 100% in-app & deterministic.
  *
  * Zero external AI APIs. The reply is synthesized by a rule engine over the
  * user's real profile telemetry (win rate, rating, disputes, matched
@@ -42,7 +42,7 @@ export interface HologramInteractResponse {
   traceId: string;
 }
 
-export const INTERNAL_HOLOGRAM_MODEL = 'aigameria-internal-hologram-v1';
+export const INTERNAL_HOLOGRAM_MODEL = 'aipetros-internal-hologram-v1';
 
 /* ------------------------------------------------------------------ */
 /* Intent routing (deterministic keyword rules, fa + en)               */

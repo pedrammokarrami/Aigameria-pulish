@@ -327,7 +327,7 @@ export const MediaSpatialProfilePage: React.FC<MediaSpatialProfilePageProps> = (
                 {hub === 'cinema' ? 'AC' : 'AM'}
               </div>
               <span className="hidden md:inline text-[14px] font-extrabold tracking-tight text-white whitespace-nowrap">
-                {hub === 'cinema' ? 'AIGAMERIA CINEMA' : 'AIGAMERIA AUDIO'}
+                {hub === 'cinema' ? 'AIPETROS CINEMA' : 'AIPETROS AUDIO'}
               </span>
             </div>
           </div>

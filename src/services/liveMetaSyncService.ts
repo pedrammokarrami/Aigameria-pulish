@@ -288,7 +288,7 @@ export async function syncLatestGameMeta(
             queryTerm
           )}&sort=new&limit=3`;
           const resp = await fetcher(url, {
-            headers: { 'User-Agent': 'AIGAMERIA-LiveMeta/2.0' },
+            headers: { 'User-Agent': 'AIPETROS-LiveMeta/2.0' },
             signal: AbortSignal.timeout(2200),
           });
           if (resp.ok) {
@@ -313,7 +313,7 @@ export async function syncLatestGameMeta(
             base.gameName
           )}&srlimit=2&format=json&origin=*`;
           const resp = await fetcher(url, {
-            headers: { 'User-Agent': 'AIGAMERIA-LiveMeta/2.0' },
+            headers: { 'User-Agent': 'AIPETROS-LiveMeta/2.0' },
             signal: AbortSignal.timeout(2200),
           });
           if (resp.ok) {
@@ -392,7 +392,7 @@ export async function searchAllPcGames(
       clean
     )}&l=english&cc=US`;
     const resp = await fetcher(url, {
-      headers: { 'User-Agent': 'AIGAMERIA-GameSearch/1.0' },
+      headers: { 'User-Agent': 'AIPETROS-GameSearch/1.0' },
       signal: AbortSignal.timeout(3000),
     });
     if (resp.ok) {
@@ -463,7 +463,7 @@ export async function fetchRealGameMediaBundle(
         catalogEntry.name
       )}&l=english&cc=US`;
       const sResp = await fetcher(searchUrl, {
-        headers: { 'User-Agent': 'AIGAMERIA-GameMedia/1.0' },
+        headers: { 'User-Agent': 'AIPETROS-GameMedia/1.0' },
         signal: AbortSignal.timeout(2500),
       });
       if (sResp.ok) {
@@ -484,7 +484,7 @@ export async function fetchRealGameMediaBundle(
     try {
       const detailsUrl = `https://store.steampowered.com/api/appdetails?appids=${resolvedSteamId}&l=english`;
       const dResp = await fetcher(detailsUrl, {
-        headers: { 'User-Agent': 'AIGAMERIA-GameMedia/1.0' },
+        headers: { 'User-Agent': 'AIPETROS-GameMedia/1.0' },
         signal: AbortSignal.timeout(3500),
       });
       if (dResp.ok) {
@@ -550,7 +550,7 @@ export async function fetchRealGameMediaBundle(
         searchTitle
       )}&gsrlimit=6&prop=pageimages&piprop=thumbnail&pithumbsize=1280&format=json&origin=*`;
       const wResp = await fetcher(wikiUrl, {
-        headers: { 'User-Agent': 'AIGAMERIA-GameMedia/1.0' },
+        headers: { 'User-Agent': 'AIPETROS-GameMedia/1.0' },
         signal: AbortSignal.timeout(2500),
       });
       if (wResp.ok) {

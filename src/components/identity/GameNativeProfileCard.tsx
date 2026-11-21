@@ -1197,7 +1197,7 @@ export const GameNativeProfileCard: React.FC<GameNativeProfileCardProps> = ({
   }
 
   // ===========================================================================
-  // 13. UNIFIED — Dark Obsidian AIGAMERIA Spatial Identity Passport (Never white!)
+  // 13. UNIFIED — Dark Obsidian AIPETROS Spatial Identity Passport (Never white!)
   // ===========================================================================
   return (
     <section

@@ -10,8 +10,8 @@ import {
   evaluateThroughBallPass,
   markMissionProgress,
   validateChessDrillMove,
-} from './aigameriaRules';
-import type { EscrowContract, GamerProfile, HighCourtCase, WalletLedger } from '../types/aigameria';
+} from './aipetrosRules';
+import type { EscrowContract, GamerProfile, HighCourtCase, WalletLedger } from '../types/aipetros';
 
 test('computeCompositeDNA computes clamped rounded average', () => {
   const score = computeCompositeDNA({

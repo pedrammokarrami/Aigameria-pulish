@@ -8,8 +8,8 @@ import type {
   MicroGameScenario,
   PitchDrillScenario,
   SupportedGame,
-} from '../types/aigameria.ts';
-import { computeCompositeDNA } from '../utils/aigameriaRules.ts';
+} from '../types/aipetros.ts';
+import { computeCompositeDNA } from '../utils/aipetrosRules.ts';
 
 export interface ImageInspectionResult {
   format: 'png' | 'jpeg' | 'webp' | 'unknown';

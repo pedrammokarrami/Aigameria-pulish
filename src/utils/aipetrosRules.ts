@@ -5,7 +5,7 @@ import type {
   HighCourtCase,
   SkillDNAAxes,
   WalletLedger,
-} from '../types/aigameria';
+} from '../types/aipetros';
 
 /**
  * Computes the composite Cross-Game Skill DNA index (0-100)

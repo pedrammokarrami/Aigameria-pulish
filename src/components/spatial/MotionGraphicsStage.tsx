@@ -178,7 +178,7 @@ export const MotionGraphicsStage: React.FC<MotionGraphicsStageProps> = ({
             type="button"
             data-testid="refresh-live-adk-btn"
             onClick={onRefreshLiveAdk}
-            title="بروزرسانی زنده ایجنت‌های داخلی AIGAMERIA"
+            title="بروزرسانی زنده ایجنت‌های داخلی AIPETROS"
             className="fc27-blade px-2.5 py-1 text-[10px] font-mono-tabular font-bold text-white/90 hover:text-white bg-white/10 cursor-pointer"
           >
             <span className="fc27-unskew flex items-center gap-1">

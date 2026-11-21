@@ -21,7 +21,7 @@ export const LAB_ROOM_ENVIRONMENTS: Record<CrossGameKey, LabRoomEnvironment> = {
   unified: {
     key: 'unified',
     imageUrl: '/src/assets/images/lab_room_unified_1795174736509.jpg',
-    labNameFa: 'لابراتوار مرکزی AIGAMERIA',
+    labNameFa: 'لابراتوار مرکزی AIPETROS',
     labNameEn: 'Core Character Forge Lab · UE 5.8',
     ambientBgHex: '#050b16',
     beamPrimaryHex: '#38BDF8',

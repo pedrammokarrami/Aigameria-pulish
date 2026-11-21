@@ -10,7 +10,7 @@ import {
 } from '../utils/coachSearchRules.ts';
 
 /**
- * AIGAMERIA Internal Coach Consultation Mesh — 100% in-app & deterministic.
+ * AIPETROS Internal Coach Consultation Mesh — 100% in-app & deterministic.
  *
  * Zero external AI APIs (no OpenAI / Gemini / Claude). The consultation is
  * produced by four internal rule/heuristic agents that run in parallel over
@@ -37,7 +37,7 @@ const REALM_SUBREDDITS: Record<RealmId, string> = {
 };
 
 export const INTERNAL_AGENT_MESH = {
-  framework: 'AIGAMERIA Internal Agent Mesh · Deterministic Rule Pipeline',
+  framework: 'AIPETROS Internal Agent Mesh · Deterministic Rule Pipeline',
   agents: [
     { id: 'vision_agent', agentName: 'VisionTelestratorAgent' },
     { id: 'patch_agent', agentName: 'MetaPatchNotesAgent' },
@@ -74,7 +74,7 @@ export async function fetchLiveCompetitiveWebSources(realm: RealmId, searchQuery
     try {
       const url = `https://www.reddit.com/r/${subreddit}/search.json?q=${encodeURIComponent(searchQuery)}&restrict_sr=1&sort=relevance&t=year&limit=3`;
       const resp = await fetch(url, {
-        headers: { 'User-Agent': 'AIGAMERIA-Internal-Agent/1.0', Accept: 'application/json' },
+        headers: { 'User-Agent': 'AIPETROS-Internal-Agent/1.0', Accept: 'application/json' },
         signal: AbortSignal.timeout(1600),
       });
       if (!resp.ok) return [];
@@ -103,7 +103,7 @@ export async function fetchLiveCompetitiveWebSources(realm: RealmId, searchQuery
     try {
       const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&srlimit=2&format=json&origin=*`;
       const resp = await fetch(url, {
-        headers: { 'User-Agent': 'AIGAMERIA-Internal-Agent/1.0' },
+        headers: { 'User-Agent': 'AIPETROS-Internal-Agent/1.0' },
         signal: AbortSignal.timeout(1400),
       });
       if (!resp.ok) return [];
@@ -240,7 +240,7 @@ export async function runAdkMultiAgentConsultation(req: AdkConsultRequest): Prom
 
   const adkIntel: AdkMultiAgentReport = {
     ...baseIntel,
-    orchestratorId: `AigameriaInternalCoachMesh-${stableTrace(req.realm, req.query)}`,
+    orchestratorId: `AipetrosInternalCoachMesh-${stableTrace(req.realm, req.query)}`,
     framework: INTERNAL_AGENT_MESH.framework,
     agentsTrace,
     liveSources,

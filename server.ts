@@ -17,7 +17,7 @@ import type {
   HighCourtCase,
   MatchRecord,
   SupportedGame,
-} from './src/types/aigameria.ts';
+} from './src/types/aipetros.ts';
 import {
   advanceEscrowMilestone,
   applyChessRatingsToDNA,
@@ -26,7 +26,7 @@ import {
   computeDeterministicProofId,
   deriveAvatarTier,
   markMissionProgress,
-} from './src/utils/aigameriaRules.ts';
+} from './src/utils/aipetrosRules.ts';
 import { resolveCoachTopic } from './src/utils/coachSearchRules.ts';
 import { runAdkMultiAgentConsultation } from './src/agents/adkCoachSystem.ts';
 import {
@@ -64,7 +64,7 @@ import { setupChatWebSocket, chatPresenceCount } from './src/server/chatWs';
 
 const PORT = Number(process.env.PORT) || 3000;
 const DATA_DIR = path.resolve(process.cwd(), '.data');
-const STATE_FILE = path.join(DATA_DIR, 'aigameria-state.json');
+const STATE_FILE = path.join(DATA_DIR, 'aipetros-state.json');
 const PUBLIC_MEDIA_DIR = path.resolve(process.cwd(), 'public/media');
 
 function loadState(): EcosystemState {
@@ -121,7 +121,7 @@ async function startServer() {
     const db = dbHealth();
     res.json({
       status: db.ok ? 'healthy' : 'degraded',
-      service: 'aigameria',
+      service: 'aipetros',
       version: '1.0.0',
       uptimeSeconds: Math.round(process.uptime()),
       database: db,
@@ -226,7 +226,7 @@ async function startServer() {
 
       if (provider === 'chesscom') {
         const statsResp = await fetch(`https://api.chess.com/pub/player/${username}/stats`, {
-          headers: { 'User-Agent': 'AIGAMERIA/1.0 (https://aigameria.app)' },
+          headers: { 'User-Agent': 'AIPETROS/1.0 (https://aipetros.app)' },
         });
         if (!statsResp.ok) {
           return res.status(statsResp.status === 404 ? 404 : 502).json({
@@ -245,14 +245,14 @@ async function startServer() {
 
         // Fetch latest monthly archives if available
         const archivesResp = await fetch(`https://api.chess.com/pub/player/${username}/games/archives`, {
-          headers: { 'User-Agent': 'AIGAMERIA/1.0' },
+          headers: { 'User-Agent': 'AIPETROS/1.0' },
         });
         if (archivesResp.ok) {
           const archData = (await archivesResp.json()) as { archives?: string[] };
           const latestUrl = archData.archives?.at(-1);
           if (latestUrl) {
             const gamesResp = await fetch(latestUrl, {
-              headers: { 'User-Agent': 'AIGAMERIA/1.0' },
+              headers: { 'User-Agent': 'AIPETROS/1.0' },
             });
             if (gamesResp.ok) {
               const gamesData = (await gamesResp.json()) as {
@@ -880,7 +880,7 @@ async function startServer() {
         const searchTerm = encodeURIComponent(topic.searchQuery);
         const wikiUrl = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${searchTerm}&gsrlimit=3&prop=pageimages&piprop=thumbnail&pithumbsize=960&format=json&origin=*`;
         const resp = await fetch(wikiUrl, {
-          headers: { 'User-Agent': 'AIGAMERIA-ADK-Coach/3.0' },
+          headers: { 'User-Agent': 'AIPETROS-ADK-Coach/3.0' },
           signal: AbortSignal.timeout(1500),
         });
         if (resp.ok) {
@@ -1277,7 +1277,7 @@ async function startServer() {
   const downloadMp3FromUrl = async (url: string): Promise<Buffer> => {
     const resp = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; AIGAMERIA-Audio/1.0)',
+        'User-Agent': 'Mozilla/5.0 (compatible; AIPETROS-Audio/1.0)',
         Accept: 'audio/mpeg,audio/*;q=0.9,*/*;q=0.8',
       },
       signal: AbortSignal.timeout(15000),
@@ -1305,7 +1305,7 @@ async function startServer() {
       let resolvedUrl: string | null = null;
       try {
         const pageResp = await fetch(MAX_PAYNE_KHINSIDER_PAGE_URL, {
-          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AIGAMERIA-Audio/1.0)' },
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AIPETROS-Audio/1.0)' },
           signal: AbortSignal.timeout(10000),
         });
         if (pageResp.ok) {
@@ -1371,7 +1371,7 @@ async function startServer() {
 
   // Bind port 3000 immediately so health probes never time out during Vite cold start
   const server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`AIGAMERIA server running at http://localhost:${PORT}`);
+    console.log(`AIPETROS server running at http://localhost:${PORT}`);
     logSecurityEvent('server.started', { detail: `port ${PORT} · pid ${process.pid}` });
     // Pre-warm the Max Payne theme buffer so clicking Account Settings plays instantaneously
     setTimeout(() => {

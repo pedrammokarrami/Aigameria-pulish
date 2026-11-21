@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { Check, Link2, ShieldCheck, Users, X } from 'lucide-react';
 import { MEDIA_ASSETS } from '../../config/mediaAssets';
-import type { EcosystemState, SupportedGame } from '../../types/aigameria';
-import { computeCompositeDNA } from '../../utils/aigameriaRules';
+import type { EcosystemState, SupportedGame } from '../../types/aipetros';
+import { computeCompositeDNA } from '../../utils/aipetrosRules';
 import { AvatarModelViewer } from './AvatarModelViewer';
 
 interface CareerClubSheetProps {

@@ -1,5 +1,5 @@
-import type { SkillDNAAxes } from '../types/aigameria';
-import { computeCompositeDNA } from '../utils/aigameriaRules';
+import type { SkillDNAAxes } from '../types/aipetros';
+import { computeCompositeDNA } from '../utils/aipetrosRules';
 
 interface SkillDNAChartProps {
   dna: SkillDNAAxes;

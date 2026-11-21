@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import type { PitchDrillScenario } from '../../types/aigameria';
-import { evaluateThroughBallPass } from '../../utils/aigameriaRules';
+import type { PitchDrillScenario } from '../../types/aipetros';
+import { evaluateThroughBallPass } from '../../utils/aipetrosRules';
 
 interface TacticalPitchDrillProps {
   drill: PitchDrillScenario;

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { MEDIA_ASSETS } from '../../config/mediaAssets';
-import type { GamerProfile } from '../../types/aigameria';
+import type { GamerProfile } from '../../types/aipetros';
 
 interface TopBarProps {
   profile: GamerProfile;

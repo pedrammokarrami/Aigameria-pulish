@@ -29,7 +29,7 @@ export interface GameStageFrameConfig {
 }
 
 /**
- * Exact 11 registered game spaces in AIGAMERIA + Unified overview pass.
+ * Exact 11 registered game spaces in AIPETROS + Unified overview pass.
  * Matches all 10 Tournament Hub worlds (FC 27, NBA 2K, FORTNITE, DOTA 2, F1, WARZONE, CS2, GTA, RDR2, APEX)
  * plus VALORANT from the main Spatial Coach Hub.
  */
@@ -60,7 +60,7 @@ export const GAME_STAGE_FRAME_CONFIG: Record<CrossGameKey, GameStageFrameConfig>
     subtitleColorClass: 'text-sky-300',
     accentHex: '#38BDF8',
     secondaryHex: '#6366F1',
-    badgeLabel: 'AIGAMERIA · UNIFIED SPATIAL PASS',
+    badgeLabel: 'AIPETROS · UNIFIED SPATIAL PASS',
     pageBgHex: '#060B16',
     pageBgGradient:
       'radial-gradient(ellipse 75% 55% at 18% 12%, rgba(56,189,248,0.22) 0%, transparent 62%), radial-gradient(ellipse 65% 50% at 85% 82%, rgba(99,102,241,0.18) 0%, transparent 62%), linear-gradient(160deg, #060B16 0%, #091326 52%, #050914 100%)',

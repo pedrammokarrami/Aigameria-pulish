@@ -1,5 +1,5 @@
 /**
- * AIGAMERIA Cinematic Media & 3D Asset Configuration
+ * AIPETROS Cinematic Media & 3D Asset Configuration
  * ---------------------------------------------------------------------------
  * Place your looping Blender lobby render at `public/media/lobby-bg.mp4`
  * and your 3D athlete model at `public/media/avatar.glb`.

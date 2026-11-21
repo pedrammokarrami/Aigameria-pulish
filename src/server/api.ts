@@ -76,7 +76,7 @@ apiV1.get('/health', (_req, res) => {
   const db = dbHealth();
   ok(res, {
     status: db.ok ? 'healthy' : 'degraded',
-    service: 'aigameria-api',
+    service: 'aipetros-api',
     version: '1.0.0',
     uptimeSeconds: Math.round(process.uptime()),
     database: db,

@@ -25,6 +25,8 @@ import {
   resolveTournamentGameFromLobby,
 } from './data/gameTournamentThemes';
 import { REALM_CONFIGS } from './data/realmsData';
+import { AppBootGate, useAppBoot, useSectionWarmup } from './components/spatial/AppBootGate';
+import { useLanguage } from './contexts/LanguageContext';
 import {
   type MotionCoachPayload,
   getInstantMotionCoachPayload,
@@ -82,8 +84,8 @@ import {
   resolveLobbyGameFromAppState,
 } from './utils/lobbySkillCatalog';
 
-const STORAGE_REALM_KEY = 'aigameria-coach-realm-v5';
-const STORAGE_SOCIAL_KEY = 'aigameria-gta-social-v5';
+const STORAGE_REALM_KEY = 'aipetros-coach-realm-v5';
+const STORAGE_SOCIAL_KEY = 'aipetros-gta-social-v5';
 
 interface BrowserSpeechRecognition {
   lang: string;
@@ -104,6 +106,8 @@ interface SelectedCoachGame {
 }
 
 export function App() {
+  // Manifest tracking for the boot gate (resolves once the media manifest fetch settles)
+  const [manifestResolved, setManifestResolved] = useState(false);
   const [activeRealm, setActiveRealm] = useState<RealmId>(() => {
     try {
       const saved = window.localStorage.getItem(STORAGE_REALM_KEY) as RealmId | null;
@@ -239,6 +243,26 @@ export function App() {
   const realmCfg = REALM_CONFIGS[activeRealm];
   const realmTopics = REALM_CONSULTATION_TOPICS[activeRealm];
 
+  // Global boot gate — nothing renders/executes until fonts + critical assets + probe settle
+  const { copy: bootCopy } = useLanguage();
+  const criticalAssets = useMemo(
+    () => (manifest.lobbyVideoUrl ? [manifest.lobbyVideoUrl] : []),
+    [manifest.lobbyVideoUrl]
+  );
+  const boot = useAppBoot(criticalAssets, manifestResolved);
+  const sectionWarming = useSectionWarmup(
+    [
+      activeMasterHub,
+      activeRealm,
+      activeTopic,
+      isGtaSocialOpen,
+      isTournamentHubOpen,
+      isIdentityProfileOpen,
+      activeLeftOverlay,
+    ],
+    620
+  );
+
   const lobbyCategories = LOBBY_CATEGORIES_BY_GAME[lobbyGameId];
   const filteredLobbySkills = useMemo(
     () => filterLobbySkills(lobbyGameId, lobbyCategoryId, lobbySearchQuery),
@@ -306,7 +330,10 @@ export function App() {
           });
         }
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => {
+        if (mounted) setManifestResolved(true);
+      });
     return () => {
       mounted = false;
     };
@@ -968,10 +995,65 @@ export function App() {
   return (
     <div
       data-realm={activeRealm}
-      data-testid="aigameria-spatial-root"
+      data-testid="aipetros-spatial-root"
+      aria-busy={!boot.ready}
       className="relative w-full h-dvh min-h-dvh overflow-hidden select-none"
       style={{ backgroundColor: 'var(--realm-bg)', color: 'var(--realm-text)' }}
     >
+      <AppBootGate ready={boot.ready} progress={boot.progress} stageKey={boot.stageKey} />
+      {/* Section warmup — slim glass cover while a hub/section is being prepared */}
+      <AnimatePresence>
+        {sectionWarming && (
+          <motion.div
+            key="section-warmup"
+            data-testid="section-warmup-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 900,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              pointerEvents: 'none',
+              background: 'rgba(5,7,13,0.42)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '14px 26px',
+                borderRadius: 999,
+                border: '1px solid rgba(255,255,255,0.14)',
+                background: 'rgba(10,14,24,0.72)',
+                boxShadow: '0 18px 50px rgba(0,0,0,0.45)',
+              }}
+            >
+              <span
+                style={{
+                  width: 16,
+                  height: 16,
+                  borderRadius: '50%',
+                  border: '2px solid rgba(140,180,255,0.25)',
+                  borderTopColor: 'rgba(140,180,255,0.95)',
+                  animation: 'aig-spin 0.8s linear infinite',
+                  display: 'inline-block',
+                }}
+              />
+              <span style={{ fontSize: 13, color: 'rgba(220,230,250,0.9)', fontWeight: 600 }}>
+                {bootCopy.sectionWarming}
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <GlobalEarthLanguageButton />
       <LanguageSelectorModal activeHub={activeMasterHub} />
       <LeftPlatformMenu

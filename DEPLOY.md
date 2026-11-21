@@ -1,6 +1,6 @@
-# AIGAMERIA — Production Deployment Guide
+# AIPETROS — Production Deployment Guide
 
-This document explains how to run AIGAMERIA as a real, production-ready product.
+This document explains how to run AIPETROS as a real, production-ready product.
 **Zero external AI APIs are required** — every intelligent feature (coach
 consultation, symbiote, prosecutor, highlight copywriter, hologram dialogue,
 content analyzer) is implemented as a deterministic in-app engine.
@@ -26,7 +26,7 @@ NODE_ENV=production npm start   # tsx server.ts (serves API + static dist)
 ```
 
 The server starts with migrations applied automatically and seeds the initial
-ecosystem state on first boot. Data persists in `.data/aigameria.sqlite` (WAL).
+ecosystem state on first boot. Data persists in `.data/aipetros.sqlite` (WAL).
 
 ## 4. Health & readiness
 
@@ -103,7 +103,7 @@ security headers, IDOR, SSRF, injection containment and 404 handling.
 | `NODE_ENV` | – | `production` serves static `dist/` |
 | `CORS_ORIGINS` | – | extra allowed origins (comma-separated) |
 | `FORCE_HSTS` | `0` | emit HSTS behind TLS proxy |
-| `AIGAMERIA_DATA_DIR` | `.data` | SQLite data directory |
+| `AIPETROS_DATA_DIR` | `.data` | SQLite data directory |
 
 No secret values are required at build or runtime — nothing is hardcoded.
 
@@ -115,14 +115,14 @@ The repo ships a `render.yaml` blueprint. Steps:
 2. Sign up at <https://render.com> (free, no credit card) with GitHub.
 3. **New + → Blueprint** → select the repo → Apply (uses `render.yaml`).
 4. After the first deploy: **Settings → Custom Domains → Add** `aipetros.xyz`
-   and `www.aipetros.xyz`. Render shows the target `aigameria.onrender.com`.
+   and `www.aipetros.xyz`. Render shows the target `aipetros.onrender.com`.
 5. In Porkbun DNS, delete the old GitHub Pages records
    (`A 185.199.108–110.153`, `CNAME www → …github.io`) and add:
 
    | Type | Host | Target |
    |---|---|---|
-   | ALIAS/ANAME | `@` | `aigameria.onrender.com` |
-   | CNAME | `www` | `aigameria.onrender.com` |
+   | ALIAS/ANAME | `@` | `aipetros.onrender.com` |
+   | CNAME | `www` | `aipetros.onrender.com` |
 
    (Porkbun's ALIAS record flattens the apex domain to the CNAME target.)
 6. HTTPS is provisioned automatically by Render (Let's Encrypt). Verify via

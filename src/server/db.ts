@@ -8,8 +8,8 @@ import path from 'node:path';
  * Fully parameterized statements everywhere (injection-safe by construction).
  */
 
-const DATA_DIR = path.resolve(process.cwd(), process.env.AIGAMERIA_DATA_DIR ?? '.data');
-export const DB_FILE = path.join(DATA_DIR, 'aigameria.sqlite');
+const DATA_DIR = path.resolve(process.cwd(), process.env.AIPETROS_DATA_DIR ?? '.data');
+export const DB_FILE = path.join(DATA_DIR, 'aipetros.sqlite');
 
 let db: DatabaseSync | null = null;
 

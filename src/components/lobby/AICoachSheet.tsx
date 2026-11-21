@@ -6,8 +6,8 @@ import type {
   ChessDrillScenario,
   EcosystemState,
   PitchDrillScenario,
-} from '../../types/aigameria';
-import { validateChessDrillMove } from '../../utils/aigameriaRules';
+} from '../../types/aipetros';
+import { validateChessDrillMove } from '../../utils/aipetrosRules';
 import { playTacticalSound } from '../../utils/tacticalAudio';
 import { SkillDNAChart } from '../SkillDNAChart';
 import { TacticalChessBoard } from './TacticalChessBoard';

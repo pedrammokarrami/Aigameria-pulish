@@ -158,7 +158,7 @@ async function fetchAndExtractMeta(url: URL): Promise<{ title: string | null; te
   try {
     const resp = await fetch(url, {
       signal: controller.signal,
-      headers: { 'User-Agent': 'AIGAMERIA-Ingest/1.0 (+https://aigameria.app)', Accept: 'text/html,application/xhtml+xml' },
+      headers: { 'User-Agent': 'AIPETROS-Ingest/1.0 (+https://aipetros.app)', Accept: 'text/html,application/xhtml+xml' },
       redirect: 'follow',
     });
     if (!resp.ok) throw new Error(`Upstream returned HTTP ${resp.status}.`);

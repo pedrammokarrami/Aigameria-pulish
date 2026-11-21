@@ -29,7 +29,7 @@ export interface SkillDNAAxes {
 export interface WalletLedger {
   xp: number;
   reputation: number;        // Non-transferable competitive trust index (0-1000)
-  platformPoints: number;    // Spendable inside AIGAMERIA economy & Escrow
+  platformPoints: number;    // Spendable inside AIPETROS economy & Escrow
   collectiblesCount: number; // Digital trophies / Petros-ready badges
 }
 

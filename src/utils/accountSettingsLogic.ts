@@ -43,14 +43,14 @@ export interface NoirThemeNote {
   pianoArpFreqs?: number[];
 }
 
-export const ACCOUNT_SETTINGS_STORAGE_KEY = 'aigameria_account_settings_v1';
+export const ACCOUNT_SETTINGS_STORAGE_KEY = 'aipetros_account_settings_v1';
 
 export const DEFAULT_ACCOUNT_SETTINGS: AccountProfileSettings = {
   displayName: 'Kian Rostami',
   handle: '@kian.spatial',
   email: 'elikhademi68@gmail.com',
   emailVerified: true,
-  recoveryEmail: 'backup.kian@aigameria.gg',
+  recoveryEmail: 'backup.kian@aipetros.gg',
   phone: '+98 912 ••• 4821',
   twoFactorEnabled: true,
   loginAlertsEnabled: true,
@@ -78,7 +78,7 @@ export const DEFAULT_ACCOUNT_SETTINGS: AccountProfileSettings = {
     },
     {
       id: 'sess-console',
-      deviceName: 'PlayStation 5 · AIGAMERIA Link',
+      deviceName: 'PlayStation 5 · AIPETROS Link',
       platform: 'Console Bridge',
       location: 'Frankfurt Relay',
       lastActive: 'دیروز · ۲۱:۱۴',

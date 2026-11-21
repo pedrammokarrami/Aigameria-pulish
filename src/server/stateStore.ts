@@ -1,4 +1,4 @@
-import type { EcosystemState } from '../types/aigameria.ts';
+import type { EcosystemState } from '../types/aipetros.ts';
 import { INITIAL_ECOSYSTEM_STATE } from '../data/seedData.ts';
 import { getDb, loadEcosystemState, saveEcosystemState } from './db';
 import { cacheInvalidateTag, cacheStats } from './cache';

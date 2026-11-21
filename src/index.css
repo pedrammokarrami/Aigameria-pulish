@@ -388,3 +388,10 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Boot gate & section warmup spinner */
+@keyframes aig-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

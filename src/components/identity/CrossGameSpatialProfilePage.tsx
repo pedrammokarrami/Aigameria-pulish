@@ -38,7 +38,7 @@ interface HologramSpeechRecognition {
   stop: () => void;
 }
 
-const SOCIAL_LINKS_STORAGE_KEY = 'aigameria_social_links_v1';
+const SOCIAL_LINKS_STORAGE_KEY = 'aipetros_social_links_v1';
 
 const DEFAULT_SOCIAL_LINKS: LinkedSocialMap = {
   discord: 'kian.spatial',
@@ -528,7 +528,7 @@ export const CrossGameSpatialProfilePage: React.FC<CrossGameSpatialProfilePagePr
                 AG
               </div>
               <span className="hidden md:inline text-[14px] font-extrabold tracking-tight text-white whitespace-nowrap">
-                AIGAMERIA
+                AIPETROS
               </span>
             </div>
           </div>

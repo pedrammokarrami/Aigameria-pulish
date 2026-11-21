@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Camera, CheckCircle2, ShieldAlert, Sparkles, Upload, X } from 'lucide-react';
 import { MEDIA_ASSETS } from '../config/mediaAssets';
-import type { SupportedGame, TerritoryNode } from '../types/aigameria';
+import type { SupportedGame, TerritoryNode } from '../types/aipetros';
 
 interface LogMatchModalProps {
   open: boolean;
