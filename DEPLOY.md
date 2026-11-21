@@ -106,3 +106,28 @@ security headers, IDOR, SSRF, injection containment and 404 handling.
 | `AIGAMERIA_DATA_DIR` | `.data` | SQLite data directory |
 
 No secret values are required at build or runtime — nothing is hardcoded.
+
+## 9. Free hosting on Render.com (domain aipetros.xyz)
+
+The repo ships a `render.yaml` blueprint. Steps:
+
+1. Push this repository to GitHub.
+2. Sign up at <https://render.com> (free, no credit card) with GitHub.
+3. **New + → Blueprint** → select the repo → Apply (uses `render.yaml`).
+4. After the first deploy: **Settings → Custom Domains → Add** `aipetros.xyz`
+   and `www.aipetros.xyz`. Render shows the target `aigameria.onrender.com`.
+5. In Porkbun DNS, delete the old GitHub Pages records
+   (`A 185.199.108–110.153`, `CNAME www → …github.io`) and add:
+
+   | Type | Host | Target |
+   |---|---|---|
+   | ALIAS/ANAME | `@` | `aigameria.onrender.com` |
+   | CNAME | `www` | `aigameria.onrender.com` |
+
+   (Porkbun's ALIAS record flattens the apex domain to the CNAME target.)
+6. HTTPS is provisioned automatically by Render (Let's Encrypt). Verify via
+   `https://aipetros.xyz/health`.
+
+Free-tier notes: the service sleeps after ~15 min idle (first request may take
+~50 s to cold-start) and the disk is ephemeral — SQLite data resets on every
+deploy/restart. Everything else (auth, agents, chat, cache) runs identically.
