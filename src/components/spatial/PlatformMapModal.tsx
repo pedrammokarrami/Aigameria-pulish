@@ -38,6 +38,246 @@ const RADIUS_STEPS: Array<{ labelEn: string; labelFa: string; meters: number | n
   { labelEn: 'All Area', labelFa: 'کل محدوده', meters: null },
 ];
 
+/** VisionOS-style spatial glass theme tokens per master hub. */
+interface MapTheme {
+  canvasBg: string;
+  scrim: string;
+  headerText: string;
+  headerMuted: string;
+  glassChip: string;
+  glassChipActive: string;
+  searchGlass: string;
+  closeBtn: string;
+  card: string;
+  cardPrimaryBtn: string;
+  cardSecondaryBtn: string;
+  mutedText: string;
+  ratingBadge: string;
+  youHalo: string;
+  youChip: string;
+  pin: Record<MapEntityKind, string>;
+  pinSelectedRing: string;
+}
+
+const GAME_THEME: MapTheme = {
+  canvasBg: '#05070D',
+  scrim: 'bg-gradient-to-b from-[#05070D]/85 via-[#05070D]/35 to-transparent',
+  headerText: 'text-slate-100',
+  headerMuted: 'text-slate-400',
+  glassChip: 'bg-white/[0.07] border-white/12 text-slate-300 backdrop-blur-xl hover:bg-white/[0.12]',
+  glassChipActive: 'bg-[#37E6F5] border-[#37E6F5] text-[#04121A] shadow-[0_0_18px_rgba(55,230,245,0.35)]',
+  searchGlass: 'bg-white/[0.07] border-white/12 text-slate-100 placeholder:text-slate-500 backdrop-blur-xl',
+  closeBtn: 'bg-white/[0.08] border-white/14 text-slate-200 hover:bg-white/[0.16] backdrop-blur-xl',
+  card: 'bg-[#0A1220]/78 border-white/14 text-slate-100 shadow-[0_24px_70px_rgba(0,0,0,0.55)] backdrop-blur-2xl',
+  cardPrimaryBtn: 'bg-[#37E6F5] text-[#04121A] hover:brightness-110 shadow-[0_6px_20px_rgba(55,230,245,0.3)]',
+  cardSecondaryBtn: 'bg-white/[0.1] border-white/16 text-slate-200 hover:bg-white/[0.16]',
+  mutedText: 'text-slate-400',
+  ratingBadge: 'bg-white/[0.09] border-white/14 text-amber-300',
+  youHalo: 'bg-[#37E6F5]',
+  youChip: 'bg-[#0A1220]/85 border-[#37E6F5]/60 text-[#7FEFFB]',
+  pin: {
+    user: 'bg-[#37E6F5] text-[#04121A] border-white/70',
+    club: 'bg-[#8B7CF6] text-white border-white/70',
+    store: 'bg-[#FFD34D] text-[#231A02] border-white/70',
+    drop: 'bg-[#FF4D8D] text-white border-white/70',
+  },
+  pinSelectedRing: 'ring-4 ring-[#37E6F5]/45',
+};
+
+const AUDIO_THEME: MapTheme = {
+  canvasBg: '#100C08',
+  scrim: 'bg-gradient-to-b from-[#100C08]/85 via-[#100C08]/30 to-transparent',
+  headerText: 'text-[#F6EFE2]',
+  headerMuted: 'text-[#CBB795]/85',
+  glassChip: 'bg-white/[0.07] border-[#E8B96B]/20 text-[#EAD9BC] backdrop-blur-xl hover:bg-white/[0.12]',
+  glassChipActive: 'bg-[#E8A94B] border-[#E8A94B] text-[#2A1B06] shadow-[0_0_18px_rgba(232,169,75,0.32)]',
+  searchGlass: 'bg-white/[0.07] border-[#E8B96B]/25 text-[#F6EFE2] placeholder:text-[#CBB795]/60 backdrop-blur-xl',
+  closeBtn: 'bg-white/[0.08] border-[#E8B96B]/25 text-[#F6EFE2] hover:bg-white/[0.16] backdrop-blur-xl',
+  card: 'bg-[#17110A]/80 border-[#E8B96B]/25 text-[#F6EFE2] shadow-[0_24px_70px_rgba(0,0,0,0.55)] backdrop-blur-2xl',
+  cardPrimaryBtn: 'bg-[#E8A94B] text-[#2A1B06] hover:brightness-110 shadow-[0_6px_20px_rgba(232,169,75,0.28)]',
+  cardSecondaryBtn: 'bg-white/[0.1] border-[#E8B96B]/30 text-[#F6EFE2] hover:bg-white/[0.16]',
+  mutedText: 'text-[#CBB795]/80',
+  ratingBadge: 'bg-white/[0.09] border-[#E8B96B]/25 text-[#E8A94B]',
+  youHalo: 'bg-[#E8A94B]',
+  youChip: 'bg-[#17110A]/85 border-[#E8A94B]/60 text-[#F3CE96]',
+  pin: {
+    user: 'bg-[#34C48D] text-[#06231A] border-white/70',
+    club: 'bg-[#E8A94B] text-[#2A1B06] border-white/70',
+    store: 'bg-[#F2D794] text-[#2A1B06] border-white/70',
+    drop: 'bg-[#C96A4A] text-[#FFF3E8] border-white/70',
+  },
+  pinSelectedRing: 'ring-4 ring-[#E8A94B]/45',
+};
+
+const CINEMA_THEME: MapTheme = {
+  canvasBg: '#EFE1C2',
+  scrim: 'bg-gradient-to-b from-[#3A2410]/38 via-[#3A2410]/10 to-transparent',
+  headerText: 'text-[#2D1B0B]',
+  headerMuted: 'text-[#5C3A1B]/85',
+  glassChip: 'bg-[#FFFBEF]/62 border-[#6B411C]/22 text-[#3A2410] backdrop-blur-xl hover:bg-[#FFFBEF]/85',
+  glassChipActive: 'bg-[#7B2C35] border-[#7B2C35] text-[#F8ECD4] shadow-[0_4px_16px_rgba(123,44,53,0.3)]',
+  searchGlass: 'bg-[#FFFBEF]/62 border-[#6B411C]/25 text-[#2D1B0B] placeholder:text-[#5C3A1B]/60 backdrop-blur-xl',
+  closeBtn: 'bg-[#FFFBEF]/70 border-[#6B411C]/30 text-[#2D1B0B] hover:bg-[#7B2C35] hover:text-[#F8ECD4] backdrop-blur-xl',
+  card: 'bg-[#FFFBEF]/82 border-[#6B411C]/22 text-[#2D1B0B] shadow-[0_24px_70px_rgba(40,20,5,0.45)] backdrop-blur-2xl',
+  cardPrimaryBtn: 'bg-[#7B2C35] text-[#F8ECD4] hover:brightness-110 shadow-[0_6px_20px_rgba(123,44,53,0.3)]',
+  cardSecondaryBtn: 'bg-[#3A2410]/12 border-[#6B411C]/28 text-[#2D1B0B] hover:bg-[#3A2410]/20',
+  mutedText: 'text-[#5C3A1B]/85',
+  ratingBadge: 'bg-[#7B2C35] text-[#F8ECD4]',
+  youHalo: 'bg-[#7B2C35]',
+  youChip: 'bg-[#3A2410]/88 border-[#7B2C35]/55 text-[#F4E4C8]',
+  pin: {
+    user: 'bg-[#B98A4C] text-[#FFF6E3] border-white/70',
+    club: 'bg-[#7B2C35] text-[#F8ECD4] border-white/70',
+    store: 'bg-[#3A2410] text-[#F4E4C8] border-white/70',
+    drop: 'bg-[#9C4238] text-[#FFF3E2] border-white/70',
+  },
+  pinSelectedRing: 'ring-4 ring-[#7B2C35]/35',
+};
+
+const HUB_THEMES: Record<MasterHubId, MapTheme> = {
+  game: GAME_THEME,
+  audio: AUDIO_THEME,
+  cinema: CINEMA_THEME,
+};
+
+/** Night City — deep dark canvas, controlled teal neon, soft smooth avenues. */
+const NightCityCanvas: React.FC = () => (
+  <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true" className="absolute inset-0 w-full h-full pointer-events-none">
+    <defs>
+      <radialGradient id="nc-core" cx="50%" cy="46%" r="58%">
+        <stop offset="0%" stopColor="rgba(30,214,235,0.16)" />
+        <stop offset="45%" stopColor="rgba(30,214,235,0.05)" />
+        <stop offset="100%" stopColor="rgba(5,7,13,0)" />
+      </radialGradient>
+      <radialGradient id="nc-corner" cx="85%" cy="90%" r="45%">
+        <stop offset="0%" stopColor="rgba(139,124,246,0.1)" />
+        <stop offset="100%" stopColor="rgba(5,7,13,0)" />
+      </radialGradient>
+      <filter id="nc-blur" x="-40%" y="-40%" width="180%" height="180%">
+        <feGaussianBlur stdDeviation="14" />
+      </filter>
+    </defs>
+    <rect width="800" height="600" fill="#05070D" />
+    <rect width="800" height="600" fill="url(#nc-core)" />
+    <rect width="800" height="600" fill="url(#nc-corner)" />
+    {/* Soft glowing light bloom patches (district ambience) */}
+    <ellipse cx="620" cy="150" rx="120" ry="70" fill="rgba(255,77,141,0.07)" filter="url(#nc-blur)" />
+    <ellipse cx="170" cy="430" rx="130" ry="80" fill="rgba(30,214,235,0.06)" filter="url(#nc-blur)" />
+    <ellipse cx="430" cy="500" rx="110" ry="60" fill="rgba(139,124,246,0.07)" filter="url(#nc-blur)" />
+    {/* Smooth, calm avenues with gentle glow */}
+    <g fill="none" strokeLinecap="round" filter="url(#nc-blur)" strokeOpacity="0.5">
+      <path d="M-40 210 C 200 190, 420 250, 840 205" stroke="#2BD9EA" strokeWidth="7" />
+      <path d="M-40 210 C 200 190, 420 250, 840 205" stroke="#2BD9EA" strokeWidth="1.4" strokeOpacity="0.9" />
+      <path d="M255 -40 C 240 180, 300 420, 275 640" stroke="#8B7CF6" strokeWidth="6" strokeOpacity="0.35" />
+      <path d="M255 -40 C 240 180, 300 420, 275 640" stroke="#8B7CF6" strokeWidth="1.2" strokeOpacity="0.55" />
+      <path d="M-40 470 C 260 440, 560 480, 840 445" stroke="#FFD34D" strokeWidth="5" strokeOpacity="0.25" />
+      <path d="M-40 470 C 260 440, 560 480, 840 445" stroke="#FFD34D" strokeWidth="1" strokeOpacity="0.4" />
+    </g>
+    {/* Sparse ambient city light nodes */}
+    <g fill="#7FEFFB">
+      {[[95, 120, 0.5], [540, 90, 0.4], [700, 330, 0.45], [120, 555, 0.35], [660, 545, 0.4], [390, 90, 0.3]].map(
+        ([cx, cy, o], i) => (
+          <circle key={i} cx={cx as number} cy={cy as number} r="2.5" opacity={o as number} />
+        )
+      )}
+    </g>
+  </svg>
+);
+
+/** Harmonic Stage — warm amber/emerald, vinyl grooves & flowing staff. */
+const HarmonicCanvas: React.FC = () => (
+  <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true" className="absolute inset-0 w-full h-full pointer-events-none">
+    <defs>
+      <radialGradient id="hs-glow" cx="50%" cy="46%" r="60%">
+        <stop offset="0%" stopColor="rgba(232,169,75,0.14)" />
+        <stop offset="55%" stopColor="rgba(52,196,141,0.05)" />
+        <stop offset="100%" stopColor="rgba(16,12,8,0)" />
+      </radialGradient>
+      <filter id="hs-blur" x="-40%" y="-40%" width="180%" height="180%">
+        <feGaussianBlur stdDeviation="16" />
+      </filter>
+    </defs>
+    <rect width="800" height="600" fill="#100C08" />
+    <rect width="800" height="600" fill="url(#hs-glow)" />
+    <ellipse cx="180" cy="140" rx="130" ry="75" fill="rgba(232,169,75,0.08)" filter="url(#hs-blur)" />
+    <ellipse cx="640" cy="470" rx="120" ry="70" fill="rgba(52,196,141,0.07)" filter="url(#hs-blur)" />
+    {/* Concentric vinyl grooves, thin and calm */}
+    <g fill="none" stroke="#E8A94B">
+      {[70, 115, 160, 205, 250].map((r) => (
+        <circle key={r} cx="400" cy="300" r={r} strokeOpacity={r === 205 ? 0.3 : 0.12} strokeWidth={r === 205 ? 1.4 : 0.8} />
+      ))}
+    </g>
+    {/* Flowing musical staff */}
+    <g fill="none" stroke="#E8A94B" strokeOpacity="0.2" strokeWidth="1.1">
+      {[-18, -9, 0, 9, 18].map((o) => (
+        <path key={o} d={`M-40 ${290 + o} C 200 ${230 + o}, 480 ${330 + o}, 840 ${285 + o}`} />
+      ))}
+    </g>
+    <text x="52" y="330" fontSize="72" fill="#E8A94B" fillOpacity="0.32" aria-hidden="true">𝄞</text>
+    <text x="688" y="272" fontSize="34" fill="#34C48D" fillOpacity="0.4" aria-hidden="true">♫</text>
+  </svg>
+);
+
+/** Theatrical Treasure — warm parchment paper, beige & wine accents. */
+const TheatricalCanvas: React.FC = () => (
+  <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true" className="absolute inset-0 w-full h-full pointer-events-none">
+    <defs>
+      <radialGradient id="tt-paper" cx="50%" cy="44%" r="68%">
+        <stop offset="0%" stopColor="#F4E7CC" />
+        <stop offset="68%" stopColor="#E6D0A8" />
+        <stop offset="100%" stopColor="#CBAE7F" />
+      </radialGradient>
+      <filter id="tt-blur" x="-40%" y="-40%" width="180%" height="180%">
+        <feGaussianBlur stdDeviation="18" />
+      </filter>
+    </defs>
+    <rect width="800" height="600" fill="url(#tt-paper)" />
+    {/* Soft watercolor landmasses */}
+    <path
+      d="M110,110 C190,60 300,95 325,175 C348,250 280,330 195,315 C120,300 55,170 110,110 Z"
+      fill="#D2AF7A" fillOpacity="0.4" stroke="#5D3A1A" strokeOpacity="0.35" strokeWidth="1.6"
+    />
+    <path
+      d="M500,90 C610,70 730,120 740,225 C748,330 650,440 535,410 C445,385 440,160 500,90 Z"
+      fill="#CFA872" fillOpacity="0.4" stroke="#5D3A1A" strokeOpacity="0.35" strokeWidth="1.6"
+    />
+    <ellipse cx="180" cy="470" rx="140" ry="70" fill="#B98A4C" fillOpacity="0.16" filter="url(#tt-blur)" />
+    {/* Smooth dashed treasure trail */}
+    <path
+      d="M200,160 Q340,230 405,275 T 590,170 T 480,360"
+      fill="none" stroke="#7B2C35" strokeWidth="2.6" strokeDasharray="11 9" strokeLinecap="round" strokeOpacity="0.65"
+    />
+    {/* Elegant compass rose */}
+    <g transform="translate(716, 520)" stroke="#4B2E14" fill="none">
+      <circle r="32" strokeOpacity="0.5" strokeWidth="1.3" />
+      <polygon points="0,-30 6,-6 30,0 6,6 0,30 -6,6 -30,0 -6,-6" fill="#7B2C35" fillOpacity="0.7" stroke="none" />
+      <text x="-4" y="-37" fontSize="11" fontWeight="bold" fill="#4B2E14" stroke="none">N</text>
+    </g>
+  </svg>
+);
+
+const HUB_CANVAS: Record<MasterHubId, React.FC> = {
+  game: NightCityCanvas,
+  audio: HarmonicCanvas,
+  cinema: TheatricalCanvas,
+};
+
+/** Keep pins inside the free band between the floating header (top ~29%) and
+ * the floating glass card (bottom ~30%) so nothing ever collides. */
+const PIN_BAND_TOP = 31;
+const PIN_BAND_BOTTOM = 67;
+const pinTopPct = (yPct: number): number => {
+  const clamped = Math.min(86, Math.max(14, yPct));
+  return PIN_BAND_TOP + ((clamped - 14) / (86 - 14)) * (PIN_BAND_BOTTOM - PIN_BAND_TOP);
+};
+
+const KIND_PIN_ICON: Record<MapEntityKind, React.ReactNode> = {
+  user: <Users className="w-4 h-4" />,
+  club: <Sparkles className="w-4 h-4" />,
+  store: <Store className="w-4 h-4" />,
+  drop: <MapPin className="w-4 h-4" />,
+};
+
 export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
   open,
   activeHub,
@@ -86,25 +326,32 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
     return entities[0] ?? null;
   }, [entities, selectedEntityId]);
 
+  useEffect(() => {
+    if (open) {
+      setQuery('');
+      setKindFilter('all');
+      setRadiusMeters(null);
+    }
+  }, [activeHub]);
+
   if (typeof document === 'undefined') return null;
 
-  const isGame = activeHub === 'game';
+  const theme = HUB_THEMES[activeHub];
   const isCinema = activeHub === 'cinema';
-  const isAudio = activeHub === 'audio';
 
-  const headerTitle = isGame
-    ? copy.mapTitleGame
-    : isCinema
-      ? copy.mapTitleCinema
-      : copy.mapTitleAudio;
+  const headerTitle = isCinema
+    ? copy.mapTitleCinema
+    : activeHub === 'audio'
+      ? copy.mapTitleAudio
+      : copy.mapTitleGame;
 
-  const headerSubtitle = isGame
-    ? copy.mapSubtitleGame
-    : isCinema
-      ? copy.mapSubtitleCinema
-      : copy.mapSubtitleAudio;
+  const headerSubtitle = isCinema
+    ? copy.mapSubtitleCinema
+    : activeHub === 'audio'
+      ? copy.mapSubtitleAudio
+      : copy.mapSubtitleGame;
 
-  const filterTabs: Array<{ id: 'all' | MapEntityKind; label: string }> = [
+  const kindChips: Array<{ id: 'all' | MapEntityKind; label: string }> = [
     { id: 'all', label: copy.mapFilterAll },
     { id: 'user', label: copy.mapFilterUsers },
     { id: 'club', label: copy.mapFilterClubs },
@@ -112,34 +359,17 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
     { id: 'drop', label: copy.mapFilterDrops },
   ];
 
-  const getPinIcon = (kind: MapEntityKind) => {
-    if (kind === 'user') return <Users className="w-3.5 h-3.5" />;
-    if (kind === 'club') return <Sparkles className="w-3.5 h-3.5" />;
-    if (kind === 'store') return <Store className="w-3.5 h-3.5" />;
-    return <MapPin className="w-3.5 h-3.5" />;
-  };
+  const MapCanvas = HUB_CANVAS[activeHub];
 
-  const togglePing = (id: string) => {
-    setPingedIds((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  // Theme tokens cleanly separated per hub
-  const modalSurfaceClass = isGame
-    ? 'bg-[#070A12] border-[#00F0FF]/45 text-slate-100 shadow-[0_24px_80px_rgba(0,240,255,0.18)]'
-    : isCinema
-      ? 'bg-[#EEDBB8] border-[#78512A]/60 text-[#2D1B0B] shadow-[0_28px_84px_rgba(40,20,5,0.75)]'
-      : 'bg-[#100D0B] border-[#D4AF37]/45 text-[#F6EFE2] shadow-[0_24px_80px_rgba(212,175,55,0.18)]';
-
-  const mutedTextClass = isCinema ? 'text-[#5C3A1B]/85' : 'text-white/65';
-  const controlBgClass = isCinema
-    ? 'bg-[#DFC69C]/75 border-[#7A5127]/35 text-[#2D1B0B] placeholder:text-[#5C3A1B]/65'
-    : 'bg-black/45 border-white/15 text-white placeholder:text-white/45';
+  const entityName = (entity: PlatformMapEntity) => (isRtl ? entity.nameFa : entity.nameEn);
+  const entityDistrict = (entity: PlatformMapEntity) => (isRtl ? entity.districtFa : entity.districtEn);
+  const entitySubtitle = (entity: PlatformMapEntity) => (isRtl ? entity.subtitleFa : entity.subtitleEn);
 
   return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
-          key="platform-map-backdrop"
+          key="spatial-glass-map"
           dir={isRtl ? 'rtl' : 'ltr'}
           role="dialog"
           aria-modal="true"
@@ -148,77 +378,92 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          onClick={onClose}
-          className="fixed inset-0 z-[95] bg-black/80 backdrop-blur-md flex items-center justify-center p-2.5 sm:p-5 select-none"
+          transition={{ duration: 0.22 }}
+          style={{ backgroundColor: theme.canvasBg, ...(isCinema ? { fontFamily: "'Cormorant Garamond', Georgia, serif" } : {}) }}
+          className="fixed inset-0 z-[95] overflow-hidden select-none"
         >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 8 }}
-            transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            onClick={(e) => e.stopPropagation()}
-            style={
-              isCinema
-                ? {
-                    fontFamily: "'Cormorant Garamond', 'Amiri', Georgia, serif",
-                    backgroundImage:
-                      'radial-gradient(circle at 20% 15%, rgba(255,248,230,0.45) 0%, transparent 55%), radial-gradient(circle at 80% 85%, rgba(168,120,62,0.28) 0%, transparent 60%)',
-                  }
-                : undefined
-            }
-            className={`relative w-full max-w-6xl max-h-[92dvh] rounded-2xl border overflow-hidden flex flex-col ${modalSurfaceClass}`}
-          >
-            {/* Header Bar */}
-            <header
-              className={`px-4 sm:px-6 py-3.5 border-b flex items-center justify-between gap-3 shrink-0 ${
-                isCinema ? 'border-[#78512A]/25 bg-[#DFC597]/65' : 'border-white/12 bg-black/35'
-              }`}
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
-                    isGame
-                      ? 'bg-[#FCEE0A]/15 border-[#FCEE0A]/50 text-[#FCEE0A]'
-                      : isCinema
-                        ? 'bg-[#8B1E1E]/15 border-[#8B1E1E]/45 text-[#8B1E1E]'
-                        : 'bg-[#D4AF37]/15 border-[#D4AF37]/50 text-[#D4AF37]'
-                  }`}
+          {/* Unified deep map canvas */}
+          <MapCanvas />
+
+          {/* You marker — soft luminous halo, no clutter */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none flex flex-col items-center">
+            <span className={`absolute w-16 h-16 rounded-full animate-ping opacity-20 ${theme.youHalo}`} />
+            <span className={`relative w-7 h-7 rounded-full border-2 flex items-center justify-center shadow-[0_0_24px_rgba(255,255,255,0.18)] ${theme.youHalo} ${isCinema ? 'text-[#F8ECD4]' : 'text-white/90'}`}>
+              <Navigation className="w-3.5 h-3.5" />
+            </span>
+            <span className={`mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-[0.18em] border backdrop-blur-md ${theme.youChip}`}>
+              {copy.mapYouAreHere}
+            </span>
+          </div>
+
+          {/* Icon-only pins — no text labels, clean shadows */}
+          <AnimatePresence>
+            {entities.map((entity) => {
+              const isSelected = selectedEntity?.id === entity.id;
+              return (
+                <motion.button
+                  key={entity.id}
+                  type="button"
+                  data-testid={`map-pin-${entity.id}`}
+                  onClick={() => setSelectedEntityId(entity.id)}
+                  aria-label={entityName(entity)}
+                  initial={{ opacity: 0, scale: 0.6 }}
+                  animate={{ opacity: 1, scale: isSelected ? 1.18 : 1 }}
+                  exit={{ opacity: 0, scale: 0.6 }}
+                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                  style={{ left: `${entity.xPct}%`, top: `${pinTopPct(entity.yPct)}%` }}
+                  className="absolute -translate-x-1/2 -translate-y-1/2 z-20 cursor-pointer outline-none"
                 >
-                  {isAudio ? <Music className="w-5 h-5" /> : <Compass className="w-5 h-5" />}
+                  {isSelected && (
+                    <span
+                      className={`absolute inset-0 -m-1.5 rounded-full animate-ping opacity-25 ${theme.youHalo}`}
+                      aria-hidden="true"
+                    />
+                  )}
+                  <span
+                    className={`relative w-10 h-10 rounded-full border-2 flex items-center justify-center shadow-[0_10px_26px_rgba(0,0,0,0.4)] transition ${theme.pin[entity.kind]} ${
+                      isSelected ? `scale-105 ${theme.pinSelectedRing}` : 'hover:scale-105'
+                    }`}
+                  >
+                    {KIND_PIN_ICON[entity.kind]}
+                  </span>
+                </motion.button>
+              );
+            })}
+          </AnimatePresence>
+
+          {/* Slim transparent floating header: title + close, compact search, one continuous glass chip row */}
+          <header className="absolute inset-x-0 top-0 z-30">
+            <div className={`px-4 pt-4 pb-5 flex flex-col gap-2.5 ${theme.scrim}`}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span
+                    className={`w-9 h-9 rounded-full border flex items-center justify-center shrink-0 backdrop-blur-xl ${
+                      isCinema ? 'bg-[#FFFBEF]/60 border-[#6B411C]/25 text-[#7B2C35]' : 'bg-white/[0.08] border-white/14 text-white/85'
+                    }`}
+                  >
+                    {activeHub === 'audio' ? <Music className="w-4 h-4" /> : <Compass className="w-4 h-4" />}
+                  </span>
+                  <div className="min-w-0">
+                    <h2 className={`text-[16px] font-bold leading-tight ${theme.headerText}`}>{headerTitle}</h2>
+                    <p className={`text-[11.5px] leading-tight ${theme.headerMuted}`}>{headerSubtitle}</p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <h2 className="text-[16px] sm:text-[19px] font-black truncate leading-tight">
-                    {headerTitle}
-                  </h2>
-                  <p className={`text-[11.5px] sm:text-[12px] truncate ${mutedTextClass}`}>
-                    {headerSubtitle}
-                  </p>
-                </div>
+                <button
+                  type="button"
+                  data-testid="map-modal-close-btn"
+                  onClick={onClose}
+                  aria-label={copy.back}
+                  className={`w-10 h-10 rounded-full border flex items-center justify-center cursor-pointer transition shrink-0 ${theme.closeBtn}`}
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              <button
-                type="button"
-                data-testid="map-modal-close-btn"
-                onClick={onClose}
-                aria-label={copy.back}
-                className={`w-10 h-10 rounded-full border flex items-center justify-center cursor-pointer transition shrink-0 ${
-                  isCinema
-                    ? 'border-[#78512A]/40 bg-[#CBB07F]/70 text-[#2D1B0B] hover:bg-[#8B1E1E] hover:text-white'
-                    : 'border-white/15 bg-white/8 text-white hover:bg-white/20'
-                }`}
+              {/* Compact search */}
+              <div
+                className={`flex items-center gap-2 h-10 px-3.5 rounded-full border ${theme.searchGlass}`}
               >
-                <X className="w-4 h-4" />
-              </button>
-            </header>
-
-            {/* Search & Filters Toolbar */}
-            <div
-              className={`px-4 sm:px-6 py-3 border-b flex flex-col lg:flex-row lg:items-center gap-2.5 shrink-0 ${
-                isCinema ? 'border-[#78512A]/20 bg-[#E6CFA5]/65' : 'border-white/10 bg-black/25'
-              }`}
-            >
-              <div className={`flex items-center gap-2 flex-1 min-h-[42px] px-3.5 rounded-xl border ${controlBgClass}`}>
                 <Search className="w-4 h-4 shrink-0 opacity-70" />
                 <input
                   type="search"
@@ -226,48 +471,39 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={copy.mapSearchPlaceholder}
-                  className="w-full bg-transparent text-[13px] font-semibold focus:outline-none py-1.5"
+                  className="w-full bg-transparent text-[13px] font-medium focus:outline-none"
                 />
                 {query.trim().length > 0 && (
                   <button
                     type="button"
                     onClick={() => setQuery('')}
                     aria-label={copy.showAll}
-                    className="p-1 rounded-full hover:bg-black/15 cursor-pointer"
+                    className="p-1 rounded-full hover:bg-black/10 cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
 
-              <div className="flex flex-wrap items-center gap-1.5">
-                {filterTabs.map((tab) => {
-                  const active = kindFilter === tab.id;
+              {/* One continuous row of delicate round glass chips (kind + radius) */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 pb-0.5">
+                {kindChips.map((chip) => {
+                  const active = kindFilter === chip.id;
                   return (
                     <button
-                      key={tab.id}
+                      key={chip.id}
                       type="button"
-                      data-testid={`map-filter-${tab.id}`}
-                      onClick={() => setKindFilter(tab.id)}
-                      className={`min-h-[34px] px-3 rounded-lg text-[11.5px] font-bold border transition cursor-pointer whitespace-nowrap ${
-                        active
-                          ? isGame
-                            ? 'bg-[#00F0FF] text-slate-950 border-[#00F0FF]'
-                            : isCinema
-                              ? 'bg-[#8B1E1E] text-[#FDF6E9] border-[#8B1E1E]'
-                              : 'bg-[#D4AF37] text-slate-950 border-[#D4AF37]'
-                          : isCinema
-                            ? 'bg-[#D8BF92]/65 text-[#3A220E] border-[#78512A]/30 hover:bg-[#CEB17E]'
-                            : 'bg-white/6 text-white/80 border-white/12 hover:bg-white/12'
+                      data-testid={`map-filter-${chip.id}`}
+                      onClick={() => setKindFilter(chip.id)}
+                      className={`h-8 px-3.5 rounded-full text-[12px] font-semibold border transition cursor-pointer whitespace-nowrap shrink-0 ${
+                        active ? theme.glassChipActive : theme.glassChip
                       }`}
                     >
-                      {tab.label}
+                      {chip.label}
                     </button>
                   );
                 })}
-              </div>
-
-              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                <span aria-hidden="true" className={`w-px h-4 shrink-0 ${isCinema ? 'bg-[#6B411C]/25' : 'bg-white/15'}`} />
                 {RADIUS_STEPS.map((step) => {
                   const active = radiusMeters === step.meters;
                   return (
@@ -275,16 +511,8 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
                       key={step.labelEn}
                       type="button"
                       onClick={() => setRadiusMeters(step.meters)}
-                      className={`min-h-[32px] px-2.5 rounded-lg text-[11px] font-mono tabular-nums font-bold border transition cursor-pointer whitespace-nowrap ${
-                        active
-                          ? isGame
-                            ? 'bg-[#FCEE0A] text-slate-950 border-[#FCEE0A]'
-                            : isCinema
-                              ? 'bg-[#3D2510] text-[#F4E4C8] border-[#3D2510]'
-                              : 'bg-[#FA243C] text-white border-[#FA243C]'
-                          : isCinema
-                            ? 'bg-transparent text-[#4E3117] border-[#78512A]/35'
-                            : 'bg-white/5 text-white/65 border-white/12'
+                      className={`h-8 px-3 rounded-full text-[11.5px] font-mono tabular-nums font-semibold border transition cursor-pointer whitespace-nowrap shrink-0 ${
+                        active ? theme.glassChipActive : theme.glassChip
                       }`}
                     >
                       {isRtl ? step.labelFa : step.labelEn}
@@ -293,386 +521,97 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
                 })}
               </div>
             </div>
+          </header>
 
-            {/* Body: Interactive Domain Map Canvas + Nearby List & Inspector */}
-            <div className="flex-1 min-h-0 overflow-y-auto lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12">
-              {/* Interactive Spatial Map Canvas */}
-              <div className="lg:col-span-7 relative min-h-[320px] sm:min-h-[390px] lg:h-full overflow-hidden border-b lg:border-b-0 lg:border-e border-black/15">
-                {/* 1. CYBERPUNK CITY GRID SVG (GAME HUB) */}
-                {isGame && (
-                  <svg
-                    viewBox="0 0 800 500"
-                    preserveAspectRatio="xMidYMid slice"
-                    aria-hidden="true"
-                    className="absolute inset-0 w-full h-full pointer-events-none"
-                  >
-                    <defs>
-                      <radialGradient id="cyberRadarGlow" cx="50%" cy="50%" r="50%">
-                        <stop offset="0%" stopColor="rgba(0,240,255,0.22)" />
-                        <stop offset="60%" stopColor="rgba(0,240,255,0.05)" />
-                        <stop offset="100%" stopColor="rgba(7,10,18,0)" />
-                      </radialGradient>
-                      <pattern id="cyberGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                        <path
-                          d="M 40 0 L 0 0 0 40"
-                          fill="none"
-                          stroke="rgba(0, 240, 255, 0.14)"
-                          strokeWidth="1"
-                        />
-                      </pattern>
-                    </defs>
-                    <rect width="800" height="500" fill="#060911" />
-                    <rect width="800" height="500" fill="url(#cyberGrid)" />
-                    <circle cx="400" cy="250" r="220" fill="url(#cyberRadarGlow)" />
-                    {/* Cyber city district polygon blocks */}
-                    <polygon points="70,45 255,45 235,165 55,165" fill="#0D1628" stroke="#00F0FF" strokeOpacity="0.35" strokeWidth="1.5" />
-                    <polygon points="310,40 530,40 545,150 295,150" fill="#131024" stroke="#FF2A6D" strokeOpacity="0.4" strokeWidth="1.5" />
-                    <polygon points="585,48 745,62 725,215 565,195" fill="#0D1826" stroke="#FCEE0A" strokeOpacity="0.45" strokeWidth="1.5" />
-                    <polygon points="80,220 270,210 250,430 65,415" fill="#121426" stroke="#FCEE0A" strokeOpacity="0.3" strokeWidth="1.5" />
-                    <polygon points="320,295 570,280 550,455 305,445" fill="#0B1829" stroke="#00F0FF" strokeOpacity="0.4" strokeWidth="1.5" />
-                    {/* Neon Tactical Expressways */}
-                    <path d="M0 190 L800 225" stroke="#FCEE0A" strokeWidth="2.4" strokeOpacity="0.6" strokeDasharray="10 6" />
-                    <path d="M275 0 L260 500" stroke="#00F0FF" strokeWidth="2.2" strokeOpacity="0.55" />
-                    <path d="M560 0 L585 500" stroke="#FF2A6D" strokeWidth="2" strokeOpacity="0.45" />
-                    {/* Radar Range Rings */}
-                    <circle cx="400" cy="250" r="90" fill="none" stroke="#00F0FF" strokeOpacity="0.28" strokeDasharray="5 5" />
-                    <circle cx="400" cy="250" r="185" fill="none" stroke="#FCEE0A" strokeOpacity="0.22" strokeDasharray="8 6" />
-                  </svg>
-                )}
+          {/* Empty state — quiet glass pill */}
+          {entities.length === 0 && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center px-8 pointer-events-none">
+              <div
+                data-testid="map-no-results"
+                className={`px-4 py-2.5 rounded-full text-[12.5px] font-medium border text-center backdrop-blur-2xl ${theme.card} ${theme.mutedText}`}
+              >
+                {copy.mapNoResults}
+              </div>
+            </div>
+          )}
 
-                {/* 2. ANTIQUE TREASURE MAP SVG (CINEMA HUB) */}
-                {isCinema && (
-                  <svg
-                    viewBox="0 0 800 500"
-                    preserveAspectRatio="xMidYMid slice"
-                    aria-hidden="true"
-                    className="absolute inset-0 w-full h-full pointer-events-none"
-                  >
-                    <defs>
-                      <radialGradient id="parchmentShade" cx="50%" cy="50%" r="65%">
-                        <stop offset="0%" stopColor="#F2DFC0" />
-                        <stop offset="72%" stopColor="#DEC08F" />
-                        <stop offset="100%" stopColor="#B88E56" />
-                      </radialGradient>
-                    </defs>
-                    <rect width="800" height="500" fill="url(#parchmentShade)" />
-                    {/* Rhumb compass grid lines */}
-                    <g stroke="#6B4423" strokeOpacity="0.22" strokeWidth="1">
-                      <line x1="0" y1="250" x2="800" y2="250" />
-                      <line x1="400" y1="0" x2="400" y2="500" />
-                      <line x1="120" y1="0" x2="680" y2="500" />
-                      <line x1="680" y1="0" x2="120" y2="500" />
-                      <circle cx="400" cy="250" r="160" fill="none" />
-                    </g>
-                    {/* Hand-drawn landmass contours */}
-                    <path
-                      d="M90,95 C160,55 270,80 300,155 C330,220 265,305 180,290 C105,275 55,155 90,95 Z"
-                      fill="#D2AF7A"
-                      fillOpacity="0.45"
-                      stroke="#5D3A1A"
-                      strokeWidth="2"
-                    />
-                    <path
-                      d="M475,75 C575,55 710,95 725,195 C738,295 645,420 520,395 C430,375 415,165 475,75 Z"
-                      fill="#CFA872"
-                      fillOpacity="0.45"
-                      stroke="#5D3A1A"
-                      strokeWidth="2"
-                    />
-                    {/* Dashed red treasure trail across islands */}
-                    <path
-                      d="M190,140 Q330,210 400,250 T575,140 T465,320"
-                      fill="none"
-                      stroke="#8B1E1E"
-                      strokeWidth="3"
-                      strokeDasharray="10 8"
-                      strokeLinecap="round"
-                    />
-                    {/* Ornate Compass Rose bottom-right */}
-                    <g transform="translate(715, 425)" stroke="#4B2E14" fill="none">
-                      <circle r="36" strokeOpacity="0.55" strokeWidth="1.5" />
-                      <polygon points="0,-34 7,-7 34,0 7,7 0,34 -7,7 -34,0 -7,-7" fill="#8B1E1E" fillOpacity="0.72" />
-                      <text x="-4" y="-40" fontSize="11" fontWeight="bold" fill="#4B2E14">N</text>
-                    </g>
-                  </svg>
-                )}
-
-                {/* 3. MUSICAL SCORE & VINYL SOUNDWAVE MAP SVG (AUDIO HUB) */}
-                {isAudio && (
-                  <svg
-                    viewBox="0 0 800 500"
-                    preserveAspectRatio="xMidYMid slice"
-                    aria-hidden="true"
-                    className="absolute inset-0 w-full h-full pointer-events-none"
-                  >
-                    <defs>
-                      <radialGradient id="vinylGrooveBg" cx="50%" cy="50%" r="55%">
-                        <stop offset="0%" stopColor="#1D1610" />
-                        <stop offset="65%" stopColor="#110D0A" />
-                        <stop offset="100%" stopColor="#080605" />
-                      </radialGradient>
-                    </defs>
-                    <rect width="800" height="500" fill="url(#vinylGrooveBg)" />
-                    {/* Concentric Vinyl Acoustic Grooves */}
-                    {[75, 130, 185, 240, 305].map((r) => (
-                      <circle
-                        key={r}
-                        cx="400"
-                        cy="250"
-                        r={r}
-                        fill="none"
-                        stroke="#D4AF37"
-                        strokeOpacity={r === 185 ? 0.34 : 0.14}
-                        strokeWidth={r === 185 ? 1.5 : 1}
-                        strokeDasharray={r === 130 ? '6 6' : undefined}
-                      />
-                    ))}
-                    {/* 5-Line Flowing Musical Staff across stage */}
-                    {[-16, -8, 0, 8, 16].map((offset) => (
-                      <path
-                        key={offset}
-                        d={`M0 ${250 + offset} Q 200 ${175 + offset}, 400 ${250 + offset} T 800 ${240 + offset}`}
-                        fill="none"
-                        stroke="#D4AF37"
-                        strokeOpacity="0.28"
-                        strokeWidth="1.2"
-                      />
-                    ))}
-                    {/* Decorative Brass Treble Clef & Notes */}
-                    <text x="58" y="255" fontSize="64" fill="#D4AF37" fillOpacity="0.45">𝄞</text>
-                    <text x="690" y="220" fontSize="34" fill="#FA243C" fillOpacity="0.5">♫</text>
-                  </svg>
-                )}
-
-                {/* User's Current Center Location Beacon */}
-                <div
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none flex flex-col items-center"
-                >
+          {/* Floating Glass Card — details of the single selected pin */}
+          <AnimatePresence>
+            {selectedEntity && (
+              <motion.div
+                key={selectedEntity.id}
+                initial={{ opacity: 0, y: 26, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 20, scale: 0.98 }}
+                transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+                data-testid="map-inspector-card"
+                className={`absolute inset-x-3 bottom-3 z-40 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-[420px] rounded-3xl border p-4 flex flex-col gap-2.5 ${theme.card}`}
+                dir={isRtl ? 'rtl' : 'ltr'}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="text-[15.5px] font-bold leading-snug">{entityName(selectedEntity)}</h3>
                   <span
-                    className={`w-10 h-10 rounded-full animate-ping opacity-30 ${
-                      isGame
-                        ? 'bg-[#00F0FF]'
-                        : isCinema
-                          ? 'bg-[#8B1E1E]'
-                          : 'bg-[#1ED760]'
-                    }`}
-                  />
-                  <div
-                    className={`absolute top-2 w-6 h-6 rounded-full border-2 flex items-center justify-center shadow-lg ${
-                      isGame
-                        ? 'bg-[#070A12] border-[#00F0FF] text-[#00F0FF]'
-                        : isCinema
-                          ? 'bg-[#8B1E1E] border-[#FDF6E9] text-[#FDF6E9]'
-                          : 'bg-[#100D0B] border-[#1ED760] text-[#1ED760]'
-                    }`}
+                    data-testid="map-rating-badge"
+                    className={`px-2 py-1 rounded-full text-[11.5px] font-mono tabular-nums font-bold shrink-0 border ${theme.ratingBadge}`}
                   >
-                    <Navigation className="w-3 h-3" />
-                  </div>
-                  <span
-                    className={`mt-1 px-2 py-0.5 rounded text-[10px] font-black tracking-wide shadow ${
-                      isCinema
-                        ? 'bg-[#3D2510] text-[#F9E8CA]'
-                        : 'bg-black/80 text-white border border-white/15'
-                    }`}
-                  >
-                    {copy.mapYouAreHere}
+                    ★ {selectedEntity.rating.toFixed(1)}
                   </span>
                 </div>
 
-                {/* Clickable Platform Entities Positioned on Map */}
-                {entities.map((entity) => {
-                  const isSelected = selectedEntity?.id === entity.id;
-                  const pinColors = isGame
-                    ? entity.kind === 'store'
-                      ? 'bg-[#FCEE0A] text-slate-950 border-white'
-                      : entity.kind === 'club'
-                        ? 'bg-[#FF2A6D] text-white border-white'
-                        : 'bg-[#00F0FF] text-slate-950 border-white'
-                    : isCinema
-                      ? entity.kind === 'drop' || entity.kind === 'store'
-                        ? 'bg-[#8B1E1E] text-[#FDF6E9] border-[#F4DFB8]'
-                        : 'bg-[#3B230F] text-[#F4DFB8] border-[#C99A5B]'
-                      : entity.kind === 'store'
-                        ? 'bg-[#D4AF37] text-slate-950 border-white'
-                        : entity.kind === 'club'
-                          ? 'bg-[#FA243C] text-white border-white'
-                          : 'bg-[#1DB954] text-slate-950 border-white';
+                <div className={`text-[12px] font-medium flex items-center gap-1.5 flex-wrap ${theme.mutedText}`}>
+                  <span>{entityDistrict(selectedEntity)}</span>
+                  <span aria-hidden="true">·</span>
+                  <span className="font-mono tabular-nums">
+                    {formatDistanceLabel(selectedEntity.distanceMeters, isRtl)}
+                  </span>
+                </div>
 
-                  return (
+                <p className={`text-[12.5px] leading-relaxed ${theme.mutedText}`}>
+                  {entitySubtitle(selectedEntity)}
+                </p>
+
+                <div className="pt-0.5">
+                  {selectedEntity.kind === 'store' ? (
                     <button
-                      key={entity.id}
                       type="button"
-                      data-testid={`map-pin-${entity.id}`}
-                      onClick={() => setSelectedEntityId(entity.id)}
-                      aria-label={isRtl ? entity.nameFa : entity.nameEn}
-                      style={{ left: `${entity.xPct}%`, top: `${entity.yPct}%` }}
-                      className={`absolute -translate-x-1/2 -translate-y-1/2 z-20 group cursor-pointer transition-transform ${
-                        isSelected ? 'scale-115 z-30' : 'hover:scale-110'
+                      data-testid="map-open-storefront-btn"
+                      onClick={() => {
+                        onClose();
+                        onJumpToStoreCollection(selectedEntity.linkedStoreCollectionId);
+                      }}
+                      className={`h-10 w-full rounded-full text-[12.5px] font-bold inline-flex items-center justify-center gap-2 transition cursor-pointer ${theme.cardPrimaryBtn}`}
+                    >
+                      <ShoppingBag className="w-4 h-4" />
+                      <span>{copy.mapOpenStoreCta}</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      data-testid="map-ping-entity-btn"
+                      onClick={() =>
+                        setPingedIds((prev) => ({ ...prev, [selectedEntity.id]: !prev[selectedEntity.id] }))
+                      }
+                      className={`h-10 w-full rounded-full text-[12.5px] font-bold inline-flex items-center justify-center gap-2 transition cursor-pointer ${
+                        pingedIds[selectedEntity.id] ? theme.cardSecondaryBtn : theme.cardPrimaryBtn
                       }`}
                     >
-                      <span
-                        className={`w-9 h-9 rounded-full border-2 shadow-xl flex items-center justify-center ${pinColors} ${
-                          isSelected ? 'ring-4 ring-white/45' : ''
-                        }`}
-                      >
-                        {isCinema && entity.kind === 'drop' ? (
-                          <span className="font-black text-[14px]">✕</span>
-                        ) : (
-                          getPinIcon(entity.kind)
-                        )}
-                      </span>
-                      <span
-                        className={`mt-1 block max-w-[116px] truncate px-1.5 py-0.5 rounded text-[10px] font-bold shadow-md ${
-                          isCinema
-                            ? 'bg-[#F5E5C8]/95 text-[#2D1B0B] border border-[#78512A]/45'
-                            : 'bg-black/85 text-white border border-white/15'
-                        }`}
-                      >
-                        {isRtl ? entity.nameFa : entity.nameEn}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Right Sidebar: Selected Entity Inspector + Scrollable Nearby List */}
-              <div className="lg:col-span-5 flex flex-col min-h-0 max-h-full overflow-hidden">
-                {/* Active Pin Inspector */}
-                {selectedEntity && (
-                  <div
-                    data-testid="map-inspector-card"
-                    className={`p-4 border-b shrink-0 flex flex-col gap-2.5 ${
-                      isCinema
-                        ? 'bg-[#E3C99D]/80 border-[#78512A]/25'
-                        : 'bg-white/[0.04] border-white/12'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className={`text-[11px] font-bold flex items-center gap-1.5 ${mutedTextClass}`}>
-                          <span>{isRtl ? selectedEntity.districtFa : selectedEntity.districtEn}</span>
-                          <span aria-hidden="true">·</span>
-                          <span className="font-mono tabular-nums">
-                            {formatDistanceLabel(selectedEntity.distanceMeters, isRtl)}
-                          </span>
-                        </div>
-                        <h3 className="text-[15.5px] font-black leading-snug mt-0.5">
-                          {isRtl ? selectedEntity.nameFa : selectedEntity.nameEn}
-                        </h3>
-                      </div>
-
-                      <span
-                        className={`px-2 py-1 rounded-md text-[11px] font-mono tabular-nums font-bold shrink-0 ${
-                          isCinema
-                            ? 'bg-[#8B1E1E] text-[#FDF6E9]'
-                            : 'bg-white/10 text-white'
-                        }`}
-                      >
-                        ★ {selectedEntity.rating.toFixed(1)}
-                      </span>
-                    </div>
-
-                    <p className={`text-[12.5px] leading-relaxed ${mutedTextClass}`}>
-                      {isRtl ? selectedEntity.subtitleFa : selectedEntity.subtitleEn}
-                    </p>
-
-                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                      <button
-                        type="button"
-                        data-testid="map-ping-entity-btn"
-                        onClick={() => togglePing(selectedEntity.id)}
-                        className={`min-h-[36px] px-3.5 rounded-xl text-[12px] font-extrabold border transition cursor-pointer inline-flex items-center gap-1.5 ${
-                          pingedIds[selectedEntity.id]
-                            ? 'bg-emerald-600 border-emerald-400 text-white'
-                            : isGame
-                              ? 'bg-[#00F0FF] border-[#00F0FF] text-slate-950'
-                              : isCinema
-                                ? 'bg-[#8B1E1E] border-[#8B1E1E] text-[#FDF6E9]'
-                                : 'bg-[#1DB954] border-[#1DB954] text-slate-950'
-                        }`}
-                      >
-                        {pingedIds[selectedEntity.id] ? (
-                          <>
-                            <Check className="w-3.5 h-3.5" />
-                            <span>{copy.mapPingedDone}</span>
-                          </>
-                        ) : (
-                          <>
-                            <UserCheck className="w-3.5 h-3.5" />
-                            <span>{copy.mapPingCta}</span>
-                          </>
-                        )}
-                      </button>
-
-                      {selectedEntity.kind === 'store' && (
-                        <button
-                          type="button"
-                          data-testid="map-open-storefront-btn"
-                          onClick={() => {
-                            onClose();
-                            onJumpToStoreCollection(selectedEntity.linkedStoreCollectionId);
-                          }}
-                          className={`min-h-[36px] px-3.5 rounded-xl text-[12px] font-extrabold border transition cursor-pointer inline-flex items-center gap-1.5 ${
-                            isCinema
-                              ? 'bg-[#3D2510] border-[#3D2510] text-[#F4E4C8]'
-                              : 'bg-white/12 border-white/25 text-white hover:bg-white/20'
-                          }`}
-                        >
-                          <ShoppingBag className="w-3.5 h-3.5" />
-                          <span>{copy.mapOpenStoreCta}</span>
-                        </button>
+                      {pingedIds[selectedEntity.id] ? (
+                        <>
+                          <Check className="w-4 h-4" />
+                          <span>{copy.mapPingedDone}</span>
+                        </>
+                      ) : (
+                        <>
+                          <UserCheck className="w-4 h-4" />
+                          <span>{copy.mapPingCta}</span>
+                        </>
                       )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Nearby Directory List */}
-                <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2">
-                  {entities.length === 0 ? (
-                    <div className={`p-6 text-center text-[13px] font-bold ${mutedTextClass}`}>
-                      {copy.mapNoResults}
-                    </div>
-                  ) : (
-                    entities.map((item) => {
-                      const active = selectedEntity?.id === item.id;
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          data-testid={`map-list-item-${item.id}`}
-                          onClick={() => setSelectedEntityId(item.id)}
-                          className={`w-full text-start p-3 rounded-xl border transition cursor-pointer flex items-center justify-between gap-3 ${
-                            active
-                              ? isGame
-                                ? 'bg-[#00F0FF]/12 border-[#00F0FF]'
-                                : isCinema
-                                  ? 'bg-[#DFC08E] border-[#8B1E1E]'
-                                  : 'bg-[#D4AF37]/14 border-[#D4AF37]'
-                              : isCinema
-                                ? 'bg-[#E6CFA5]/55 border-[#78512A]/25 hover:bg-[#DFC394]'
-                                : 'bg-white/[0.03] border-white/10 hover:bg-white/[0.08]'
-                          }`}
-                        >
-                          <div className="min-w-0 flex-1">
-                            <div className="text-[13px] font-extrabold truncate">
-                              {isRtl ? item.nameFa : item.nameEn}
-                            </div>
-                            <div className={`text-[11px] truncate mt-0.5 ${mutedTextClass}`}>
-                              {isRtl ? item.statusTextFa : item.statusTextEn} ·{' '}
-                              {isRtl ? item.districtFa : item.districtEn}
-                            </div>
-                          </div>
-                          <span className="text-[11px] font-mono tabular-nums font-bold shrink-0 opacity-85">
-                            {formatDistanceLabel(item.distanceMeters, isRtl)}
-                          </span>
-                        </button>
-                      );
-                    })
+                    </button>
                   )}
                 </div>
-              </div>
-            </div>
-          </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
     </AnimatePresence>,
