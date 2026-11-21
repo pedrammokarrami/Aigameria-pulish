@@ -76,6 +76,17 @@ export interface AdkMultiAgentReport {
   coordSource?: 'tap' | 'image_scan' | 'topic_default';
 }
 
+export type CoachAnswerIntent = 'formation' | 'loadout' | 'item' | 'map' | 'tactic' | 'economy' | 'generic';
+
+export interface CoachAnswerBlock {
+  intent: CoachAnswerIntent;
+  titleFa: string;
+  titleEn: string;
+  linesFa: string[];
+  linesEn: string[];
+  options?: string[];
+}
+
 export interface CoachConsultationTopic {
   id: string;
   realm: RealmId;
@@ -93,6 +104,113 @@ export interface CoachConsultationTopic {
   motionArrows: MotionVectorArrow[];
   motionCallouts: MotionCalloutNode[];
   adkIntel?: AdkMultiAgentReport;
+  answerBlock?: CoachAnswerBlock;
+}
+
+/** Detect what kind of structured answer the user's question needs. */
+export function detectAnswerIntent(query: string): CoachAnswerIntent {
+  const q = query.toLowerCase();
+  if (/formation|lineup|\u062a\u0631\u06a9\u06cc\u0628|\u0641\u0631\u0645\u0627\u0633\u06cc\u0648\u0646|\u0686\u06cc\u0646\u0634|4231|433|3142/.test(q)) return 'formation';
+  if (/weapon|loadout|gun|rifle|attachment|\u0627\u0633\u0644\u062d\u0647|\u062a\u0641\u0646\u06af|\u0622\u067e\u06af\u0631\u06cc\u062f/.test(q)) return 'loadout';
+  if (/item|gear|\u0622\u06cc\u062a\u0645|\u0627\u06cc\u062a\u0645|equipment/.test(q)) return 'item';
+  if (/\u0646\u0642\u0634\u0647|map position|callout|\u0645\u0648\u0642\u0639\u06cc\u062a/.test(q)) return 'map';
+  if (/economy|eco|\u0627\u0642\u062a\u0635\u0627\u062f|\u062e\u0631\u06cc\u062f/.test(q)) return 'economy';
+  return 'tactic';
+}
+
+/** Deterministic structured answer for the detected intent (bilingual). */
+export function buildCoachAnswerBlock(query: string, realm: RealmId): CoachAnswerBlock {
+  const intent = detectAnswerIntent(query);
+  if (intent === 'formation') {
+    return {
+      intent,
+      titleFa: '\u062a\u0631\u06a9\u06cc\u0628 \u067e\u06cc\u0634\u0646\u0647\u0627\u062f\u06cc (\u0645\u062a\u0627\u06cc \u0641\u0639\u0644\u06cc)',
+      titleEn: 'Recommended formation (current meta)',
+      linesFa: [
+        '4-2-3-1 \u2192 \u06a9\u0646\u062a\u0631\u0644 \u0648\u0633\u0637 \u0648 \u0636\u062f\u062d\u0645\u0644\u0647\u061b \u0627\u0645\u0646\u200c\u062a\u0631\u06cc\u0646 \u0627\u0646\u062a\u062e\u0627\u0628 \u0631\u0646\u06a9.',
+        '4-3-3(2) \u2192 \u067e\u0631\u0633 \u0628\u0627\u0644\u0627 \u0648 \u0648\u06cc\u0646\u06af\u200c\u0647\u0627\u06cc \u0633\u0631\u06cc\u0639.',
+        '4-2-1-3 \u2192 \u0641\u0634\u0627\u0631 \u062d\u062f\u0627\u06a9\u062b\u0631\u06cc\u061b \u06cc\u06a9 CDM \u0647\u0645\u06cc\u0634\u0647 \u0628\u0645\u0648\u0646\u0647.',
+        '\u0639\u0631\u0636 \u062f\u0641\u0627\u0639 40\u060c \u0627\u0631\u062a\u0641\u0627\u0639 \u062e\u0637 55\u2013\u06f6\u06f0\u060c \u067e\u0631\u0633 \u0628\u0639\u062f \u0627\u0632 \u067e\u0627\u0633 \u0639\u0631\u0636\u06cc.',
+      ],
+      linesEn: [
+        '4-2-3-1 \u2192 central control + counter; safest ranked pick.',
+        '4-3-3(2) \u2192 high press with fast wingers.',
+        '4-2-1-3 \u2192 max pressure; keep one CDM home.',
+        'Def width 40, line height 55-60, press after sideways pass.',
+      ],
+      options: ['4-2-3-1', '4-3-3 (2)', '4-2-1-3', '3-5-2'],
+    };
+  }
+  if (intent === 'loadout') {
+    return {
+      intent,
+      titleFa: '\u0631\u0627\u0647\u0646\u0645\u0627\u06cc \u06a9\u0627\u0633\u062a\u0648\u0645 \u0648 \u0627\u0646\u062a\u062e\u0627\u0628 \u062a\u062c\u0647\u06cc\u0632\u0627\u062a',
+      titleEn: 'Loadout & customization guide',
+      linesFa: [
+        '\u062f\u0642\u062a \u0627\u0648\u0644\u06cc\u0646 \u06af\u0644\u0648\u0644\u0647: \u0644\u0648\u0644\u0647 \u0633\u0646\u06af\u06cc\u0646\u200c\u062a\u0631 \u06cc\u0627 \u0645\u0648\u0646\u062a \u062f\u0642\u06cc\u0642.',
+        '\u0631\u06cc\u06a9\u0648\u06cc\u0644 \u06a9\u0646\u062a\u0631\u0644: \u06af\u0631\u06cc\u067e \u06a9\u0645\u200c\u062a\u0631\u060c \u0633\u0631\u0639\u062a \u0627\u0633\u067e\u0631\u06cc\u0646\u062a \u0631\u0648\u06cc \u0622\u0641.',
+        '\u0641\u0644\u0634/\u0627\u0633\u0645\u0648\u06a9 \u0647\u0645\u06cc\u0634\u0647 \u0647\u0645\u0631\u0627\u0647 \u0628\u0627\u0634\u0647 \u0628\u0631\u0627\u06cc \u0627\u06a9\u0633\u06a9\u0648\u062a.',
+        '\u06a9\u0627\u0633\u062a\u0648\u0645 \u062e\u0648\u062f\u062a \u0631\u0648 \u062b\u0627\u0628\u062a \u0646\u06af\u0647 \u062f\u0627\u0631 \u0648 \u0645\u06a9\u0633 \u0632\u0646.',
+      ],
+      linesEn: [
+        'Prioritize first-bullet accuracy: heavier barrel or precise mount.',
+        'Recoil control: lower grip, sprint-fire off.',
+        'Always carry flash/smoke for executes.',
+        'Lock your custom setup and max it.',
+      ],
+      options: ['First-bullet accuracy', 'Recoil control', 'Utility for executes'],
+    };
+  }
+  if (intent === 'item') {
+    return {
+      intent,
+      titleFa: '\u0627\u0646\u062a\u062e\u0627\u0628 \u062f\u0631\u0633\u062a \u0622\u06cc\u062a\u0645 / \u0628\u06cc\u0644\u062f',
+      titleEn: 'Right item / build picks',
+      linesFa: [
+        '\u0627\u0648\u0644\u0648\u06cc\u062a \u0628\u0627 \u0622\u06cc\u062a\u0645\u200c\u0647\u0627\u06cc \u062a\u06cc\u0645\u06cc \u0648 \u06a9\u0646\u062a\u0631\u0644\u06cc\u0647\u060c \u0646\u0647 \u062f\u0645\u06cc\u062c \u062e\u0627\u0645.',
+        '\u0627\u0633\u067e\u0627\u06cc\u06a9 \u0642\u062f\u0631\u062a\u06cc \u0631\u0648 \u0642\u0628\u0644 \u0627\u0632 \u0631\u06cc\u0633\u06a9 \u0628\u0633\u0627\u0632\u061b \u0622\u06cc\u062a\u0645 \u062f\u0641\u0627\u0639\u06cc \u0648\u0642\u062a\u06cc \u0639\u0642\u0628\u06cc.',
+        '\u06cc\u06a9 \u0627\u0633\u0644\u0627\u062a counter-pick \u0628\u0631\u0627\u06cc \u0636\u062f\u062d\u0631\u06cc\u0641 \u0646\u06af\u0647 \u062f\u0627\u0631.',
+      ],
+      linesEn: [
+        'Team-control items first; raw damage last.',
+        'Build the power spike before risky plays.',
+        'Keep a counter-pick slot for the enemy comp.',
+      ],
+    };
+  }
+  if (intent === 'map') {
+    return {
+      intent,
+      titleFa: '\u0646\u0642\u0634\u0647 \u0648 \u0645\u0648\u0642\u0639\u06cc\u062a\u200c\u0647\u0627\u06cc \u06a9\u0644\u06cc\u062f\u06cc',
+      titleEn: 'Map & key positions',
+      linesFa: [
+        '\u062f\u0648 \u0645\u0633\u06cc\u0631 \u0627\u0635\u0644\u06cc \u0631\u0648 \u0646\u06af\u0647 \u062f\u0627\u0631\u061b \u0646\u0642\u0637\u0647\u200c\u0647\u0627\u06cc \u062a\u0631\u06a9\u06cc\u0628\u06cc \u0631\u0648 \u0627\u0633\u06a9\u0646 \u06a9\u0646.',
+        '\u067e\u06cc\u0634 \u0627\u0632 \u067e\u0648\u0634: \u0686\u06a9 \u00b7 \u06a9\u067e\u0686\u0631 \u00b7 \u062a\u0647\u062f\u06cc\u062f \u0627\u0632 \u0633\u0647 \u0632\u0627\u0648\u06cc\u0647.',
+        '\u0631\u0648\u06cc \u0646\u0642\u0634\u0647: \u062f\u0627\u06cc\u0631\u0647 \u0642\u0631\u0645\u0632 = \u062e\u0637\u0631\u060c \u0641\u0644\u0634 = \u0645\u0633\u06cc\u0631\u060c \u0633\u0628\u0632 = \u0647\u062f\u0641.',
+      ],
+      linesEn: [
+        'Hold two main lanes; scan combo sites.',
+        'Before a push: check \u00b7 capture \u00b7 threaten from 3 angles.',
+        'Map legend: red = danger, arrow = route, green = goal.',
+      ],
+    };
+  }
+  if (intent === 'economy') {
+    return {
+      intent,
+      titleFa: '\u0645\u062f\u06cc\u0631\u06cc\u062a \u0627\u0642\u062a\u0635\u0627\u062f',
+      titleEn: 'Economy management',
+      linesFa: ['\u0647\u0631\u06af\u0632 full-buy \u0628\u0639\u062f \u0627\u0632 \u0634\u06a9\u0633\u062a eco \u0646\u06a9\u0646.', '\u0631\u0648\u0646\u062f save/purchase \u062a\u06cc\u0645 \u0631\u0648 \u0631\u0639\u0627\u06cc\u062a \u06a9\u0646.', '\u0631\u06cc\u0648\u0627\u0631\u062f \u0631\u0627\u0646\u062f \u0631\u0648 \u062d\u0633\u0627\u0628 \u06a9\u0646\u060c \u0646\u0647 \u062d\u0633.'],
+      linesEn: ['Never full-buy after a lost eco.', 'Follow the team save/purchase pattern.', 'Count round rewards, not vibes.'],
+    };
+  }
+  return {
+    intent: 'tactic',
+    titleFa: '\u067e\u0644\u0646 \u062a\u0627\u06a9\u062a\u06cc\u06a9\u06cc \u06af\u0627\u0645\u200c\u0628\u0647\u200c\u06af\u0627\u0645',
+    titleEn: 'Step-by-step tactical plan',
+    linesFa: ['\u0661) \u0642\u0628\u0644 \u0627\u0632 \u0627\u062c\u0631\u0627: \u0627\u0633\u06a9\u0646 \u0633\u0647\u200c\u0632\u0627\u0648\u06cc\u0647\u200c\u0627\u06cc.', '\u0662) \u0627\u062c\u0631\u0627 \u0628\u0627 \u062a\u0627\u06cc\u0645\u06cc\u0646\u06af \u0647\u0645\u200c\u062a\u06cc\u0645\u06cc.', '\u0663) \u0647\u0645\u06cc\u0634\u0647 \u06cc\u06a9 \u0646\u0641\u0631 backup \u0628\u0627\u0634\u0647.', '\u0664) \u0645\u0631\u0648\u0631 \u062e\u0637\u0627 \u0628\u0639\u062f \u0627\u0632 \u0631\u0627\u0646\u062f.'],
+    linesEn: ['1) Scan 3 angles before executing.', '2) Execute on teammate timing.', '3) Always keep one backup.', '4) Review the mistake after the round.'],
+  };
 }
 
 export const REALM_CONSULTATION_TOPICS: Record<RealmId, CoachConsultationTopic[]> = {

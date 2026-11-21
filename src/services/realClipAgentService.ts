@@ -1,4 +1,5 @@
 import type { RealmId } from '../types/spatial.ts';
+import { buildEnglishQuery } from '../agents/liveWebIntel.ts';
 import {
   buildDynamicGameEntry,
   findCatalogGameById,
@@ -570,17 +571,44 @@ async function filterPlayableClips(
   return playable.slice(0, limit);
 }
 
-/** Keep only results whose title/snippet actually match the lesson query. */
-function filterByRelevance(items: RawYoutubeItem[], userQuery: string, gameName: string): RawYoutubeItem[] {
-  const q = `${userQuery} ${gameName}`.toLowerCase();
-  const tokens = q
-    .split(/[^\p{L}\p{N}]+/u)
-    .filter((t) => t.length >= 4);
+/**
+ * Score-based clip relevance. Persian queries are translated to English tokens
+ * (YouTube titles are mostly English), game-name tokens are excluded (they let
+ * unrelated trailers pass), and promo/trailer noise is penalized unless the
+ * user explicitly asked for highlights/goals.
+ */
+const TRAILER_NOISE = /(trailer|teaser|official|announce|reaction|shorts\b)/i;
+
+function filterByRelevance(items: RawYoutubeItem[], userQuery: string, gameName: string, englishQuery?: string): RawYoutubeItem[] {
+  if (!userQuery) return items;
+  const gameTokens = new Set(
+    gameName
+      .toLowerCase()
+      .split(/[^\p{L}\p{N}]+/u)
+      .filter((t) => t.length >= 4)
+  );
+  const tokenSet = new Set<string>();
+  const addTokens = (text: string) => {
+    for (const t of text.toLowerCase().split(/[^\p{L}\p{N}]+/u)) {
+      if (t.length >= 4 && !gameTokens.has(t)) tokenSet.add(t);
+    }
+  };
+  addTokens(userQuery);
+  if (englishQuery) addTokens(englishQuery);
+  const tokens = [...tokenSet];
   if (tokens.length === 0) return items;
-  return items.filter((it) => {
-    const hay = `${it.title} ${it.snippet}`.toLowerCase();
-    return tokens.some((t) => hay.includes(t));
-  });
+  const penalize = !/(goal|highlights|هیولایت|گل)/i.test(userQuery);
+  return items
+    .map((it) => {
+      const hay = `${it.title} ${it.snippet}`.toLowerCase();
+      let score = 0;
+      for (const t of tokens) if (hay.includes(t)) score += 2;
+      if (penalize && TRAILER_NOISE.test(hay)) score -= 4;
+      return { it, score };
+    })
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map((x) => x.it);
 }
 
 export async function discoverRealCoachClips(
@@ -604,6 +632,7 @@ export async function discoverRealCoachClips(
   const gameName = input.gameName || catalogEntry.name;
   const realm = input.realm ?? catalogEntry.realm;
   const userQuery = (input.userQuery ?? '').trim();
+  const englishQuery = userQuery ? buildEnglishQuery(userQuery) : '';
   const nowMs = options.nowMs ?? Date.now();
   const cacheKey = `${normId}:${realm}:${userQuery.toLowerCase()}`;
 
@@ -615,10 +644,10 @@ export async function discoverRealCoachClips(
   const fetcher = options.fetcher ?? globalThis.fetch;
 
   const proQuery = userQuery
-    ? `${gameName} ${userQuery} pro tips tutorial breakdown`
+    ? `${gameName} ${englishQuery || userQuery} pro tips tutorial breakdown`
     : `${gameName} pro tips mistakes gameplay breakdown`;
   const redditQuery = userQuery
-    ? `${gameName} ${userQuery} reddit best clips highlights`
+    ? `${gameName} ${englishQuery || userQuery} reddit best clips highlights`
     : `${gameName} best reddit clips highlights mistakes`;
 
   let proRaw: RawYoutubeItem[] = [];
@@ -631,11 +660,19 @@ export async function discoverRealCoachClips(
     ]);
     // Relevance first, then embeddability — only clips the user can actually play
     // and that genuinely match the lesson the user asked about.
-    const relevantPool = filterByRelevance([...proRaw, ...redditRaw], userQuery, gameName);
-    const pool = relevantPool.length >= 3 ? relevantPool : [...proRaw, ...redditRaw];
+    const relevantPro = filterByRelevance(proRaw, userQuery, gameName, englishQuery);
+    const relevantReddit = filterByRelevance(redditRaw, userQuery, gameName, englishQuery);
+    // If relevant clips exist, show ONLY relevant ones — never fall back to
+    // unrelated trailers when the user asked a specific question.
+    const relevantCount = relevantPro.length + relevantReddit.length;
+    const pool = relevantCount >= 2 ? [...relevantPro, ...relevantReddit] : [...proRaw, ...redditRaw];
     const playable = await filterPlayableClips(pool, fetcher, 7);
-    proRaw = playable.slice(0, 4);
-    redditRaw = playable.slice(4, 7);
+    // Partition by origin so pro/reddit slots keep their own sources.
+    const proIds = new Set(proRaw.map((it) => it.videoId));
+    const proPart = playable.filter((it) => proIds.has(it.videoId));
+    const redditPart = playable.filter((it) => !proIds.has(it.videoId));
+    proRaw = proPart.slice(0, 4);
+    redditRaw = redditPart.slice(0, 3);
   }
 
   const seenIds = new Set<string>();

@@ -19,6 +19,14 @@ interface CoachTopic {
   titleFa: string;
   coachAdviceFa: string;
   coachVoiceEn: string;
+  answerBlock?: {
+    intent: string;
+    titleFa: string;
+    titleEn: string;
+    linesFa: string[];
+    linesEn: string[];
+    options?: string[];
+  };
   adkIntel?: {
     liveSources?: Array<{ title: string; url: string; source: string }>;
   };
@@ -85,6 +93,30 @@ export const LiveWebAnswer: React.FC<LiveWebAnswerProps> = ({ gameId, searchQuer
       {!loading && topic && (
         <>
           <p className="text-[13px] font-bold text-white/95 leading-relaxed">{topic.titleFa}</p>
+          {topic.answerBlock && (
+            <div className="rounded-xl border border-sky-400/25 bg-sky-950/40 p-2.5 flex flex-col gap-1.5">
+              <span className="text-[12px] font-black text-sky-200">{topic.answerBlock.titleFa}</span>
+              {topic.answerBlock.options && topic.answerBlock.options.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {topic.answerBlock.options.map((opt) => (
+                    <span
+                      key={opt}
+                      dir="ltr"
+                      className="px-2 py-0.5 rounded-full bg-sky-500/20 border border-sky-300/40 text-[11px] font-bold text-sky-100"
+                    >
+                      {opt}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {(isFa ? topic.answerBlock.linesFa : topic.answerBlock.linesEn).map((line, i) => (
+                <p key={i} className="text-[12.5px] text-white/80 leading-relaxed flex items-start gap-1.5">
+                  <span className="text-sky-300 shrink-0">▸</span>
+                  <span>{line}</span>
+                </p>
+              ))}
+            </div>
+          )}
           <p className="text-[12.5px] text-white/75 leading-relaxed">
             {isFa ? topic.coachAdviceFa : topic.coachVoiceEn || topic.coachAdviceFa}
           </p>

@@ -1,5 +1,6 @@
 import type { RealmId } from '../types/spatial.ts';
 import { gatherLiveWebIntel } from './liveWebIntel.ts';
+import { buildCoachAnswerBlock } from '../utils/coachSearchRules.ts';
 import {
   type AdkAgentBadge,
   type AdkLiveWebSource,
@@ -266,6 +267,7 @@ export async function runAdkMultiAgentConsultation(req: AdkConsultRequest): Prom
   };
 
   topicWithVectors.adkIntel = adkIntel;
+  topicWithVectors.answerBlock = buildCoachAnswerBlock(req.query, req.realm);
   return topicWithVectors;
 }
 

@@ -1,4 +1,5 @@
 import { stableHash } from '../server/cache';
+import { webSearch } from './webSearchEngine.ts';
 
 /**
  * AIPETROS Live Web Intelligence — the agents' gateway to the open web.
@@ -10,7 +11,7 @@ export interface LiveSource {
   title: string;
   url: string;
   snippet: string;
-  source: 'wikipedia' | 'reddit' | 'hackernews' | 'steamnews';
+  source: 'wikipedia' | 'reddit' | 'hackernews' | 'steamnews' | 'web';
 }
 
 export interface LiveIntelResult {
@@ -179,6 +180,7 @@ function rankByRelevance(query: string, sources: LiveSource[]): LiveSource[] {
     for (const t of tokens) if (hay.includes(t)) score += 2;
     // prefer primary reference sources on ties
     if (s.source === 'wikipedia') score += 1;
+    if (s.source === 'web') score += 1;
     return { s, score };
   });
   return scored.sort((a, b) => b.score - a.score).map((x) => x.s);
@@ -209,15 +211,23 @@ export async function gatherLiveWebIntel(
   // Sources understand English far better — build an English variant for them.
   const sourceQuery = buildEnglishQuery(cleanQuery) || cleanQuery;
 
-  const [wikiEn, wikiFa, reddit, hn, steam] = await Promise.all([
+  const [wikiEn, wikiFa, reddit, hn, steam, webHits] = await Promise.all([
     fetchWikipedia(sourceQuery, 'en', fetcher),
     isFa ? fetchWikipedia(cleanQuery, 'fa', fetcher) : Promise.resolve([]),
     fetchReddit(`${gameName ? gameName + ' ' : ''}${sourceQuery}`, fetcher),
     fetchHackerNews(sourceQuery, fetcher),
     gameName ? fetchSteamNews(gameName, fetcher) : Promise.resolve([]),
+    webSearch(sourceQuery, { fetcher, limit: 5 }),
   ]);
 
-  const merged = [...wikiEn, ...wikiFa, ...steam, ...reddit, ...hn];
+  const merged = [
+    ...webHits.map((h) => ({ title: h.title, url: h.url, snippet: h.snippet, source: 'web' as const })),
+    ...wikiEn,
+    ...wikiFa,
+    ...steam,
+    ...reddit,
+    ...hn,
+  ];
   const deduped: LiveSource[] = [];
   const seenUrls = new Set<string>();
   for (const s of merged) {
@@ -246,7 +256,7 @@ export function formatLiveIntelSection(intel: LiveIntelResult, isFa: boolean): s
   const parts: string[] = [header];
   for (const s of intel.sources.slice(0, 4)) {
     const badge =
-      s.source === 'wikipedia' ? 'Wikipedia' : s.source === 'reddit' ? 'Reddit' : s.source === 'steamnews' ? 'Steam News' : 'HN';
+      s.source === 'wikipedia' ? 'Wikipedia' : s.source === 'reddit' ? 'Reddit' : s.source === 'steamnews' ? 'Steam News' : s.source === 'web' ? 'Web' : 'HN';
     const snippet = s.snippet ? ' — ' + s.snippet.slice(0, 140) : '';
     parts.push('• [' + badge + '] ' + s.title + snippet);
     parts.push('  ' + s.url);
