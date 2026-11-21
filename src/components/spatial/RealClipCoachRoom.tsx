@@ -294,7 +294,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
         {/* ================= SINGLE-LINE TOP BAR (ZERO 3-ROW CLUTTER) ================= */}
         <header
           data-testid="coach-single-topbar"
-          className="flex items-center justify-between gap-2 shrink-0"
+          className="flex items-center justify-between gap-2 shrink-0 pl-12"
         >
           {/* Back */}
           <button

@@ -503,7 +503,7 @@ export const CrossGameSpatialProfilePage: React.FC<CrossGameSpatialProfilePagePr
           borderColor: activePageTheme.topBarBorder,
         }}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
+        <div className="max-w-7xl mx-auto pl-14 sm:pl-16 pr-4 sm:pr-6 h-14 sm:h-16 flex items-center justify-between gap-3">
           {/* Zone 1: Back + Wordmark */}
           <div className="flex items-center gap-2.5 shrink-0">
             {onBackToLobby && (

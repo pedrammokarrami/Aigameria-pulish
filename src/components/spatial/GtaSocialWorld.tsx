@@ -309,7 +309,7 @@ export const GtaSocialWorld: React.FC<GtaSocialWorldProps> = ({
 
       {/* Sticky 3-Zone Top Navigation Bar */}
       <header className="sticky top-0 z-30 border-b border-white/12 bg-[#0B0814]/86 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+        <div className="max-w-7xl mx-auto pl-14 sm:pl-16 pr-4 sm:pr-6 h-16 flex items-center justify-between gap-3">
           {/* Zone 1: Back + GTA VI Social Brand */}
           <div className="flex items-center gap-3 min-w-0 shrink-0">
             <button

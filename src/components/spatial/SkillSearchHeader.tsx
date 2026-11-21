@@ -1,5 +1,7 @@
 import React from 'react';
 import { Mic, Search, X } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { getCategoryLabel } from '../../utils/i18nEngine';
 import type { LobbyCategoryChip } from '../../utils/lobbySkillCatalog';
 
 interface SkillSearchHeaderProps {
@@ -21,15 +23,17 @@ export const SkillSearchHeader: React.FC<SkillSearchHeaderProps> = ({
   isListeningVoice,
   onToggleVoiceSearch,
 }) => {
+  const { languageCode, isRtl, copy } = useLanguage();
+
   return (
     <section
-      aria-label="جستجو و فیلتر مهارت‌ها"
+      aria-label={copy.searchSkillsPlaceholder}
       data-testid="skill-search-header"
       className="w-full shrink-0 flex flex-col gap-2.5"
     >
       {/* Frosted-Glass Instant Skill Search Input */}
       <div
-        dir="rtl"
+        dir={isRtl ? 'rtl' : 'ltr'}
         className="flex items-center gap-2 min-h-[44px] px-3.5 rounded-full bg-slate-950/50 backdrop-blur-xl border border-white/15 focus-within:border-emerald-400/60 focus-within:shadow-[0_0_16px_rgba(16,185,129,0.2)] transition-all"
       >
         <Search className="w-4 h-4 text-white/60 shrink-0" aria-hidden="true" />
@@ -37,8 +41,8 @@ export const SkillSearchHeader: React.FC<SkillSearchHeaderProps> = ({
           type="search"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="جستجوی سریع مهارت یا دکمه..."
-          aria-label="جستجوی سریع مهارت یا دکمه"
+          placeholder={copy.searchSkillsPlaceholder}
+          aria-label={copy.searchSkillsPlaceholder}
           data-testid="skill-search-input"
           className="w-full bg-transparent text-[13px] font-medium text-white placeholder:text-white/55 focus:outline-none py-2"
         />
@@ -47,7 +51,7 @@ export const SkillSearchHeader: React.FC<SkillSearchHeaderProps> = ({
           <button
             type="button"
             onClick={() => onSearchChange('')}
-            aria-label="پاک کردن جستجو"
+            aria-label={copy.showAllSkills}
             data-testid="skill-search-clear-btn"
             className="w-7 h-7 rounded-full flex items-center justify-center text-white/65 hover:text-white hover:bg-white/10 transition cursor-pointer shrink-0"
           >
@@ -58,7 +62,7 @@ export const SkillSearchHeader: React.FC<SkillSearchHeaderProps> = ({
         <button
           type="button"
           onClick={onToggleVoiceSearch}
-          aria-label={isListeningVoice ? 'توقف جستجوی صوتی' : 'جستجوی صوتی مهارت'}
+          aria-label={copy.searchSkillsPlaceholder}
           data-testid="skill-voice-search-btn"
           className={`w-8 h-8 rounded-full flex items-center justify-center transition cursor-pointer shrink-0 ${
             isListeningVoice
@@ -73,13 +77,14 @@ export const SkillSearchHeader: React.FC<SkillSearchHeaderProps> = ({
       {/* 1-Tap Category Filter Chips */}
       <div
         role="tablist"
-        aria-label="دسته‌بندی مهارت‌ها"
+        aria-label={copy.searchSkillsPlaceholder}
         data-testid="skill-category-chips"
-        dir="rtl"
+        dir={isRtl ? 'rtl' : 'ltr'}
         className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5"
       >
         {categories.map((chip) => {
           const isActive = chip.id === activeCategoryId;
+          const label = getCategoryLabel(chip.id, chip.labelFa, languageCode);
           return (
             <button
               key={chip.id}
@@ -94,7 +99,7 @@ export const SkillSearchHeader: React.FC<SkillSearchHeaderProps> = ({
                   : 'bg-slate-950/45 text-white/80 border-white/15 hover:bg-slate-900/65 hover:text-white'
               }`}
             >
-              {chip.labelFa}
+              {label}
             </button>
           );
         })}

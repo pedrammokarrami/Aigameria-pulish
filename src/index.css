@@ -351,6 +351,17 @@
   animation: motionScannerSweep 2.6s ease-in-out infinite;
 }
 
+@keyframes fuiWinReveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.965) translate3d(0, 8px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

@@ -5,6 +5,7 @@ import { computeMicroTilt, computeScrubbedTime, type MicroTiltState } from './st
 
 interface StadiumTurntableProps {
   src?: string;
+  fallbackImageUrl?: string;
   roomBg?: string;
   primaryHex?: string;
   primaryRgb?: string;
@@ -34,6 +35,7 @@ const RADIAL_BLEND_MASK =
  */
 export const StadiumTurntable: React.FC<StadiumTurntableProps> = ({
   src = DEFAULT_STADIUM_VIDEO_SRC,
+  fallbackImageUrl,
   roomBg = '#03100b',
   primaryHex = '#00E676',
   primaryRgb = '0, 230, 118',
@@ -52,11 +54,16 @@ export const StadiumTurntable: React.FC<StadiumTurntableProps> = ({
 
   const [isDragging, setIsDragging] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [videoFailed, setVideoFailed] = useState(false);
   const [tilt, setTilt] = useState<MicroTiltState>({ rotateX: 0, rotateY: 0 });
 
   useEffect(() => {
+    setVideoFailed(false);
+  }, [src]);
+
+  useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || videoFailed) return;
     video.muted = isMuted;
     const playPromise = video.play();
     if (playPromise && typeof playPromise.catch === 'function') {
@@ -64,7 +71,7 @@ export const StadiumTurntable: React.FC<StadiumTurntableProps> = ({
         // Autoplay fallback handled gracefully if browser blocks unmuted playback
       });
     }
-  }, [isMuted, src]);
+  }, [isMuted, src, videoFailed]);
 
   const updateTiltFromEvent = useCallback((clientX: number, clientY: number) => {
     const el = containerRef.current;
@@ -184,22 +191,36 @@ export const StadiumTurntable: React.FC<StadiumTurntableProps> = ({
         }}
         className="relative w-[112%] max-w-[500px] max-h-full aspect-video shrink-0 flex items-center justify-center"
       >
-        <video
-          ref={videoRef}
-          data-testid="fc27-stadium-video"
-          src={src}
-          autoPlay
-          loop
-          muted={isMuted}
-          playsInline
-          preload="auto"
-          draggable={false}
-          style={{
-            WebkitMaskImage: RADIAL_BLEND_MASK,
-            maskImage: RADIAL_BLEND_MASK,
-          }}
-          className="w-full h-full object-contain pointer-events-none"
-        />
+        {videoFailed && fallbackImageUrl ? (
+          <img
+            src={fallbackImageUrl}
+            alt={ariaLabel}
+            draggable={false}
+            style={{
+              WebkitMaskImage: RADIAL_BLEND_MASK,
+              maskImage: RADIAL_BLEND_MASK,
+            }}
+            className="w-full h-full object-cover pointer-events-none rounded-3xl"
+          />
+        ) : (
+          <video
+            ref={videoRef}
+            data-testid="fc27-stadium-video"
+            src={src}
+            autoPlay
+            loop
+            muted={isMuted}
+            playsInline
+            preload="auto"
+            draggable={false}
+            onError={() => setVideoFailed(true)}
+            style={{
+              WebkitMaskImage: RADIAL_BLEND_MASK,
+              maskImage: RADIAL_BLEND_MASK,
+            }}
+            className="w-full h-full object-contain pointer-events-none"
+          />
+        )}
 
         {/* Ultra-subtle floating AR tactical anchor pins (non-intrusive, parallax with video stage) */}
         <div

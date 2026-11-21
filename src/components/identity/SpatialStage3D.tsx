@@ -11,7 +11,7 @@ import {
   VolumeX,
 } from 'lucide-react';
 import type { CrossGameKey } from '../../data/offlineAgentsData';
-import type { IconicGameCharacter } from '../../data/iconicGameCharacters';
+import type { HologramPlateKey } from '../../data/iconicGameCharacters';
 import {
   type HologramDisplayMode,
   type HologramEmotion,
@@ -31,6 +31,35 @@ import { LAB_ROOM_ENVIRONMENTS } from './labRoomEnvironments';
 
 export type CameraFocusPreset = 'overview' | 'face' | 'stage';
 
+export interface StageCharacterBrief {
+  nameEn: string;
+  nameFa: string;
+  plateKey: HologramPlateKey;
+  accentHex: string;
+  secondaryHex: string;
+}
+
+export interface CustomLabRoomEnv {
+  imageUrl: string;
+  ambientBgHex: string;
+  beamPrimaryHex: string;
+  beamSecondaryHex: string;
+  roomRimHex: string;
+  floorGlowHex: string;
+}
+
+export interface CustomStageFrameConfig {
+  outerClass: string;
+  headerBgClass: string;
+  titleColorClass: string;
+  subtitleColorClass: string;
+  accentHex: string;
+  secondaryHex: string;
+  badgeLabel: string;
+  lightAccentText?: boolean;
+  clipStyle?: React.CSSProperties;
+}
+
 interface SpatialStage3DProps {
   activeGameKey: CrossGameKey;
   accentHex: string;
@@ -39,7 +68,7 @@ interface SpatialStage3DProps {
   gender: HologramGender;
   age: number;
   renderMode: HologramRenderMode;
-  matchedCharacter: IconicGameCharacter;
+  matchedCharacter: StageCharacterBrief;
   similarityPct: number;
   emotion: HologramEmotion;
   gesture: HologramGesture;
@@ -54,6 +83,10 @@ interface SpatialStage3DProps {
   onToggleVoiceEnabled: () => void;
   onToggleMic: () => void;
   onSendPrompt: (message: string) => void;
+  customLabEnv?: CustomLabRoomEnv;
+  customStageFrame?: CustomStageFrameConfig;
+  customSuggestions?: string[];
+  customPlaceholder?: string;
 }
 
 const CAMERA_PRESETS: Record<
@@ -290,6 +323,10 @@ export const SpatialStage3D: React.FC<SpatialStage3DProps> = ({
   onToggleVoiceEnabled,
   onToggleMic,
   onSendPrompt,
+  customLabEnv,
+  customStageFrame,
+  customSuggestions,
+  customPlaceholder,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [promptInput, setPromptInput] = useState('');
@@ -297,10 +334,20 @@ export const SpatialStage3D: React.FC<SpatialStage3DProps> = ({
 
   const metaProfile = useMemo(() => computeMetaHumanProfile(gender, age), [gender, age]);
   const activePlateUrl = HOLOGRAM_PLATE_URLS[matchedCharacter.plateKey];
-  const activeLabRoom = LAB_ROOM_ENVIRONMENTS[activeGameKey] ?? LAB_ROOM_ENVIRONMENTS.unified;
-  const frameConfig = GAME_STAGE_FRAME_CONFIG[activeGameKey] ?? GAME_STAGE_FRAME_CONFIG.unified;
+  const activeLabRoom =
+    customLabEnv ?? LAB_ROOM_ENVIRONMENTS[activeGameKey] ?? LAB_ROOM_ENVIRONMENTS.unified;
+  const frameConfig =
+    customStageFrame ?? GAME_STAGE_FRAME_CONFIG[activeGameKey] ?? GAME_STAGE_FRAME_CONFIG.unified;
   const lightAccentKeys = new Set(['unified', 'fc27', 'warzone', 'nba2k', 'dota2', 'chess']);
-  const sendBtnTextColor = lightAccentKeys.has(activeGameKey) ? '#090D16' : '#FFFFFF';
+  const sendBtnTextColor =
+    customStageFrame?.lightAccentText !== undefined
+      ? customStageFrame.lightAccentText
+        ? '#090D16'
+        : '#FFFFFF'
+      : lightAccentKeys.has(activeGameKey)
+        ? '#090D16'
+        : '#FFFFFF';
+  const promptSuggestions = customSuggestions ?? SELF_INTRO_SUGGESTIONS;
 
   const desiredCamPos = useRef(new THREE.Vector3(...CAMERA_PRESETS.stage.pos));
   const desiredCamTarget = useRef(new THREE.Vector3(...CAMERA_PRESETS.stage.target));
@@ -314,6 +361,9 @@ export const SpatialStage3D: React.FC<SpatialStage3DProps> = ({
   const labRoomTexPrevRef = useRef<THREE.Texture | null>(null);
   const labRoomBlendRef = useRef<number>(1.0);
   const floorGlowMatRef = useRef<THREE.ShaderMaterial | null>(null);
+  const ambientLightRef = useRef<THREE.AmbientLight | null>(null);
+  const keyLightRef = useRef<THREE.DirectionalLight | null>(null);
+  const rimLightRef = useRef<THREE.DirectionalLight | null>(null);
   const emitterLightRef = useRef<THREE.PointLight | null>(null);
   const frontMatRef = useRef<THREE.ShaderMaterial | null>(null);
   const backMatRef = useRef<THREE.ShaderMaterial | null>(null);
@@ -382,6 +432,15 @@ export const SpatialStage3D: React.FC<SpatialStage3DProps> = ({
     }
     if (emitterLightRef.current) {
       emitterLightRef.current.color.copy(beamPrimaryCol);
+    }
+    if (ambientLightRef.current) {
+      ambientLightRef.current.color.copy(beamPrimaryCol).lerp(beamSecondaryCol, 0.55);
+    }
+    if (keyLightRef.current) {
+      keyLightRef.current.color.copy(beamSecondaryCol);
+    }
+    if (rimLightRef.current) {
+      rimLightRef.current.color.copy(roomRimCol);
     }
     if (floorGlowMatRef.current) {
       floorGlowMatRef.current.uniforms.uColor.value.copy(floorGlowCol);
@@ -549,12 +608,26 @@ export const SpatialStage3D: React.FC<SpatialStage3DProps> = ({
     const container = containerRef.current;
     if (!container) return;
 
+    let isSoftwareGl = false;
+    try {
+      const glProbe = document.createElement('canvas').getContext('webgl2');
+      if (glProbe) {
+        const ext = glProbe.getExtension('WEBGL_debug_renderer_info');
+        const gpu = String(glProbe.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : glProbe.RENDERER) ?? '');
+        glProbe.getExtension('WEBGL_lose_context')?.loseContext();
+        isSoftwareGl = /SwiftShader|llvmpipe|softpipe|Software|Basic Render|Mesa/i.test(gpu);
+      }
+    } catch {
+      // ignore probe failure
+    }
+
     let renderer: THREE.WebGLRenderer;
     try {
       renderer = new THREE.WebGLRenderer({
-        antialias: true,
+        antialias: !isSoftwareGl,
         alpha: false,
         powerPreference: 'high-performance',
+        preserveDrawingBuffer: true,
       });
     } catch {
       setWebglReady(false);
@@ -563,7 +636,7 @@ export const SpatialStage3D: React.FC<SpatialStage3DProps> = ({
 
     const width = container.clientWidth || 640;
     const height = container.clientHeight || 460;
-    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    const pixelRatio = isSoftwareGl ? 1 : Math.min(window.devicePixelRatio || 1, 2);
 
     renderer.setPixelRatio(pixelRatio);
     renderer.setSize(width, height);
@@ -586,7 +659,7 @@ export const SpatialStage3D: React.FC<SpatialStage3DProps> = ({
     camera.position.set(...CAMERA_PRESETS.stage.pos);
 
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
+    controls.enableDamping = !isSoftwareGl;
     controls.dampingFactor = 0.06;
     controls.enablePan = false;
     controls.minDistance = 1.85;
@@ -602,19 +675,28 @@ export const SpatialStage3D: React.FC<SpatialStage3DProps> = ({
     };
     controls.addEventListener('start', onControlsStart);
 
-    // Studio & Hologram Emitter Lights (Matched to Active UE 5.8 Engineering Lab)
-    scene.add(new THREE.AmbientLight('#7dd3fc', 0.28));
+    // Studio & Hologram Emitter Lights (Matched dynamically to Active UE 5.8 Room)
+    const initAmbientCol = new THREE.Color(activeLabRoom.beamPrimaryHex).lerp(
+      new THREE.Color(activeLabRoom.beamSecondaryHex),
+      0.55
+    );
+    const ambientLight = new THREE.AmbientLight(initAmbientCol, 0.30);
+    ambientLightRef.current = ambientLight;
+    scene.add(ambientLight);
+
     const emitterPointLight = new THREE.PointLight(activeLabRoom.beamPrimaryHex, 5.2, 5.4, 1.5);
     emitterPointLight.position.set(0, 0.32, 0.22);
     emitterLightRef.current = emitterPointLight;
     scene.add(emitterPointLight);
 
-    const keyLight = new THREE.DirectionalLight('#bae6fd', 0.95);
+    const keyLight = new THREE.DirectionalLight(activeLabRoom.beamSecondaryHex, 0.95);
     keyLight.position.set(2.2, 3.6, 2.8);
+    keyLightRef.current = keyLight;
     scene.add(keyLight);
 
     const rimLight = new THREE.DirectionalLight(activeLabRoom.roomRimHex, 0.95);
     rimLight.position.set(-2.5, 2.2, -2.0);
+    rimLightRef.current = rimLight;
     scene.add(rimLight);
 
     // =========================================================================
@@ -1325,6 +1407,7 @@ export const SpatialStage3D: React.FC<SpatialStage3DProps> = ({
     const initRoomImg = new Image();
     initRoomImg.crossOrigin = 'anonymous';
     initRoomImg.onload = () => {
+      if (unmounted || labRoomTexCurrRef.current) return;
       const roomTex = new THREE.Texture(initRoomImg);
       roomTex.colorSpace = THREE.SRGBColorSpace;
       roomTex.minFilter = THREE.LinearFilter;
@@ -1402,8 +1485,9 @@ export const SpatialStage3D: React.FC<SpatialStage3DProps> = ({
     });
     resizeObserver.observe(container);
 
-    // 60fps Animation Loop with Alive Cinematic 3D Parallax inside the UE 5.8 Engineering Lab!
+    // 60fps Animation Loop (paced via afterDraw on software WebGL)
     let rafId = 0;
+    let unmounted = false;
     const startMs = performance.now();
     let smoothedLip = 0;
     let currentScale = stateRef.current.frameScale;
@@ -1411,22 +1495,48 @@ export const SpatialStage3D: React.FC<SpatialStage3DProps> = ({
     let smoothTiltY = 0;
     const dynCamGoal = new THREE.Vector3();
 
+    const afterDraw = (cb: () => void) => {
+      if (unmounted) return;
+      const gl = renderer.getContext() as WebGL2RenderingContext;
+      if (gl && typeof gl.fenceSync === 'function') {
+        const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+        gl.flush();
+        const poll = () => {
+          if (unmounted) return;
+          const state = sync && gl.getSyncParameter(sync, gl.SYNC_STATUS);
+          if (state === gl.UNSIGNALED) {
+            rafId = window.setTimeout(poll, 5);
+          } else {
+            if (sync) gl.deleteSync(sync);
+            rafId = window.setTimeout(cb, 80);
+          }
+        };
+        rafId = window.setTimeout(poll, 5);
+      } else {
+        rafId = window.setTimeout(cb, 80);
+      }
+    };
+
+    let lastFrameMs = performance.now();
     const animate = () => {
-      rafId = window.requestAnimationFrame(animate);
-      const elapsed = (performance.now() - startMs) * 0.001;
+      if (unmounted) return;
+      const nowMs = performance.now();
+      const deltaSec = Math.min(0.18, Math.max(0.016, (nowMs - lastFrameMs) * 0.001));
+      lastFrameMs = nowMs;
+      const elapsed = (nowMs - startMs) * 0.001;
       const s = stateRef.current;
 
       smoothTiltX += (pointerTiltRef.current.x - smoothTiltX) * 0.06;
       smoothTiltY += (pointerTiltRef.current.y - smoothTiltY) * 0.06;
 
-      // Smoothly cross-fade UE 5.8 Lab Room texture when switching games
+      // Smoothly cross-fade UE 5.8 Room texture (~200ms on GPU, crisp 2-step fade on software WebGL)
       if (labRoomBlendRef.current < 1.0) {
-        labRoomBlendRef.current = Math.min(1.0, labRoomBlendRef.current + 0.045);
+        const blendStep = isSoftwareGl ? 0.65 : deltaSec * 5.2;
+        labRoomBlendRef.current = Math.min(1.0, labRoomBlendRef.current + blendStep);
         labRoomMat.uniforms.uBlend.value = labRoomBlendRef.current;
       }
       labRoomMat.uniforms.uTime.value = elapsed;
 
-      // Subtle continuous 3D stereoscopic parallax sway (keeps full character dead-center!)
       if (!isUserOrbitingRef.current) {
         const isNarrow = viewportAspectRef.current < 1.1;
         const zPullback = isNarrow && s.focusPreset === 'overview' ? 0.32 : 0.0;
@@ -1441,16 +1551,13 @@ export const SpatialStage3D: React.FC<SpatialStage3DProps> = ({
       controls.target.lerp(desiredCamTarget.current, 0.07);
       controls.update();
 
-      // Lip-sync amplitude
       const rawLip = computeLipSyncAmplitude(s.isSpeaking, elapsed, audioRmsRef.current);
       smoothedLip += (rawLip - smoothedLip) * 0.24;
 
-      // Holographic glitch micro-pulse
       const glitchBase = s.isThinking ? 0.42 : s.emotion === 'Alert' ? 0.65 : 0.10;
       const pulse = Math.pow(Math.max(0, Math.sin(elapsed * 2.1) * Math.sin(elapsed * 7.3)), 6.0);
       const glitchVal = glitchBase * pulse;
 
-      // Smooth 8..99 scale
       currentScale += (s.frameScale - currentScale) * 0.08;
       hologramGroup.scale.set(
         s.displayMode === 'peppers-ghost' ? -currentScale : currentScale,
@@ -1458,9 +1565,6 @@ export const SpatialStage3D: React.FC<SpatialStage3DProps> = ({
         currentScale
       );
 
-      // Cylindrical Volumetric Camera Tracking:
-      // Whenever the user orbits 360° around the UE 5.8 Engineering Lab, the 3D hologram
-      // smoothly turns with the camera to ALWAYS show a distortion-free front-facing angle!
       const dxCam = camera.position.x - hologramGroup.position.x;
       const dzCam = camera.position.z - hologramGroup.position.z;
       const camYaw = Math.atan2(dxCam, dzCam);
@@ -1472,7 +1576,6 @@ export const SpatialStage3D: React.FC<SpatialStage3DProps> = ({
       hologramGroup.rotation.x = -camPitch * 0.35 + Math.sin(elapsed * 0.41) * 0.012 + smoothTiltY * 0.02;
       hologramGroup.position.y = 1.16 + Math.sin(elapsed * 1.45) * 0.014;
 
-      // Real-time 3D specular reflections sweep across the 3D sculpted nose & cheekbones as you orbit the lab!
       frontMat.uniforms.uLightDirA.value
         .set(
           Math.cos(elapsed * 0.85 - camYaw * 0.9) * 0.78 + smoothTiltX * 0.32,
@@ -1489,7 +1592,6 @@ export const SpatialStage3D: React.FC<SpatialStage3DProps> = ({
         .set(-Math.cos(elapsed * 0.65 - camYaw * 0.9) * 0.75, 0.32, -0.58)
         .normalize();
 
-      // Update shaders
       frontMat.uniforms.uTime.value = elapsed;
       frontMat.uniforms.uLipSync.value = smoothedLip;
       frontMat.uniforms.uGlitch.value = glitchVal;
@@ -1510,11 +1612,15 @@ export const SpatialStage3D: React.FC<SpatialStage3DProps> = ({
       emitterPointLight.intensity = 4.8 + smoothedLip * 2.0 + Math.sin(elapsed * 2.5) * 0.35;
 
       renderer.render(scene, camera);
+      if (isSoftwareGl) afterDraw(animate);
+      else rafId = window.requestAnimationFrame(animate);
     };
-    animate();
+    rafId = window.requestAnimationFrame(animate);
 
     return () => {
+      unmounted = true;
       window.cancelAnimationFrame(rafId);
+      window.clearTimeout(rafId);
       renderer.domElement.removeEventListener('pointermove', onPointerMove);
       renderer.domElement.removeEventListener('pointerleave', onPointerLeave);
       controls.removeEventListener('start', onControlsStart);
@@ -1542,6 +1648,9 @@ export const SpatialStage3D: React.FC<SpatialStage3DProps> = ({
       currentDepthTexRef.current?.dispose();
       currentBackDepthTexRef.current?.dispose();
       renderer.dispose();
+      ambientLightRef.current = null;
+      keyLightRef.current = null;
+      rimLightRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1558,6 +1667,7 @@ export const SpatialStage3D: React.FC<SpatialStage3DProps> = ({
     <section
       data-testid="spatial-stage-3d"
       data-game-frame={activeGameKey}
+      data-lab-room={activeLabRoom.imageUrl}
       data-camera-locked="stage"
       className={`relative flex flex-col transition-colors duration-300 ${frameConfig.outerClass}`}
       style={frameConfig.clipStyle}
@@ -1658,7 +1768,7 @@ export const SpatialStage3D: React.FC<SpatialStage3DProps> = ({
 
         {/* Quick Self-Intro Prompt Starters */}
         <div className="flex flex-wrap items-center gap-1.5">
-          {SELF_INTRO_SUGGESTIONS.map((suggestion, idx) => (
+          {promptSuggestions.map((suggestion, idx) => (
             <button
               key={idx}
               type="button"
@@ -1693,7 +1803,10 @@ export const SpatialStage3D: React.FC<SpatialStage3DProps> = ({
             data-testid="hologram-prompt-input"
             value={promptInput}
             onChange={(e) => setPromptInput(e.target.value)}
-            placeholder="از خودت بگو... (اسم، سن، روحیه یا بازی موردعلاقه‌ات تا کاراکترت زنده ساخته بشه)"
+            placeholder={
+              customPlaceholder ??
+              'از خودت بگو... (اسم، سن، روحیه یا بازی موردعلاقه‌ات تا کاراکترت زنده ساخته بشه)'
+            }
             className="flex-1 min-w-0 h-10 px-3.5 rounded-xl border border-white/15 bg-white/8 text-[12.5px] text-white placeholder:text-slate-400 focus:outline-none focus:border-white/45"
           />
 

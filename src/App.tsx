@@ -1,10 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { AudioHubView } from './components/audio/AudioHubView';
+import { CinemaHubView } from './components/cinema/CinemaHubView';
 import { CoachStage3D } from './components/spatial/CoachStage3D';
 import { CrossGameSpatialProfilePage } from './components/identity/CrossGameSpatialProfilePage';
 import { GameNativeTournamentHub } from './components/spatial/GameNativeTournamentHub';
 import { GameSwitcherBar } from './components/spatial/GameSwitcherBar';
+import { GlobalEarthLanguageButton } from './components/spatial/GlobalEarthLanguageButton';
 import { GtaSocialWorld } from './components/spatial/GtaSocialWorld';
+import { LanguageSelectorModal } from './components/spatial/LanguageSelectorModal';
+import { LeftPlatformMenu } from './components/spatial/LeftPlatformMenu';
 import { LobbyBottomDock } from './components/spatial/LobbyBottomDock';
+import { MasterHubSwitcher, type MasterHubId } from './components/spatial/MasterHubSwitcher';
+import { PlatformMapModal } from './components/spatial/PlatformMapModal';
+import { PlatformStoreModal } from './components/spatial/PlatformStoreModal';
 import {
   RealClipCoachRoom,
   type UploadedCoachMedia,
@@ -105,6 +114,17 @@ export function App() {
     return 'sports';
   });
 
+  const [activeMasterHub, setActiveMasterHub] = useState<MasterHubId>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const hub = params.get('hub');
+      if (hub === 'cinema' || hub === 'audio' || hub === 'game') return hub;
+    } catch {
+      // ignore
+    }
+    return 'game';
+  });
+
   const [isGtaSocialOpen, setIsGtaSocialOpen] = useState<boolean>(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -131,6 +151,9 @@ export function App() {
       return false;
     }
   });
+
+  const [activeLeftOverlay, setActiveLeftOverlay] = useState<'map' | 'store' | null>(null);
+  const [storeInitialCollectionId, setStoreInitialCollectionId] = useState<string | null>(null);
 
   const [tournamentInitialGame, setTournamentInitialGame] = useState<TournamentGameId>(() => {
     try {
@@ -236,21 +259,26 @@ export function App() {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-realm', activeRealm);
-    document.body.dataset.state = isIdentityProfileOpen
-      ? 'spatial-identity'
-      : isTournamentHubOpen
-        ? 'tournament-hub'
-        : isGtaSocialOpen
-          ? 'gta-social'
-          : activeTopic
-            ? 'coach-ar'
-            : 'playing';
+    document.body.dataset.state =
+      activeMasterHub === 'cinema'
+        ? 'cinema-hub'
+        : activeMasterHub === 'audio'
+          ? 'audio-hub'
+          : isIdentityProfileOpen
+            ? 'spatial-identity'
+            : isTournamentHubOpen
+              ? 'tournament-hub'
+              : isGtaSocialOpen
+                ? 'gta-social'
+                : activeTopic
+                  ? 'coach-ar'
+                  : 'playing';
     try {
       window.localStorage.setItem(STORAGE_REALM_KEY, activeRealm);
     } catch {
       // ignore
     }
-  }, [activeRealm, isIdentityProfileOpen, isTournamentHubOpen, isGtaSocialOpen, activeTopic]);
+  }, [activeMasterHub, activeRealm, isIdentityProfileOpen, isTournamentHubOpen, isGtaSocialOpen, activeTopic]);
 
   useEffect(() => {
     try {
@@ -944,120 +972,220 @@ export function App() {
       className="relative w-full h-dvh min-h-dvh overflow-hidden select-none"
       style={{ backgroundColor: 'var(--realm-bg)', color: 'var(--realm-text)' }}
     >
-      {/* 0. Cross-Game Spatial Identity & 5 Offline Agents Profile */}
-      {isIdentityProfileOpen ? (
-        <CrossGameSpatialProfilePage
-          onBackToLobby={() => setIsIdentityProfileOpen(false)}
-        />
-      ) : isTournamentHubOpen ? (
-        <GameNativeTournamentHub
-          initialGameId={tournamentInitialGame}
-          onBack={() => setIsTournamentHubOpen(false)}
-        />
-      ) : isGtaSocialOpen ? (
-        /* 1. Dedicated GTA VI Vice City Social Media & Club World */
-        <GtaSocialWorld
-          socialState={socialState}
-          isSendingChat={isSendingSocialChat}
-          onSelectTab={handleSelectSocialTab}
-          onToggleFriend={handleToggleFriend}
-          onSendChat={handleSendSocialChat}
-          onTogglePostReaction={handleTogglePostReaction}
-          onAddPostComment={handleAddPostComment}
-          onToggleCommentLike={handleToggleCommentLike}
-          onSharePost={handleSharePost}
-          onCreatePost={handleCreatePost}
-          onToggleClubJoin={handleToggleClubJoin}
-          onCreateClub={handleCreateClub}
-          onPostClubAnnouncement={handlePostClubAnnouncement}
-          onToggleSquadJoin={handleToggleSquadJoin}
-          onCreateSquad={handleCreateSquad}
-          onCreateHighlightClip={handleCreateHighlightClip}
-          onToggleClipLike={handleToggleClipLike}
-          onRegisterTournament={handleRegisterTournament}
-          onCreateChallenge={handleCreateChallenge}
-          onSubmitLivePrediction={handleSubmitLivePrediction}
-          onPostFanClubMessage={handlePostFanClubMessage}
-          onBackFaction={handleBackFaction}
-          onExitToCoach={() => setIsGtaSocialOpen(false)}
-          onOpenTournamentHub={() => {
-            setTournamentInitialGame(resolveTournamentGameFromLobby(lobbyGameId));
-            setIsTournamentHubOpen(true);
-          }}
-          onUploadSceneFile={handleUploadFile}
-          onToggleSpeak={() =>
-            isSpeaking
-              ? stopSpeaking()
-              : triggerCoachSpeech(
-                  activeTopic?.coachVoiceEn ?? realmTopics[0].coachVoiceEn
-                )
-          }
-          isSpeaking={isSpeaking}
-        />
-      ) : activeTopic ? (
-        /* 2. Unreal 5.8 3D + Dual-Agent (ProClipAnalyzerAgent & MotionCoachAgent) AI Coach Screen */
-        <RealClipCoachRoom
-          activeRealm={activeRealm}
-          motionPayload={activeMotionPayload}
-          proClipsData={activeProClipsData}
-          isLoadingClips={isLoadingClips}
-          isSyncingMotion={isSyncingMotion}
-          problemQuery={clipProblemQuery}
-          uploadedMedia={uploadedMedia}
-          isSpeaking={isSpeaking}
-          isListeningVoice={isListeningVoice}
-          isAnalyzingUpload={isAnalyzingUpload}
-          onSelectGame={handleSelectCoachGame}
-          onSubmitProblemQuery={(q) => {
-            setClipProblemQuery(q);
-            fetchProClipsAgent(selectedGame, q, false);
-          }}
-          onRefreshAgents={() => {
-            fetchMotionCoachAgent(selectedGame, true);
-            fetchProClipsAgent(selectedGame, clipProblemQuery, true);
-          }}
-          onUploadFile={handleUploadFile}
-          onClearUploadedMedia={() => setUploadedMedia(null)}
-          onToggleSpeak={(voiceText) =>
-            isSpeaking ? stopSpeaking() : triggerCoachSpeech(voiceText)
-          }
-          onToggleVoiceQa={handleToggleVoiceQa}
-          onOpenSocialWorld={() => setIsGtaSocialOpen(true)}
-          onBackToMenu={() => {
-            stopSpeaking();
-            setUploadedMedia(null);
-            setClipProblemQuery('');
-            setActiveTopic(null);
-          }}
-        />
-      ) : (
-        /* 3. Clean Frosted-Glass Mobile-First Lobby Over Unreal Engine 5.8 Stadium-Tunnel Backdrop */
-        <>
-          <CoachStage3D
-            realm={activeRealm}
-            manifest={manifest}
-            isSpeaking={isSpeaking}
-            useVideoBackdrop={useVideoBackdrop}
-            customBackdropUrl={null}
-            customAccentHex={null}
-            customSecondaryHex={null}
-          />
-
-          <div
-            data-testid="lobby-foreground-shell"
-            className="relative z-20 max-w-md mx-auto w-full h-dvh min-h-dvh overflow-x-hidden px-4 pt-3 pb-4 flex flex-col justify-between gap-2.5"
+      <GlobalEarthLanguageButton />
+      <LanguageSelectorModal activeHub={activeMasterHub} />
+      <LeftPlatformMenu
+        activeHub={activeMasterHub}
+        activeOverlay={activeLeftOverlay}
+        onOpenMap={() => setActiveLeftOverlay((prev) => (prev === 'map' ? null : 'map'))}
+        onOpenStore={() => {
+          setStoreInitialCollectionId(null);
+          setActiveLeftOverlay((prev) => (prev === 'store' ? null : 'store'));
+        }}
+      />
+      <PlatformMapModal
+        open={activeLeftOverlay === 'map'}
+        activeHub={activeMasterHub}
+        onClose={() => setActiveLeftOverlay(null)}
+        onJumpToStoreCollection={(collectionId) => {
+          setStoreInitialCollectionId(collectionId ?? null);
+          setActiveLeftOverlay('store');
+        }}
+      />
+      <PlatformStoreModal
+        open={activeLeftOverlay === 'store'}
+        activeHub={activeMasterHub}
+        initialCollectionId={storeInitialCollectionId}
+        onClose={() => setActiveLeftOverlay(null)}
+      />
+      <AnimatePresence mode="wait">
+        {activeMasterHub === 'cinema' ? (
+          <motion.div
+            key="hub-cinema"
+            initial={{ opacity: 0, scale: 0.985 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.985 }}
+            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full h-full"
           >
-            <div className="w-full flex flex-col gap-2.5 shrink-0">
-              <GameSwitcherBar
-                activeGameId={lobbyGameId}
-                onSelectGame={handleLobbyGameSwitch}
-                onOpenTournamentHub={() => {
-                  setTournamentInitialGame(resolveTournamentGameFromLobby(lobbyGameId));
-                  setIsTournamentHubOpen(true);
-                }}
-                onOpenSocialClub={() => setIsGtaSocialOpen(true)}
-                onOpenIdentityProfile={() => setIsIdentityProfileOpen(true)}
-              />
+            <CinemaHubView activeHub={activeMasterHub} onSelectHub={setActiveMasterHub} />
+          </motion.div>
+        ) : activeMasterHub === 'audio' ? (
+          <motion.div
+            key="hub-audio"
+            initial={{ opacity: 0, scale: 0.985 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.985 }}
+            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full h-full"
+          >
+            <AudioHubView activeHub={activeMasterHub} onSelectHub={setActiveMasterHub} />
+          </motion.div>
+        ) : isIdentityProfileOpen ? (
+          <motion.div
+            key="hub-game-identity"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="w-full h-full"
+          >
+            <CrossGameSpatialProfilePage
+              onBackToLobby={() => setIsIdentityProfileOpen(false)}
+            />
+          </motion.div>
+        ) : isTournamentHubOpen ? (
+          <motion.div
+            key="hub-game-tournament"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="w-full h-full"
+          >
+            <GameNativeTournamentHub
+              initialGameId={tournamentInitialGame}
+              onBack={() => setIsTournamentHubOpen(false)}
+            />
+          </motion.div>
+        ) : isGtaSocialOpen ? (
+          <motion.div
+            key="hub-game-social"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="w-full h-full"
+          >
+            {/* 1. Dedicated GTA VI Vice City Social Media & Club World */}
+            <GtaSocialWorld
+              socialState={socialState}
+              isSendingChat={isSendingSocialChat}
+              onSelectTab={handleSelectSocialTab}
+              onToggleFriend={handleToggleFriend}
+              onSendChat={handleSendSocialChat}
+              onTogglePostReaction={handleTogglePostReaction}
+              onAddPostComment={handleAddPostComment}
+              onToggleCommentLike={handleToggleCommentLike}
+              onSharePost={handleSharePost}
+              onCreatePost={handleCreatePost}
+              onToggleClubJoin={handleToggleClubJoin}
+              onCreateClub={handleCreateClub}
+              onPostClubAnnouncement={handlePostClubAnnouncement}
+              onToggleSquadJoin={handleToggleSquadJoin}
+              onCreateSquad={handleCreateSquad}
+              onCreateHighlightClip={handleCreateHighlightClip}
+              onToggleClipLike={handleToggleClipLike}
+              onRegisterTournament={handleRegisterTournament}
+              onCreateChallenge={handleCreateChallenge}
+              onSubmitLivePrediction={handleSubmitLivePrediction}
+              onPostFanClubMessage={handlePostFanClubMessage}
+              onBackFaction={handleBackFaction}
+              onExitToCoach={() => setIsGtaSocialOpen(false)}
+              onOpenTournamentHub={() => {
+                setTournamentInitialGame(resolveTournamentGameFromLobby(lobbyGameId));
+                setIsTournamentHubOpen(true);
+              }}
+              onUploadSceneFile={handleUploadFile}
+              onToggleSpeak={() =>
+                isSpeaking
+                  ? stopSpeaking()
+                  : triggerCoachSpeech(
+                      activeTopic?.coachVoiceEn ?? realmTopics[0].coachVoiceEn
+                    )
+              }
+              isSpeaking={isSpeaking}
+            />
+          </motion.div>
+        ) : activeTopic ? (
+          <motion.div
+            key="hub-game-coach"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="w-full h-full"
+          >
+            {/* 2. Unreal 5.8 3D + Dual-Agent (ProClipAnalyzerAgent & MotionCoachAgent) AI Coach Screen */}
+            <RealClipCoachRoom
+              activeRealm={activeRealm}
+              motionPayload={activeMotionPayload}
+              proClipsData={activeProClipsData}
+              isLoadingClips={isLoadingClips}
+              isSyncingMotion={isSyncingMotion}
+              problemQuery={clipProblemQuery}
+              uploadedMedia={uploadedMedia}
+              isSpeaking={isSpeaking}
+              isListeningVoice={isListeningVoice}
+              isAnalyzingUpload={isAnalyzingUpload}
+              onSelectGame={handleSelectCoachGame}
+              onSubmitProblemQuery={(q) => {
+                setClipProblemQuery(q);
+                fetchProClipsAgent(selectedGame, q, false);
+              }}
+              onRefreshAgents={() => {
+                fetchMotionCoachAgent(selectedGame, true);
+                fetchProClipsAgent(selectedGame, clipProblemQuery, true);
+              }}
+              onUploadFile={handleUploadFile}
+              onClearUploadedMedia={() => setUploadedMedia(null)}
+              onToggleSpeak={(voiceText) =>
+                isSpeaking ? stopSpeaking() : triggerCoachSpeech(voiceText)
+              }
+              onToggleVoiceQa={handleToggleVoiceQa}
+              onOpenSocialWorld={() => setIsGtaSocialOpen(true)}
+              onBackToMenu={() => {
+                stopSpeaking();
+                setUploadedMedia(null);
+                setClipProblemQuery('');
+                setActiveTopic(null);
+              }}
+            />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="hub-game-lobby"
+            initial={{ opacity: 0, scale: 0.985 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.985 }}
+            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+            className="relative w-full h-full"
+          >
+            {/* 3. Clean Frosted-Glass Mobile-First Lobby Over Unreal Engine 5.8 Stadium-Tunnel Backdrop */}
+            <CoachStage3D
+              realm={activeRealm}
+              manifest={manifest}
+              isSpeaking={isSpeaking}
+              useVideoBackdrop={useVideoBackdrop}
+              customBackdropUrl={null}
+              customAccentHex={null}
+              customSecondaryHex={null}
+            />
+
+            <div
+              data-testid="lobby-foreground-shell"
+              className="relative z-20 max-w-md mx-auto w-full h-dvh min-h-dvh overflow-x-hidden px-4 pt-2.5 pb-4 flex flex-col justify-between gap-2"
+            >
+              <div className="w-full flex flex-col gap-2 shrink-0">
+                <div className="flex justify-center pl-12 sm:pl-0">
+                  <MasterHubSwitcher
+                    activeHub={activeMasterHub}
+                    onSelectHub={setActiveMasterHub}
+                  />
+                </div>
+
+                <div className="pl-11 sm:pl-0">
+                  <GameSwitcherBar
+                    activeGameId={lobbyGameId}
+                    onSelectGame={handleLobbyGameSwitch}
+                    onOpenTournamentHub={() => {
+                      setTournamentInitialGame(resolveTournamentGameFromLobby(lobbyGameId));
+                      setIsTournamentHubOpen(true);
+                    }}
+                    onOpenSocialClub={() => setIsGtaSocialOpen(true)}
+                    onOpenIdentityProfile={() => setIsIdentityProfileOpen(true)}
+                  />
+                </div>
 
               <SkillSearchHeader
                 searchQuery={lobbySearchQuery}
@@ -1079,31 +1207,32 @@ export function App() {
               }}
             />
 
-            <LobbyBottomDock
-              isListeningVoice={isListeningVoice}
-              hasVideoBackdrop={Boolean(manifest.lobbyVideoUrl)}
-              useVideoBackdrop={useVideoBackdrop}
-              onUploadFile={handleUploadFile}
-              onToggleVoice={handleToggleVoiceQa}
-              onOpenQuickDemo={() => {
-                const firstSkill = filteredLobbySkills[0];
-                if (firstSkill) {
-                  handleSelectLobbySkill(firstSkill);
-                } else {
-                  launchTopicSearch(realmTopics[0].id, 22, 74);
-                }
-              }}
-              onOpenTournamentHub={() => {
-                setTournamentInitialGame(resolveTournamentGameFromLobby(lobbyGameId));
-                setIsTournamentHubOpen(true);
-              }}
-              onOpenSocialClub={() => setIsGtaSocialOpen(true)}
-              onOpenIdentityProfile={() => setIsIdentityProfileOpen(true)}
-              onToggleBackdropMode={() => setUseVideoBackdrop((v) => !v)}
-            />
-          </div>
-        </>
-      )}
+              <LobbyBottomDock
+                isListeningVoice={isListeningVoice}
+                hasVideoBackdrop={Boolean(manifest.lobbyVideoUrl)}
+                useVideoBackdrop={useVideoBackdrop}
+                onUploadFile={handleUploadFile}
+                onToggleVoice={handleToggleVoiceQa}
+                onOpenQuickDemo={() => {
+                  const firstSkill = filteredLobbySkills[0];
+                  if (firstSkill) {
+                    handleSelectLobbySkill(firstSkill);
+                  } else {
+                    launchTopicSearch(realmTopics[0].id, 22, 74);
+                  }
+                }}
+                onOpenTournamentHub={() => {
+                  setTournamentInitialGame(resolveTournamentGameFromLobby(lobbyGameId));
+                  setIsTournamentHubOpen(true);
+                }}
+                onOpenSocialClub={() => setIsGtaSocialOpen(true)}
+                onOpenIdentityProfile={() => setIsIdentityProfileOpen(true)}
+                onToggleBackdropMode={() => setUseVideoBackdrop((v) => !v)}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

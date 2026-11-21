@@ -5,7 +5,7 @@ export interface SocialPlatformDef {
   id: string;
   label: string;
   placeholder: string;
-  category: 'social' | 'gaming';
+  category: 'social' | 'gaming' | 'cinema' | 'audio';
   accentHex: string;
   shortMark: string;
 }
@@ -85,6 +85,30 @@ export const SOCIAL_PLATFORMS: SocialPlatformDef[] = [
   },
 ];
 
+export const CINEMA_SOCIAL_PLATFORMS: SocialPlatformDef[] = [
+  { id: 'telegram', label: 'Telegram', placeholder: 't.me/channel', category: 'cinema', accentHex: '#0EA5E9', shortMark: 'TG' },
+  { id: 'letterboxd', label: 'Letterboxd', placeholder: 'letterboxd.com/user', category: 'cinema', accentHex: '#10B981', shortMark: 'LB' },
+  { id: 'imdb', label: 'IMDb List', placeholder: 'ur12345678', category: 'cinema', accentHex: '#EAB308', shortMark: 'IM' },
+  { id: 'anilist', label: 'AniList', placeholder: 'anilist.co/user', category: 'cinema', accentHex: '#38BDF8', shortMark: 'AL' },
+  { id: 'trakt', label: 'Trakt TV', placeholder: 'trakt.tv/users/...', category: 'cinema', accentHex: '#E11D48', shortMark: 'TK' },
+  { id: 'youtube', label: 'YouTube', placeholder: '@channel', category: 'social', accentHex: '#EF4444', shortMark: 'YT' },
+  { id: 'instagram', label: 'Instagram', placeholder: '@username', category: 'social', accentHex: '#E1306C', shortMark: 'IG' },
+  { id: 'x', label: 'X / Twitter', placeholder: '@handle', category: 'social', accentHex: '#334155', shortMark: 'X' },
+  { id: 'plex', label: 'P2P / Plex', placeholder: 'peer://node-id', category: 'cinema', accentHex: '#F59E0B', shortMark: 'P2' },
+];
+
+export const AUDIO_SOCIAL_PLATFORMS: SocialPlatformDef[] = [
+  { id: 'telegram', label: 'Telegram', placeholder: 't.me/music_ch', category: 'audio', accentHex: '#0EA5E9', shortMark: 'TG' },
+  { id: 'spotify', label: 'Spotify', placeholder: 'spotify:user:...', category: 'audio', accentHex: '#16A34A', shortMark: 'SP' },
+  { id: 'soundcloud', label: 'SoundCloud', placeholder: 'soundcloud.com/...', category: 'audio', accentHex: '#F97316', shortMark: 'SC' },
+  { id: 'applemusic', label: 'Apple Music', placeholder: '@apple_id', category: 'audio', accentHex: '#FB7185', shortMark: 'AM' },
+  { id: 'castbox', label: 'Podcast RSS', placeholder: 'rss/feed-url', category: 'audio', accentHex: '#A855F7', shortMark: 'RS' },
+  { id: 'mixcloud', label: 'Mixcloud', placeholder: 'mixcloud.com/dj', category: 'audio', accentHex: '#38BDF8', shortMark: 'MC' },
+  { id: 'youtube', label: 'YT Music', placeholder: '@channel', category: 'social', accentHex: '#EF4444', shortMark: 'YT' },
+  { id: 'instagram', label: 'Instagram', placeholder: '@username', category: 'social', accentHex: '#E1306C', shortMark: 'IG' },
+  { id: 'x', label: 'X / Twitter', placeholder: '@handle', category: 'social', accentHex: '#334155', shortMark: 'X' },
+];
+
 export type LinkedSocialMap = Record<string, string>;
 
 interface SocialLinksCardProps {
@@ -94,6 +118,8 @@ interface SocialLinksCardProps {
   borderColor: string;
   onSaveLink: (platformId: string, handle: string) => void;
   onRemoveLink: (platformId: string) => void;
+  platforms?: SocialPlatformDef[];
+  titleFa?: string;
 }
 
 export const SocialLinksCard: React.FC<SocialLinksCardProps> = ({
@@ -103,6 +129,8 @@ export const SocialLinksCard: React.FC<SocialLinksCardProps> = ({
   borderColor,
   onSaveLink,
   onRemoveLink,
+  platforms = SOCIAL_PLATFORMS,
+  titleFa = 'لینک اکانت‌های سوشیال و گیم',
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftHandle, setDraftHandle] = useState('');
@@ -142,7 +170,7 @@ export const SocialLinksCard: React.FC<SocialLinksCardProps> = ({
         <div className="flex items-center gap-2">
           <Link2 className="w-4 h-4 shrink-0" style={{ color: accentHex }} />
           <h3 className="text-[13.5px] font-bold text-white">
-            لینک اکانت‌های سوشیال و گیم
+            {titleFa}
           </h3>
         </div>
         <span className="text-[12px] text-slate-300 font-mono-tabular">
@@ -152,7 +180,7 @@ export const SocialLinksCard: React.FC<SocialLinksCardProps> = ({
 
       {/* Clean Adaptive Dark Platform Grid */}
       <div className="grid grid-cols-3 gap-2">
-        {SOCIAL_PLATFORMS.map((platform) => {
+        {platforms.map((platform) => {
           const linkedHandle = links[platform.id]?.trim();
           const isEditing = editingId === platform.id;
 
@@ -213,7 +241,7 @@ export const SocialLinksCard: React.FC<SocialLinksCardProps> = ({
             value={draftHandle}
             onChange={(e) => setDraftHandle(e.target.value)}
             placeholder={
-              SOCIAL_PLATFORMS.find((p) => p.id === editingId)?.placeholder ?? '@handle'
+              platforms.find((p) => p.id === editingId)?.placeholder ?? '@handle'
             }
             className="flex-1 min-w-0 h-9 px-3 rounded-xl border border-white/20 bg-black/35 text-[12.5px] text-white placeholder:text-slate-400 focus:outline-none focus:border-white/50"
           />

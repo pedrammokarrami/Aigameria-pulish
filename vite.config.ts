@@ -36,6 +36,11 @@ export default defineConfig(() => {
     },
     optimizeDeps: {
       include: [
+        'react',
+        'react-dom',
+        'react/jsx-runtime',
+        'motion/react',
+        'hls.js',
         'three',
         'three/addons/loaders/GLTFLoader.js',
         'three/addons/environments/RoomEnvironment.js',

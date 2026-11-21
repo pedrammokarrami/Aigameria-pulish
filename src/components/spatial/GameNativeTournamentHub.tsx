@@ -163,7 +163,7 @@ export const GameNativeTournamentHub: React.FC<GameNativeTournamentHubProps> = (
       />
 
       {/* LAYER 2: Crystal-Clear Spatial HUD (Unobstructed Center 3D Window + Safe-Area Top Clearance) */}
-      <div className="relative z-10 w-full h-full flex flex-col justify-between px-3.5 pt-[max(3rem,env(safe-area-inset-top))] pb-3.5 pointer-events-none">
+      <div className="relative z-10 w-full h-full flex flex-col justify-between px-3.5 pt-[max(3.75rem,env(safe-area-inset-top))] pb-3.5 pointer-events-none">
         {/* === TOP ZONE: Game Switcher + Top Context + Squad Lineup === */}
         <div className="w-full flex flex-col gap-2 shrink-0 pointer-events-auto">
           {/* Row 1: Back + Multi-Game Native Switcher */}
