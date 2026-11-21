@@ -24,6 +24,7 @@ import {
   type MotionCalloutNode,
   buildAdkMicroIntelForTopic,
 } from '../../utils/coachSearchRules';
+import { CoachAnswerBoard } from './CoachAnswerBoard';
 
 interface MotionGraphicsStageProps {
   realm: RealmId;
@@ -551,6 +552,8 @@ export const MotionGraphicsStage: React.FC<MotionGraphicsStageProps> = ({
         </div>
 
         {/* Active Specialized ADK Agent Output Card — EA SPORTS FC 27 Card System */}
+        {topic.answerBlock && <CoachAnswerBoard answerBlock={topic.answerBlock} accentHex={cfg.accentHex} />}
+
         {activeAgentTab === 'mechanics' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
             <div className="fc27-card-volt p-3">

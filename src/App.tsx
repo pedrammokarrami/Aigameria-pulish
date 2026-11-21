@@ -212,6 +212,9 @@ export function App() {
 
   // Active Coach Topic — when non-null, activates the dedicated Real-Gameplay AR Coach screen
   const [activeTopic, setActiveTopic] = useState<CoachConsultationTopic | null>(null);
+  // Guards against out-of-order coach/search responses overwriting newer topics.
+  const coachSearchSeqRef = useRef(0);
+  const nextCoachSearchSeq = () => ++coachSearchSeqRef.current;
   const [useVideoBackdrop, setUseVideoBackdrop] = useState<boolean>(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
@@ -561,6 +564,7 @@ export function App() {
           ? `&tapX=${encodeURIComponent(Math.round(tapX))}&tapY=${encodeURIComponent(Math.round(tapY))}`
           : '';
 
+      const seq2 = nextCoachSearchSeq();
       fetch(
         `/api/coach/search?realm=${encodeURIComponent(targetRealm)}&q=${encodeURIComponent(
           queryOrTopicId
@@ -568,7 +572,7 @@ export function App() {
       )
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          if (data?.topic) {
+          if (data?.topic && seq2 === coachSearchSeqRef.current) {
             setActiveTopic(data.topic as CoachConsultationTopic);
           }
         })
@@ -621,6 +625,7 @@ export function App() {
       setActiveTopic(resolvedTopic);
       triggerCoachSpeech(resolvedTopic.coachVoiceEn);
 
+      const seq = nextCoachSearchSeq();
       fetch(
         `/api/coach/search?realm=${encodeURIComponent(tab.realm)}&q=${encodeURIComponent(
           skill.problemQuery
@@ -628,7 +633,7 @@ export function App() {
       )
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          if (data?.topic) {
+          if (data?.topic && seq === coachSearchSeqRef.current) {
             setActiveTopic({
               ...(data.topic as CoachConsultationTopic),
               titleFa: skill.titleFa,
@@ -1200,6 +1205,7 @@ export function App() {
               isSpeaking={isSpeaking}
               isListeningVoice={isListeningVoice}
               isAnalyzingUpload={isAnalyzingUpload}
+              answerBlock={activeTopic.answerBlock}
               onSelectGame={handleSelectCoachGame}
               onSubmitProblemQuery={(q) => {
                 setClipProblemQuery(q);

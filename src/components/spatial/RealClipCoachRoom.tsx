@@ -34,6 +34,8 @@ import type { ClipSourceKind } from '../../services/realClipAgentService';
 import type { RealmId } from '../../types/spatial';
 import { CoachWorld3D } from './CoachWorld3D';
 import { MotionCoachCard } from './MotionCoachCard';
+import { CoachAnswerBoard } from './CoachAnswerBoard';
+import type { CoachAnswerBlock } from '../../utils/coachSearchRules';
 
 export interface UploadedCoachMedia {
   url: string;
@@ -62,6 +64,7 @@ interface RealClipCoachRoomProps {
   isSpeaking: boolean;
   isListeningVoice: boolean;
   isAnalyzingUpload: boolean;
+  answerBlock?: CoachAnswerBlock;
   onSelectGame: (game: { id: string; name?: string; realm?: RealmId; steamAppId?: number }) => void;
   onSubmitProblemQuery: (query: string) => void;
   onRefreshAgents: () => void;
@@ -97,6 +100,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
   isSpeaking,
   isListeningVoice,
   isAnalyzingUpload,
+  answerBlock,
   onSelectGame,
   onSubmitProblemQuery,
   onRefreshAgents,
@@ -584,12 +588,13 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
           </section>
 
           {/* ---------- LAYER 3: CENTER 3D HOLOGRAPHIC CONTROLLER & COACHING HERO CARD ---------- */}
+          {answerBlock && <CoachAnswerBoard answerBlock={answerBlock} accentHex={accent} />}
           <MotionCoachCard
             payload={motionPayload}
             activePhase={activePhase}
             isSpeaking={isSpeaking}
             onToggleSpeak={() => onToggleSpeak(motionPayload.voiceExplanationEn)}
-          />
+ />
         </main>
 
         {/* ================= LAYER 4: COLLAPSED GLASS DRAWER + DARK-GLASS EMERALD CTA + MIC ================= */}
