@@ -120,81 +120,188 @@ export function parseYoutubeInitialDataFromHtml(html: string): RawYoutubeItem[] 
 
   try {
     const data = JSON.parse(html.slice(start + marker.length, end)) as unknown;
-    const renderers = collectVideoRenderers(data);
-    const results: RawYoutubeItem[] = [];
-    const seen = new Set<string>();
-
-    for (const vr of renderers) {
-      const videoId = String(vr.videoId ?? '').trim();
-      if (!videoId || videoId.length !== 11 || seen.has(videoId)) continue;
-
-      const title = extractRunsText(vr.title).trim();
-      if (!title) continue;
-
-      // Skip live streams without duration
-      const durationLabel = extractRunsText(vr.lengthText).trim();
-      if (!durationLabel) continue;
-
-      seen.add(videoId);
-      const channelName = extractRunsText(vr.ownerText).trim() || 'Pro Creator';
-      const viewsLabel = extractRunsText(vr.shortViewCountText).trim() || 'HD';
-
-      const snippetsArr = vr.detailedMetadataSnippets as Array<{ snippetText?: unknown }> | undefined;
-      const snippet = snippetsArr?.[0]?.snippetText ? extractRunsText(snippetsArr[0].snippetText) : '';
-
-      const thumbsArr = (vr.thumbnail as { thumbnails?: Array<{ url?: string }> } | undefined)?.thumbnails;
-      const thumbnailUrl =
-        thumbsArr?.[thumbsArr.length - 1]?.url ||
-        `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
-
-      // Extract real video chapters if present in expandableMetadata
-      const chapters: Array<{ title: string; sec: number }> = [];
-      const cards = (
-        vr.expandableMetadata as {
-          expandableMetadataRenderer?: {
-            expandedContent?: {
-              horizontalCardListRenderer?: {
-                cards?: Array<{
-                  macroMarkersListItemRenderer?: {
-                    title?: unknown;
-                    onTap?: { watchEndpoint?: { startTimeSeconds?: number } };
-                  };
-                }>;
-              };
-            };
-          };
-        }
-      )?.expandableMetadataRenderer?.expandedContent?.horizontalCardListRenderer?.cards;
-
-      if (Array.isArray(cards)) {
-        for (const card of cards) {
-          const ch = card?.macroMarkersListItemRenderer;
-          const sec = ch?.onTap?.watchEndpoint?.startTimeSeconds;
-          if (typeof sec === 'number' && Number.isFinite(sec) && sec > 0) {
-            const chTitle = extractRunsText(ch?.title).trim();
-            chapters.push({ title: chTitle || `لحظه ${formatSecondsToTime(sec)}`, sec });
-          }
-        }
-      }
-
-      results.push({
-        videoId,
-        title,
-        channelName,
-        viewsLabel,
-        durationLabel,
-        snippet,
-        thumbnailUrl,
-        chapters: chapters.slice(0, 4),
-      });
-
-      if (results.length >= 6) break;
-    }
-
-    return results;
+    // YouTube's 2025+ search pages replaced videoRenderer with lockupViewModel.
+    const legacy = collectVideoRenderers(data);
+    if (legacy.length > 0) return renderersToRawItems(legacy);
+    return lockupsToRawItems(data);
   } catch {
     return [];
   }
+}
+
+function renderersToRawItems(renderers: Array<Record<string, unknown>>): RawYoutubeItem[] {
+  const results: RawYoutubeItem[] = [];
+  const seen = new Set<string>();
+
+  for (const vr of renderers) {
+    const videoId = String(vr.videoId ?? '').trim();
+    if (!videoId || videoId.length !== 11 || seen.has(videoId)) continue;
+
+    const title = extractRunsText(vr.title).trim();
+    if (!title) continue;
+
+    // Skip live streams without duration
+    const durationLabel = extractRunsText(vr.lengthText).trim();
+    if (!durationLabel) continue;
+
+    seen.add(videoId);
+    const channelName = extractRunsText(vr.ownerText).trim() || 'Pro Creator';
+    const viewsLabel = extractRunsText(vr.shortViewCountText).trim() || 'HD';
+
+    const snippetsArr = vr.detailedMetadataSnippets as Array<{ snippetText?: unknown }> | undefined;
+    const snippet = snippetsArr?.[0]?.snippetText ? extractRunsText(snippetsArr[0].snippetText) : '';
+
+    const thumbsArr = (vr.thumbnail as { thumbnails?: Array<{ url?: string }> } | undefined)?.thumbnails;
+    const thumbnailUrl =
+      thumbsArr?.[thumbsArr.length - 1]?.url ||
+      `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+    // Extract real video chapters if present in expandableMetadata
+    const chapters: Array<{ title: string; sec: number }> = [];
+    const cards = (
+      vr.expandableMetadata as {
+        expandableMetadataRenderer?: {
+          expandedContent?: {
+            horizontalCardListRenderer?: {
+              cards?: Array<{
+                macroMarkersListItemRenderer?: {
+                  title?: unknown;
+                  onTap?: { watchEndpoint?: { startTimeSeconds?: number } };
+                };
+              }>;
+            };
+          };
+        };
+      }
+    )?.expandableMetadataRenderer?.expandedContent?.horizontalCardListRenderer?.cards;
+
+    if (Array.isArray(cards)) {
+      for (const card of cards) {
+        const ch = card?.macroMarkersListItemRenderer;
+        const sec = ch?.onTap?.watchEndpoint?.startTimeSeconds;
+        if (typeof sec === 'number' && Number.isFinite(sec) && sec > 0) {
+          const chTitle = extractRunsText(ch?.title).trim();
+          chapters.push({ title: chTitle || `لحظه ${formatSecondsToTime(sec)}`, sec });
+        }
+      }
+    }
+
+    results.push({
+      videoId,
+      title,
+      channelName,
+      viewsLabel,
+      durationLabel,
+      snippet,
+      thumbnailUrl,
+      chapters: chapters.slice(0, 4),
+    });
+
+    if (results.length >= 12) break;
+  }
+
+  return results;
+}
+
+/** 2025+ YouTube search rows: lockupViewModel with contentId + lockupMetadataViewModel. */
+function lockupsToRawItems(data: unknown): RawYoutubeItem[] {
+  const lockups: Array<Record<string, unknown>> = [];
+  collectLockups(data, lockups);
+
+  const results: RawYoutubeItem[] = [];
+  const seen = new Set<string>();
+
+  for (const lv of lockups) {
+    const videoId = String(lv.contentId ?? '').trim();
+    if (!videoId || videoId.length !== 11 || seen.has(videoId)) continue;
+
+    const meta = (lv.metadata as { lockupMetadataViewModel?: Record<string, unknown> } | undefined)
+      ?.lockupMetadataViewModel;
+    const title = String((meta?.title as { content?: string } | undefined)?.content ?? '').trim();
+    if (!title) continue;
+
+    // Duration lives in the thumbnail overlay badge (e.g. "10:01"); skip live/shorts without it.
+    const durationLabel = extractOverlayDuration(lv);
+    if (!durationLabel || !/^\d{1,2}:\d{2}(:\d{2})?$/.test(durationLabel)) continue;
+
+    seen.add(videoId);
+
+    const rows =
+      (meta?.metadata as { contentMetadataViewModel?: { metadataRows?: Array<{ metadataParts?: Array<{ text?: { content?: string } }> }> } } | undefined)
+        ?.contentMetadataViewModel?.metadataRows ?? [];
+    const texts = rows.flatMap((r) => (r.metadataParts ?? []).map((p) => String(p.text?.content ?? ''))).filter(Boolean);
+
+    const channelFromAvatar = String(
+      (meta?.image as { decoratedAvatarViewModel?: { avatar?: { avatarViewModel?: { image?: { image?: unknown } } } } } | undefined)
+        ?.decoratedAvatarViewModel?.avatar?.avatarViewModel?.image ?? {}
+    );
+    void channelFromAvatar;
+    let channelName = 'Pro Creator';
+    const a11y = (meta?.image as unknown as Record<string, unknown>) ?? {};
+    void a11y;
+    // channel name from a11y label "Go to channel <name>"
+    const a11yLabel = findStringField(meta?.image as unknown, 'a11yLabel');
+    const m = /Go to channel (.+)$/.exec(a11yLabel);
+    if (m?.[1]) channelName = m[1].trim();
+
+    const viewsLabel = texts.find((t) => /^(\d+[.,]?\d*[KM]?)$/.test(t) || /(views|بازدید|K view|M view)/i.test(t)) ?? 'HD';
+    const snippet = texts.find((t) => t.length > 40) ?? '';
+
+    const thumb = (lv.contentImage as { thumbnailViewModel?: { image?: { sources?: Array<{ url?: string }> } } } | undefined)
+      ?.thumbnailViewModel?.image?.sources;
+    const thumbnailUrl = thumb?.[thumb.length - 1]?.url ?? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+    results.push({
+      videoId,
+      title,
+      channelName,
+      viewsLabel,
+      durationLabel,
+      snippet,
+      thumbnailUrl,
+      chapters: [],
+    });
+
+    if (results.length >= 12) break;
+  }
+
+  return results;
+}
+
+function collectLockups(node: unknown, out: Array<Record<string, unknown>>): void {
+  if (!node || typeof node !== 'object' || out.length >= 40) return;
+  const obj = node as Record<string, unknown>;
+  if (obj.lockupViewModel && typeof obj.lockupViewModel === 'object') {
+    out.push(obj.lockupViewModel as Record<string, unknown>);
+    return;
+  }
+  if (Array.isArray(obj)) {
+    for (const item of obj) collectLockups(item, out);
+    return;
+  }
+  for (const key of Object.keys(obj)) collectLockups(obj[key], out);
+}
+
+function extractOverlayDuration(lv: Record<string, unknown>): string {
+  const overlays = (lv.contentImage as { thumbnailViewModel?: { overlays?: Array<Record<string, unknown>> } } | undefined)
+    ?.thumbnailViewModel?.overlays ?? [];
+  for (const o of overlays) {
+    const s = JSON.stringify(o);
+    const m = /"text":"(\d{1,2}:\d{2}(?::\d{2})?)"/.exec(s);
+    if (m?.[1]) return m[1];
+  }
+  return '';
+}
+
+function findStringField(node: unknown, key: string, depth = 0): string {
+  if (!node || typeof node !== 'object' || depth > 6) return '';
+  const obj = node as Record<string, unknown>;
+  if (typeof obj[key] === 'string') return obj[key] as string;
+  for (const k of Object.keys(obj)) {
+    const found = findStringField(obj[k], key, depth + 1);
+    if (found) return found;
+  }
+  return '';
 }
 
 export function buildCoachBreakdownForClip(
@@ -435,6 +542,47 @@ async function queryYoutubeClips(
   }
 }
 
+/**
+ * Embeddability check — a video the user can actually play.
+ * YouTube's oEmbed endpoint returns 200 for embeddable/public videos and
+ * 401/404 for private, deleted, age-restricted or embed-blocked ones.
+ */
+async function verifyEmbeddable(videoId: string, fetcher: typeof fetch): Promise<boolean> {
+  try {
+    const resp = await fetcher(
+      `https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`)}&format=json`,
+      { signal: AbortSignal.timeout(3500) }
+    );
+    return resp.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function filterPlayableClips(
+  items: RawYoutubeItem[],
+  fetcher: typeof fetch,
+  limit: number
+): Promise<RawYoutubeItem[]> {
+  const pool = items.slice(0, 12);
+  const verdicts = await Promise.all(pool.map((it) => verifyEmbeddable(it.videoId, fetcher)));
+  const playable = pool.filter((_, i) => verdicts[i]);
+  return playable.slice(0, limit);
+}
+
+/** Keep only results whose title/snippet actually match the lesson query. */
+function filterByRelevance(items: RawYoutubeItem[], userQuery: string, gameName: string): RawYoutubeItem[] {
+  const q = `${userQuery} ${gameName}`.toLowerCase();
+  const tokens = q
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((t) => t.length >= 4);
+  if (tokens.length === 0) return items;
+  return items.filter((it) => {
+    const hay = `${it.title} ${it.snippet}`.toLowerCase();
+    return tokens.some((t) => hay.includes(t));
+  });
+}
+
 export async function discoverRealCoachClips(
   input: {
     gameId: string;
@@ -481,6 +629,13 @@ export async function discoverRealCoachClips(
       queryYoutubeClips(proQuery, fetcher),
       queryYoutubeClips(redditQuery, fetcher),
     ]);
+    // Relevance first, then embeddability — only clips the user can actually play
+    // and that genuinely match the lesson the user asked about.
+    const relevantPool = filterByRelevance([...proRaw, ...redditRaw], userQuery, gameName);
+    const pool = relevantPool.length >= 3 ? relevantPool : [...proRaw, ...redditRaw];
+    const playable = await filterPlayableClips(pool, fetcher, 7);
+    proRaw = playable.slice(0, 4);
+    redditRaw = playable.slice(4, 7);
   }
 
   const seenIds = new Set<string>();
