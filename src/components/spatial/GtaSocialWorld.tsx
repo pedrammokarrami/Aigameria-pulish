@@ -92,6 +92,28 @@ interface GtaSocialWorldProps {
 }
 
 const PERSIAN_DIGITS = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+
+/** Safe URL linkifier — splits on URLs, renders <a> only for http(s); React escapes everything else. */
+function renderMessageText(text: string): React.ReactNode[] {
+  const parts = text.split(/(https?:\/\/[^\s<>"]+)/gi);
+  return parts.map((part, i) => {
+    if (/^https?:\/\//i.test(part)) {
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer nofollow"
+          className="text-[#38E8FF] underline decoration-dotted underline-offset-2 hover:text-[#7BEAFF]"
+        >
+          {part}
+        </a>
+      );
+    }
+    return <React.Fragment key={i}>{part}</React.Fragment>;
+  });
+}
+
 function faNum(n: number | string): string {
   return String(n).replace(/\d/g, (d) => PERSIAN_DIGITS[Number(d)] ?? d);
 }
@@ -585,7 +607,7 @@ export const GtaSocialWorld: React.FC<GtaSocialWorldProps> = ({
                               </span>
                             </div>
                             <p className="text-[13.5px] leading-relaxed break-words">
-                              {msg.text}
+                              {renderMessageText(msg.text)}
                             </p>
                           </div>
                         </div>
