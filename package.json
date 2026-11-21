@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test:e2e": "node scripts/e2e-test.mjs"
+    "test:e2e": "node scripts/e2e-test.mjs",
+    "test:users": "node scripts/ten-user-test.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
