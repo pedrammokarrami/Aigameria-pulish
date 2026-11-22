@@ -34,6 +34,32 @@ def get_json(url, timeout=15):
         return None
 
 
+def strategywiki(title: str):
+    """StrategyWiki MediaWiki API — real walkthroughs, maps, controls, strategies."""
+    try:
+        params = urllib.parse.urlencode({
+            "action": "query", "list": "search", "srsearch": title,
+            "srlimit": 3, "format": "json"})
+        data = get_json(f"https://strategywiki.org/w/api.php?{params}")
+        hits = (data or {}).get("query", {}).get("search", [])
+        if not hits:
+            return None
+        top = hits[0]["title"]
+        eparams = urllib.parse.urlencode({
+            "action": "query", "prop": "extracts", "explaintext": "1",
+            "exchars": "2500", "titles": top, "format": "json"})
+        edata = get_json(f"https://strategywiki.org/w/api.php?{eparams}")
+        pages = (edata or {}).get("query", {}).get("pages", {})
+        for _, p in pages.items():
+            extract = (p.get("extract") or "").strip()
+            if extract:
+                url = "https://strategywiki.org/wiki/" + urllib.parse.quote(top.replace(" ", "_"))
+                return {"title": top, "url": url, "extract": extract}
+    except Exception:
+        return None
+    return None
+
+
 def srd_game(name):
     d = get_json("https://www.speedrun.com/api/v1/games?max=1&name=" + urllib.parse.quote(name))
     return ((d or {}).get("data") or [None])[0]
@@ -105,6 +131,15 @@ def main():
         if rec["game_id"] in done:
             continue
         chunks = []
+        # StrategyWiki — real walkthroughs / maps / controls / strategies (keyless)
+        sw = strategywiki(rec["name"])
+        if sw:
+            chunks.append({
+                "game_id": rec["game_id"], "name": rec["name"], "platform": ",".join(rec["platforms"]),
+                "kind": "strategy_guide", "title": sw["title"], "body": sw["extract"][:2500],
+                "source_url": sw["url"], "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            })
+            time.sleep(args.delay)
         # speedrun.com guides — official community guides with stable URLs
         g = srd_game(rec["name"])
         if g:
