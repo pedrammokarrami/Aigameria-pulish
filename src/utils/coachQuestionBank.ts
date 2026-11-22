@@ -71,20 +71,37 @@ function normalize(text: string): string {
     .trim();
 }
 
-/** Live suggestions: ranked matching questions (empty query → starter questions). */
+/** Live suggestions: forgiving near-match (typing anything shows close questions).
+ *  If the typed words directly hit ANOTHER game's bank (e.g. «فرماسیون» while in shooter),
+ *  that game's questions win — the user is clearly asking about that domain. */
 export function suggestCoachQuestions(query: string, gameId: LobbyGameId, limit = 6): string[] {
   const bank = COACH_SAMPLE_QUESTIONS[gameId] ?? COACH_SAMPLE_QUESTIONS.fc27;
   const normalizedQuery = normalize(query);
   if (!normalizedQuery) return bank.slice(0, limit);
   const tokens = normalizedQuery.split(' ').filter(Boolean);
-  const scored = bank
-    .map((q) => {
-      const hay = normalize(q);
-      let score = 0;
-      for (const token of tokens) if (hay.includes(token)) score += 1;
-      return { q, score };
-    })
-    .filter((e) => e.score > 0);
-  scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, limit).map((e) => e.q);
+  const rank = (list: string[]) => {
+    const scored = list
+      .map((q) => {
+        const hay = normalize(q);
+        let score = 0;
+        for (const token of tokens) {
+          if (hay.includes(token)) score += 3;             // direct word hit
+          else if (hay.split(' ').some((w) => w.startsWith(token.slice(0, Math.max(2, token.length - 1))) || token.startsWith(w.slice(0, 3)))) score += 1; // near/partial
+        }
+        return { q, score, direct: score >= 3 };
+      })
+      .filter((e) => e.score > 0);
+    scored.sort((a, b) => b.score - a.score);
+    return scored;
+  };
+  const local = rank(bank);
+  if (local.some((e) => e.direct)) return local.slice(0, limit).map((e) => e.q);
+  // cross-game: another game's bank has direct word hits
+  const otherGames = (Object.keys(COACH_SAMPLE_QUESTIONS) as LobbyGameId[]).filter((g) => g !== gameId);
+  for (const g of otherGames) {
+    const cross = rank(COACH_SAMPLE_QUESTIONS[g]);
+    if (cross.some((e) => e.direct)) return cross.slice(0, limit).map((e) => e.q);
+  }
+  if (local.length > 0) return local.slice(0, limit).map((e) => e.q);
+  return bank.slice(0, limit); // off-topic → still show near suggestions
 }
