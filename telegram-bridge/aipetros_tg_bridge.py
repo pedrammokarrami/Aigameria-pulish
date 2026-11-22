@@ -58,6 +58,7 @@ client = TelegramClient(StringSession(SESSION_STR), API_ID, API_HASH)
 last_chat_id: int | None = None
 
 AIPETROS_BASE = os.environ.get('AIPETROS_BASE', 'http://127.0.0.1:3000')
+LOCAL_APP_BASE = os.environ.get('DEEPAI_APP_BASE', 'http://127.0.0.1:3773')
 
 
 async def ask_aipetros(text: str) -> str:
@@ -157,20 +158,44 @@ def enqueue(text: str, chat_id: int) -> None:
         fh.write(json.dumps(rec, ensure_ascii=False) + '\n')
 
 
-async def push_to_webhook(text: str, chat_id: int) -> None:
-    webhook = load_webhook()
-    if not webhook:
-        return
+async def push_to_webhook(text: str, chat_id: int) -> bool:
+    """Deliver the message to the DeepAI Code agent (this thread) via the local
+    scheduled-task webhook endpoint. Returns True when accepted."""
     import aiohttp
+    import sqlite3
+
+    url = load_webhook()
+    token = ''
+    if not url:
+        # Resolve the local webhook endpoint from the app's own state DB.
+        db = Path.home() / '.deepai-code/userdata/statev2.sqlite'
+        try:
+            con = sqlite3.connect(f'file:{db.as_posix()}?mode=ro', uri=True)
+            row = con.execute(
+                "SELECT task_id, webhook_token FROM scheduled_tasks "
+                "WHERE title LIKE 'Telegram bridge%' AND webhook_token IS NOT NULL LIMIT 1"
+            ).fetchone()
+            con.close()
+            if row:
+                url = f'{LOCAL_APP_BASE}/api/hooks/{row[0]}/{row[1]}'
+        except Exception as exc:  # noqa: BLE001
+            print(f'webhook resolve failed: {exc}')
+    if not url:
+        return False
     try:
         async with aiohttp.ClientSession() as http:
-            await http.post(
-                webhook,
+            async with http.post(
+                url,
                 json={'path': '/tg-message', 'text': text, 'chatId': chat_id},
-                timeout=aiohttp.ClientTimeout(total=10),
-            )
+                timeout=aiohttp.ClientTimeout(total=15),
+            ) as resp:
+                body = await resp.text()
+                ok = resp.status in (200, 201, 202)
+                print(f'webhook -> {resp.status} {body[:120]}')
+                return ok
     except Exception as exc:  # noqa: BLE001
         print(f'webhook POST failed: {exc}')
+        return False
 
 
 @client.on(events.NewMessage(chats='me'))
@@ -186,8 +211,13 @@ async def on_saved(event):
     if not is_prompt_chat(event.chat_id):
         print(f'group chat ignored (no auto-reply): {event.chat_id}')
         return
-    await push_to_webhook(text, event.chat_id)
-    asyncio.create_task(answer_and_send(text, event.chat_id))
+    accepted = await push_to_webhook(text, event.chat_id)
+    if accepted:
+        # Instant ack so the user knows the request reached the agent.
+        await deliver('در حال بررسی…', event.chat_id)
+    else:
+        # Fallback: answer locally from the AIPETROS engine.
+        asyncio.create_task(answer_and_send(text, event.chat_id))
 
 
 @client.on(events.NewMessage())
@@ -204,8 +234,11 @@ async def on_any_message(event):
     if not is_prompt_chat(event.chat_id):
         print(f'group chat ignored (no auto-reply): {event.chat_id}')
         return
-    await push_to_webhook(text, event.chat_id)
-    asyncio.create_task(answer_and_send(text, event.chat_id))
+    accepted = await push_to_webhook(text, event.chat_id)
+    if accepted:
+        await deliver('در حال بررسی…', event.chat_id)
+    else:
+        asyncio.create_task(answer_and_send(text, event.chat_id))
 
 
 async def handle_send(request: web.Request):
