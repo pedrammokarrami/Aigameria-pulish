@@ -102,7 +102,14 @@ export const CoachSessionPanel: React.FC<CoachSessionPanelProps> = ({
             )}
           </div>
         </div>
-        {loading && <RefreshCw className="w-4 h-4 animate-spin text-white/60 shrink-0" />}
+          {loading ? (
+            <div className="flex items-center gap-2 text-[12px] font-bold" style={{ color: accentHex }}>
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              {isFa ? 'در حال ساخت جلسه کامل (تا ۲۰ ثانیه)…' : 'Building your full class (up to 20s)…'}
+            </div>
+          ) : (
+            <RefreshCw className="w-4 h-4 text-white/60 shrink-0" />
+          )}
       </div>
 
       {/* Free question box — no limits on what can be asked */}
