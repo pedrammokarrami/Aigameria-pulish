@@ -52,7 +52,7 @@ export const LiveWebAnswer: React.FC<LiveWebAnswerProps> = ({ gameId, searchQuer
     let cancelled = false;
     setLoading(true);
     setTopic(null);
-    fetch(`/api/coach/search?realm=${GAME_REALM[gameId]}&q=${encodeURIComponent(query)}`)
+    fetch(`/api/coach/search?realm=${GAME_REALM[gameId]}&gameId=${encodeURIComponent(gameId)}&q=${encodeURIComponent(query)}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('bad status'))))
       .then((body) => {
         if (!cancelled && body?.topic) setTopic(body.topic as CoachTopic);

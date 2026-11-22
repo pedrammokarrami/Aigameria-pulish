@@ -634,7 +634,7 @@ export function App() {
 
       const seq = nextCoachSearchSeq();
       fetch(
-        `/api/coach/search?realm=${encodeURIComponent(tab.realm)}&q=${encodeURIComponent(
+        `/api/coach/search?realm=${encodeURIComponent(tab.realm)}&gameId=${encodeURIComponent(tab.id)}&q=${encodeURIComponent(
           askedQuestion
         )}`
       )
@@ -661,7 +661,7 @@ export function App() {
       fetchProClipsAgent(selectedGame, q, false);
       const seq = nextCoachSearchSeq();
       fetch(
-        `/api/coach/search?realm=${encodeURIComponent(selectedGame.realm)}&q=${encodeURIComponent(q)}`
+        `/api/coach/search?realm=${encodeURIComponent(selectedGame.realm)}&gameId=${encodeURIComponent(lobbyGameId)}&q=${encodeURIComponent(q)}`
       )
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {

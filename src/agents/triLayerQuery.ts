@@ -152,21 +152,29 @@ async function queryKnowledgeCards(gameId: string, query: string): Promise<Local
     const { getDb } = await import('../server/db');
     const db = getDb();
     const tokens = query.toLowerCase().split(/\s+/).filter((t) => t.length >= 3);
-    const rows = db.prepare('SELECT kind, title, body, url FROM knowledge_cards WHERE game_id = ? ORDER BY updated_at DESC LIMIT 250').all(gameId);
-    return rows
+    const rows = db.prepare('SELECT kind, title, body, url FROM knowledge_cards WHERE game_id = ? ORDER BY updated_at DESC LIMIT 400').all(gameId);
+    const scored = rows
       .map((r) => {
         const hay = `${r.title} ${r.body}`.toLowerCase();
         let score = 0;
         for (const t of tokens) if (hay.includes(t)) score += 2;
+        // 'qa' cards are curated 101-game answers — always valuable when the
+        // question touches their topic at all.
+        if (r.kind === 'qa') score += 3;
+        if (r.kind === 'meta') score += 1;
         return { r, score };
       })
       .filter((e) => e.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 6)
-      .map((e) => ({
-        gameId, kind: String(e.r.kind ?? 'trick'), title: String(e.r.title ?? ''), body: String(e.r.body ?? ''),
-        sourceUrl: String(e.r.url ?? ''), layer: 'L2-cards' as const,
-      }));
+      .sort((a, b) => b.score - a.score);
+    // Fallback: when nothing matches, surface the game's curated QA cards
+    // (skills / maps / meta / glitches / tips) — real answers, never blank.
+    const usable = scored.length > 0
+      ? scored
+      : rows.filter((r) => r.kind === 'qa' || r.kind === 'meta').map((r) => ({ r, score: 1 }));
+    return usable.slice(0, 6).map((e) => ({
+      gameId, kind: String(e.r.kind ?? 'trick'), title: String(e.r.title ?? ''), body: String(e.r.body ?? ''),
+      sourceUrl: String(e.r.url ?? ''), layer: 'L2-cards' as const,
+    }));
   } catch {
     return [];
   }

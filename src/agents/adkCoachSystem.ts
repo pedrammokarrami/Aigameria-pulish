@@ -25,6 +25,7 @@ import {
 export interface AdkConsultRequest {
   realm: RealmId;
   query: string;
+  gameId?: string;
   tapX?: number;
   tapY?: number;
   imageBase64?: string;
@@ -216,6 +217,43 @@ export async function runAdkMultiAgentConsultation(req: AdkConsultRequest): Prom
   }
   const patchLatency = Math.max(24, Date.now() - patchStart);
 
+  // Curated archive knowledge (101-game Q&A store) — real grounded answers
+  // (skills / maps / meta / glitches / tips) with official wiki+guide URLs.
+  const archiveGameId = req.gameId ?? 'fc27';
+  let archiveNotes: string[] = [];
+  const archiveSources: Array<{ title: string; url: string; source: string }> = [];
+  try {
+    const { getDb } = await import('../server/db');
+    const db = getDb();
+    const rows = db
+      .prepare("SELECT title, body, url, kind FROM knowledge_cards WHERE game_id = ? AND kind IN ('qa','meta') ORDER BY updated_at DESC LIMIT 40")
+      .all(archiveGameId) as Array<{ title: string; body: string; url: string; kind: string }>;
+    const tokens = req.query.toLowerCase().split(/\s+/).filter((t) => t.length >= 3);
+    const ranked = rows
+      .map((r) => {
+        const hay = `${r.title} ${r.body}`.toLowerCase();
+        let score = 1;
+        for (const t of tokens) if (hay.includes(t)) score += 3;
+        if (/skill|mechanic|map|tactic|meta|glitch|exploit|trick|tip/i.test(r.title)) score += 2;
+        return { r, score };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+    for (const { r } of ranked) {
+      archiveNotes.push(`${r.title}\n${r.body}`);
+      if (r.url) archiveSources.push({ title: `📚 ${r.title}`, url: r.url, source: 'Game Archive' });
+    }
+  } catch {
+    // archive store optional
+  }
+  if (archiveSources.length > 0) {
+    for (const s of archiveSources) {
+      if (liveSources.length >= 8) break;
+      if (liveSources.some((x) => x.url === s.url)) continue;
+      liveSources.push(s);
+    }
+  }
+
   const topicWithVectors =
     coordSource !== 'topic_default'
       ? recomputeTelestratorFromTap(baseTopic, effectiveTapX as number, effectiveTapY as number)
@@ -267,6 +305,15 @@ export async function runAdkMultiAgentConsultation(req: AdkConsultRequest): Prom
   };
 
   topicWithVectors.adkIntel = adkIntel;
+  if (archiveNotes.length > 0) {
+    // Real archive answer — grounded, not generic.
+    topicWithVectors.coachAdviceFa = archiveNotes.join('\n\n');
+    topicWithVectors.coachVoiceEn =
+      archiveNotes
+        .map((n) => n.replace(/\n/g, '. '))
+        .join(' ')
+        .slice(0, 900) || topicWithVectors.coachVoiceEn;
+  }
   topicWithVectors.answerBlock = buildCoachAnswerBlock(req.query, req.realm) ?? undefined;
   return topicWithVectors;
 }

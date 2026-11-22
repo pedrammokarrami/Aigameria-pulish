@@ -871,6 +871,7 @@ async function startServer() {
       const topic = await runAdkMultiAgentConsultation({
         realm,
         query: q,
+        gameId: typeof req.query.gameId === 'string' ? req.query.gameId.trim() : undefined,
         tapX: Number.isFinite(tapX) ? tapX : undefined,
         tapY: Number.isFinite(tapY) ? tapY : undefined,
       });
