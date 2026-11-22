@@ -299,6 +299,22 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
   const [radiusMeters, setRadiusMeters] = useState<number | null>(null);
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
   const [pingedIds, setPingedIds] = useState<Record<string, boolean>>({});
+  const [waypointId, setWaypointId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimerRef = React.useRef<number | null>(null);
+  const showToast = React.useCallback((text: string) => {
+    setToast(text);
+    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = window.setTimeout(() => setToast(null), 3200);
+  }, []);
+  const KIND_LABEL_FA: Record<MapEntityKind, string> = {
+    user: 'NEARBY PLAYER',
+    club: 'CLUB HQ',
+    store: 'AIPETROS STORE',
+    drop: 'DROP ZONE',
+  };
+  // GTA V minimap bars — deterministic per session (no fake randomness)
+  const GTA_BARS = { health: 86, armor: 72, stamina: 64 };
 
   useEffect(() => {
     if (!open) return;
@@ -335,6 +351,9 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
       .catch(() => {
         setLiveGrid(null);
         setGridError('grid-failed');
+        showToast(isFa
+          ? '⚠️ دریافت نقشه واقعی ناموفق — چند لحظه بعد دوباره امتحان کن'
+          : 'Real map fetch failed — try again shortly');
       })
       .finally(() => setGridLoading(false));
   }, []);
@@ -726,29 +745,38 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
                 dir={isRtl ? 'rtl' : 'ltr'}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <h3 className="text-[15.5px] font-bold leading-snug">{entityName(selectedEntity)}</h3>
+                  <div className="min-w-0">
+                    <div className={`flex items-center gap-1.5 text-[11px] mb-0.5 ${theme.mutedText}`}>
+                      <span className="font-gta uppercase tracking-wider text-cyan-400 font-bold" dir="ltr">
+                        {KIND_LABEL_FA[selectedEntity.kind]}
+                      </span>
+                      <span>•</span>
+                      <span dir="ltr" className="font-mono tabular-nums">
+                        {formatDistanceLabel(selectedEntity.distanceMeters, isRtl)}
+                      </span>
+                    </div>
+                    <h3 className="text-sm sm:text-base font-extrabold text-white leading-snug">{entityName(selectedEntity)}</h3>
+                  </div>
                   <span
                     data-testid="map-rating-badge"
-                    className={`px-2 py-1 rounded-full text-[11.5px] font-mono tabular-nums font-bold shrink-0 border ${theme.ratingBadge}`}
+                    className="bg-white/10 px-2 py-1 rounded-lg font-gta text-xs font-bold text-amber-300 shrink-0"
                   >
                     ★ {selectedEntity.rating.toFixed(1)}
                   </span>
                 </div>
 
+                <p className={`text-xs leading-relaxed ${theme.mutedText}`}>{entitySubtitle(selectedEntity)}</p>
+
                 <div className={`text-[12px] font-medium flex items-center gap-1.5 flex-wrap ${theme.mutedText}`}>
                   <span>{entityDistrict(selectedEntity)}</span>
-                  <span aria-hidden="true">·</span>
-                  <span className="font-mono tabular-nums">
-                    {formatDistanceLabel(selectedEntity.distanceMeters, isRtl)}
-                  </span>
                 </div>
 
                 <p className={`text-[12.5px] leading-relaxed ${theme.mutedText}`}>
                   {entitySubtitle(selectedEntity)}
                 </p>
 
-                <div className="pt-0.5">
-                  {selectedEntity.kind === 'store' ? (
+                <div className="flex items-center gap-2">
+                  {selectedEntity.kind === 'store' && (
                     <button
                       type="button"
                       data-testid="map-open-storefront-btn"
@@ -756,39 +784,100 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
                         onClose();
                         onJumpToStoreCollection(selectedEntity.linkedStoreCollectionId);
                       }}
-                      className={`h-10 w-full rounded-full text-[12.5px] font-bold inline-flex items-center justify-center gap-2 transition cursor-pointer ${theme.cardPrimaryBtn}`}
+                      className={`flex-1 h-10 rounded-xl text-[12.5px] font-bold inline-flex items-center justify-center gap-2 transition cursor-pointer ${theme.cardPrimaryBtn}`}
                     >
                       <ShoppingBag className="w-4 h-4" />
                       <span>{copy.mapOpenStoreCta}</span>
                     </button>
-                  ) : (
-                    <button
-                      type="button"
-                      data-testid="map-ping-entity-btn"
-                      onClick={() =>
-                        setPingedIds((prev) => ({ ...prev, [selectedEntity.id]: !prev[selectedEntity.id] }))
-                      }
-                      className={`h-10 w-full rounded-full text-[12.5px] font-bold inline-flex items-center justify-center gap-2 transition cursor-pointer ${
-                        pingedIds[selectedEntity.id] ? theme.cardSecondaryBtn : theme.cardPrimaryBtn
-                      }`}
-                    >
-                      {pingedIds[selectedEntity.id] ? (
-                        <>
-                          <Check className="w-4 h-4" />
-                          <span>{copy.mapPingedDone}</span>
-                        </>
-                      ) : (
-                        <>
-                          <UserCheck className="w-4 h-4" />
-                          <span>{copy.mapPingCta}</span>
-                        </>
-                      )}
-                    </button>
                   )}
+                  <button
+                    type="button"
+                    data-testid="btn-set-waypoint"
+                    onClick={() => {
+                      const next = waypointId === selectedEntity.id ? null : selectedEntity.id;
+                      setWaypointId(next);
+                      showToast(
+                        next
+                          ? (isFa ? '🟣 مسیریابی GPS به سبک GTA فعال شد' : 'GTA waypoint set')
+                          : (isFa ? 'مسیریابی لغو شد' : 'Waypoint cleared')
+                      );
+                    }}
+                    className={`flex-1 h-10 rounded-xl text-[12.5px] font-bold inline-flex items-center justify-center gap-2 transition cursor-pointer ${
+                      waypointId === selectedEntity.id
+                        ? 'bg-purple-800 text-white border border-purple-400/40'
+                        : 'bg-purple-600 hover:bg-purple-500 active:scale-95 text-white shadow-lg shadow-purple-600/30'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+                      <path d="M12 2L19 21l-7-4-7 4 7-19z" />
+                    </svg>
+                    <span>{isFa ? 'مسیریابی GPS به سبک GTA' : 'GTA-style GPS route'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="btn-radar-view"
+                    onClick={() => {
+                      setSelectedEntityId(null);
+                      setWaypointId(null);
+                      showToast(isFa ? '📷 دوربین روی زاویه رادار برگشت' : 'Camera reset to radar view');
+                    }}
+                    className="bg-slate-800 hover:bg-slate-700 border border-white/10 text-slate-200 text-xs font-semibold py-2.5 px-3 rounded-xl transition cursor-pointer shrink-0"
+                    title={isFa ? 'بازنشانی دوربین' : 'Reset camera'}
+                  >
+                    {isFa ? 'زاویه رادار' : 'Radar view'}
+                  </button>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* ── LOADING OVERLAY (grid fetch) ── */}
+          {gridLoading && (
+            <div
+              data-testid="grid-loader-overlay"
+              className="absolute inset-0 z-40 bg-[#07090d]/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center"
+            >
+              <div className="w-14 h-14 border-4 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin mb-4" aria-hidden="true" />
+              <h2 className="text-base sm:text-lg font-bold text-white mb-1">
+                {isFa ? 'در حال دریافت نقشه سه‌بعدی محله…' : 'Fetching the real neighborhood…'}
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-400 max-w-xs">
+                {isFa
+                  ? 'اتصال مستقیم به OpenStreetMap بدون نیاز به API Key برای ساخت خیابان‌ها و ساختمان‌ها'
+                  : 'Direct OpenStreetMap connection — no API key needed for streets and buildings'}
+              </p>
+            </div>
+          )}
+
+          {/* ── TOAST (no alert()) ── */}
+          {toast && (
+            <div
+              data-testid="map-toast"
+              className="absolute top-28 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 border border-amber-400/50 text-amber-200 text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2 max-w-[90vw]"
+            >
+              <span>{toast}</span>
+            </div>
+          )}
+
+          {/* ── BOTTOM HUD: GTA V minimap status bars ── */}
+          <div className="absolute inset-x-3 bottom-3 z-30 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-[420px] pointer-events-none">
+            <div className="bg-[#090c11]/95 border-2 border-slate-700/80 rounded-xl p-1.5 shadow-2xl">
+              <div className="grid grid-cols-12 gap-1.5 h-2.5" dir="ltr">
+                {/* Health (green, 6 cols) */}
+                <div className="col-span-6 bg-emerald-950/90 rounded-sm overflow-hidden relative">
+                  <div className="h-full bg-gradient-to-r from-emerald-500 to-green-400" style={{ width: `${GTA_BARS.health}%` }} />
+                </div>
+                {/* Armor (blue, 3 cols) */}
+                <div className="col-span-3 bg-sky-950/90 rounded-sm overflow-hidden relative">
+                  <div className="h-full bg-gradient-to-r from-sky-500 to-cyan-400" style={{ width: `${GTA_BARS.armor}%` }} />
+                </div>
+                {/* Stamina (amber, 3 cols) */}
+                <div className="col-span-3 bg-amber-950/90 rounded-sm overflow-hidden relative">
+                  <div className="h-full bg-gradient-to-r from-amber-500 to-yellow-300" style={{ width: `${GTA_BARS.stamina}%` }} />
+                </div>
+              </div>
+            </div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>,
