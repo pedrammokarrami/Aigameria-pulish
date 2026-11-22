@@ -1,0 +1,39 @@
+{
+ "startedAt": "2026-11-22T01:41:43.264Z",
+ "durationHours": 8,
+ "targetUsers": 1000,
+ "registered": 20,
+ "activeUsers": 0,
+ "rounds": 0,
+ "actions": {
+  "total": 20,
+  "ok": 20,
+  "fail": 0
+ },
+ "bySection": {
+  "register": {
+   "total": 20,
+   "ok": 20,
+   "fail": 0
+  }
+ },
+ "coachQuestions": {
+  "asked": 0,
+  "answered": 0,
+  "withLiveSources": 0,
+  "avgLatencyMs": 0,
+  "latencySum": 0
+ },
+ "chat": {
+  "roomsCreated": 0,
+  "messagesSent": 0,
+  "ok": 0,
+  "fail": 0
+ },
+ "errors": {},
+ "statusCodes": {
+  "201": 20
+ },
+ "updatedAt": "2026-11-22T01:43:43.291Z",
+ "elapsedHours": 0.03
+}
