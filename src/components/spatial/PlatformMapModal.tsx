@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import {
   Check,
   Compass,
+  Star,
   MapPin,
   Music,
   Navigation,
@@ -284,7 +285,8 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
   onClose,
   onJumpToStoreCollection,
 }) => {
-  const { isRtl, copy } = useLanguage();
+  const { isRtl, copy, languageCode } = useLanguage();
+  const isFa = languageCode === 'fa' || languageCode.startsWith('fa') || languageCode === 'prs';
   const [query, setQuery] = useState('');
   const [kindFilter, setKindFilter] = useState<'all' | MapEntityKind>('all');
   const [radiusMeters, setRadiusMeters] = useState<number | null>(null);
@@ -313,6 +315,37 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
       }),
     [activeHub, query, kindFilter, radiusMeters]
   );
+
+  // ── Real home location (GPS) — shown live in the GTA-style HUD ──
+  const [homeLocation, setHomeLocation] = useState<{ lat: number; lng: number; accuracyM: number } | null>(null);
+  const [homeError, setHomeError] = useState<string | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    if (!('geolocation' in navigator)) {
+      setHomeError('no-gps');
+      return;
+    }
+    let cancelled = false;
+    const id = navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        if (cancelled) return;
+        setHomeLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracyM: Math.round(pos.coords.accuracy),
+        });
+        setHomeError(null);
+      },
+      (err) => {
+        if (!cancelled) setHomeError(err.code === 1 ? 'denied' : 'unavailable');
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+    );
+    return () => {
+      cancelled = true;
+      if (id !== undefined) navigator.geolocation.clearWatch(id as number);
+    };
+  }, [open]);
 
   useEffect(() => {
     setSelectedEntityId(entities[0]?.id ?? null);
@@ -385,15 +418,31 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
           {/* Unified deep map canvas */}
           <MapCanvas />
 
-          {/* You marker — soft luminous halo, no clutter */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none flex flex-col items-center">
-            <span className={`absolute w-16 h-16 rounded-full animate-ping opacity-20 ${theme.youHalo}`} />
-            <span className={`relative w-7 h-7 rounded-full border-2 flex items-center justify-center shadow-[0_0_24px_rgba(255,255,255,0.18)] ${theme.youHalo} ${isCinema ? 'text-[#F8ECD4]' : 'text-white/90'}`}>
-              <Navigation className="w-3.5 h-3.5" />
+          {/* Radar vignette (GTA skin) */}
+          <div className="radar-vignette" aria-hidden="true" />
+
+          {/* You marker — GTA blip with real GPS coordinates */}
+          <div className="gta-blip active" style={{ left: '50%', top: '50%', zIndex: 10, pointerEvents: 'none' }}>
+            <span className={`blip-icon ${theme.youHalo} text-white`}>
+              <Navigation className="w-4 h-4" />
             </span>
-            <span className={`mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-[0.18em] border backdrop-blur-md ${theme.youChip}`}>
-              {copy.mapYouAreHere}
-            </span>
+            <span className="blip-label">{copy.mapYouAreHere}</span>
+            {homeLocation && (
+              <span
+                data-testid="map-home-gps"
+                dir="ltr"
+                className="mt-1 px-2 py-0.5 rounded-md text-[10px] font-mono-tabular font-black bg-[#0c1017]/90 border border-cyan-400/40 text-cyan-200"
+              >
+                📍 {homeLocation.lat.toFixed(5)}, {homeLocation.lng.toFixed(5)} · ±{homeLocation.accuracyM}m
+              </span>
+            )}
+            {homeError && (
+              <span className="mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#0c1017]/90 border border-white/15 text-amber-200">
+                {homeError === 'denied'
+                  ? (isFa ? 'موقعیت GPS غیرفعاله' : 'GPS location off')
+                  : (isFa ? 'GPS در دسترس نیست' : 'GPS unavailable')}
+              </span>
+            )}
           </div>
 
           {/* Icon-only pins — no text labels, clean shadows */}
@@ -408,24 +457,19 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
                   onClick={() => setSelectedEntityId(entity.id)}
                   aria-label={entityName(entity)}
                   initial={{ opacity: 0, scale: 0.6 }}
-                  animate={{ opacity: 1, scale: isSelected ? 1.18 : 1 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.6 }}
                   transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
                   style={{ left: `${entity.xPct}%`, top: `${pinTopPct(entity.yPct)}%` }}
-                  className="absolute -translate-x-1/2 -translate-y-1/2 z-20 cursor-pointer outline-none"
+                  className={`gta-blip ${isSelected ? 'active' : ''} outline-none`}
                 >
-                  {isSelected && (
-                    <span
-                      className={`absolute inset-0 -m-1.5 rounded-full animate-ping opacity-25 ${theme.youHalo}`}
-                      aria-hidden="true"
-                    />
-                  )}
                   <span
-                    className={`relative w-10 h-10 rounded-full border-2 flex items-center justify-center shadow-[0_10px_26px_rgba(0,0,0,0.4)] transition ${theme.pin[entity.kind]} ${
-                      isSelected ? `scale-105 ${theme.pinSelectedRing}` : 'hover:scale-105'
-                    }`}
+                    className={`blip-icon ${theme.pin[entity.kind]} ${isSelected ? 'scale-105' : ''} transition`}
                   >
                     {KIND_PIN_ICON[entity.kind]}
+                  </span>
+                  <span className="blip-label" dir="rtl">
+                    {entityName(entity)}
                   </span>
                 </motion.button>
               );
@@ -437,15 +481,23 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
             <div className={`px-4 pt-4 pb-5 flex flex-col gap-2.5 ${theme.scrim}`}>
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <span
-                    className={`w-9 h-9 rounded-full border flex items-center justify-center shrink-0 backdrop-blur-xl ${
-                      isCinema ? 'bg-[#FFFBEF]/60 border-[#6B411C]/25 text-[#7B2C35]' : 'bg-white/[0.08] border-white/14 text-white/85'
-                    }`}
-                  >
-                    {activeHub === 'audio' ? <Music className="w-4 h-4" /> : <Compass className="w-4 h-4" />}
+                  <span className="w-9 h-9 rounded-lg bg-cyan-500/15 border border-cyan-400/40 flex items-center justify-center text-cyan-300 shrink-0 backdrop-blur-xl">
+                    <svg className="w-5 h-5 animate-spin" style={{ animationDuration: '9s' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <circle cx="12" cy="12" r="9" strokeOpacity="0.35" />
+                      <path d="M12 3a9 9 0 0 1 9 9" strokeLinecap="round" />
+                      <circle cx="12" cy="12" r="2" fill="currentColor" />
+                    </svg>
                   </span>
                   <div className="min-w-0">
-                    <h2 className={`text-[16px] font-bold leading-tight ${theme.headerText}`}>{headerTitle}</h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className={`text-[16px] font-bold leading-tight ${theme.headerText}`}>{headerTitle}</h2>
+                      {/* GTA V wanted stars */}
+                      <span className="flex items-center gap-0.5" aria-hidden="true" data-testid="map-wanted-stars">
+                        {[0, 1, 2, 3, 4].map((i) => (
+                          <Star key={i} className={`w-3.5 h-3.5 ${i === 0 ? 'star-active' : 'star-inactive'}`} fill={i === 0 ? 'currentColor' : 'none'} />
+                        ))}
+                      </span>
+                    </div>
                     <p className={`text-[11.5px] leading-tight ${theme.headerMuted}`}>{headerSubtitle}</p>
                   </div>
                 </div>
