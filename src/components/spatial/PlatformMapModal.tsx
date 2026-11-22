@@ -607,7 +607,7 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
                       {gridLoading
                         ? (isFa ? 'در حال آماده‌سازی نقشه واقعی…' : 'Loading real map…')
                         : liveGrid
-                          ? `${liveGrid.label} · BLD ${liveGrid.buildingCount} · RDS ${liveGrid.roadCount}`
+                          ? `${liveGrid.label} (${liveGrid.center.lat.toFixed(4)}, ${liveGrid.center.lng.toFixed(4)}) · BLD ${liveGrid.buildingCount} · RDS ${liveGrid.roadCount}`
                           : homeError
                             ? (isFa ? 'لوکیشن واقعی رو از دکمه GPS انتخاب کن' : 'Pick a real location via GPS')
                             : headerSubtitle}

@@ -15,6 +15,8 @@ export interface GridWay {
   points: number[];
   /** road class for styling */
   roadClass?: string;
+  /** OSM building:levels tag for realistic extrusion height */
+  levels?: number;
 }
 
 export interface LiveGrid {
@@ -105,7 +107,10 @@ export async function fetchLiveGrid(
       for (const el of body.elements ?? []) {
         if (!el.geometry || el.geometry.length < 2) continue;
         const flat = el.geometry.flatMap((g) => [g.lat, g.lon]);
-        if (el.tags?.building) buildings.push({ points: flat });
+        if (el.tags?.building) {
+          const lv = parseInt(String(el.tags['building:levels'] ?? ''), 10);
+          buildings.push({ points: flat, levels: Number.isFinite(lv) && lv > 0 ? lv : undefined });
+        }
         else if (el.tags?.highway) roads.push({ points: flat, roadClass: el.tags.highway });
       }
       // An empty result from a regional mirror (e.g. osm.ch = Swiss-only) must

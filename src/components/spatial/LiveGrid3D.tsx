@@ -109,9 +109,11 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, on
       const wallMat = new THREE.MeshStandardMaterial({ color: 0x151b26, roughness: 0.75, metalness: 0.25 });
       const roofMat = new THREE.MeshStandardMaterial({ color: 0x1c2433, roughness: 0.8, metalness: 0.2 });
       const edgeMat = new THREE.LineBasicMaterial({ color: 0x475569, transparent: true, opacity: 0.75 });
+      const highlightEdgeMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.55 });
       gridRef.buildings.slice(0, 140).forEach((b) => {
         const pts = b.points;
         if (pts.length < 8) return;
+        const toLocal = toLocalMeters(gridRef.center, gridRef.radiusM, pts[0], pts[1]);
         const shape = new THREE.Shape();
         let first = true;
         for (let i = 0; i < pts.length; i += 2) {
@@ -124,15 +126,20 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, on
           }
         }
         shape.closePath();
-        const height = 8 + ((Math.abs(Math.round(pts[0] * 100)) % 22));
+        // real OSM height: levels × 3.8m (cap 110), else deterministic pseudo-random
+        const lv = b.levels;
+        let height = 12;
+        if (lv && lv > 0) height = Math.min(lv * 3.8, 110);
+        else {
+          const seed = Math.abs(Math.sin(toLocal.x * 12.9898 + toLocal.z * 78.233));
+          height = 9 + seed * 24;
+        }
         const geo = new THREE.ExtrudeGeometry(shape, { depth: height, bevelEnabled: false });
         geo.rotateX(-Math.PI / 2);
         const mesh = new THREE.Mesh(geo, [wallMat, roofMat]);
         buildingsGroup.add(mesh);
-        if (buildingsGroup.children.length < 60) {
-          const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 20), edgeMat);
-          buildingsGroup.add(edges);
-        }
+        const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 25), height > 26 ? highlightEdgeMat : edgeMat);
+        buildingsGroup.add(edges);
       });
 
       // ── Real roads: flat dark ribbons along OSM polylines ──
@@ -157,8 +164,9 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, on
       });
 
       // ── Traffic: small cars gliding along road curves ──
-      const carGeo = new THREE.BoxGeometry(4.4, 1.6, 2.2);
-      const carColors = [0x22d3ee, 0xfacc15, 0xf43f5e, 0x4ade80, 0xe2e8f0];
+      const carGeo = new THREE.SphereGeometry(1.5, 8, 8);
+      const headMat = new THREE.MeshBasicMaterial({ color: 0xf8fafc });
+      const tailMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
       const roadCurves = gridRef.roads
         .filter((r) => r.points.length >= 6 && !(r.roadClass && FOOTWAY_CLASSES.has(r.roadClass)))
         .slice(0, 12)
@@ -170,11 +178,12 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, on
           }
           return new THREE.CatmullRomCurve3(curvePts);
         });
-      for (let i = 0; i < Math.min(10, roadCurves.length); i++) {
+      for (let i = 0; i < Math.min(35, roadCurves.length); i++) {
         const curve = roadCurves[i % roadCurves.length];
-        const mesh = new THREE.Mesh(carGeo, new THREE.MeshBasicMaterial({ color: carColors[i % carColors.length] }));
+        const mesh = new THREE.Mesh(carGeo, i % 2 === 0 ? headMat : tailMat); // white headlights / red taillights
+        mesh.position.y = 1.2;
         trafficGroup.add(mesh);
-        traffic.push({ mesh, curve, t: Math.random(), speed: 0.012 + Math.random() * 0.02 });
+        traffic.push({ mesh, curve, t: Math.random(), speed: 0.008 + Math.random() * 0.012 });
       }
     }
 
