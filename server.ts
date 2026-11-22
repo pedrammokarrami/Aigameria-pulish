@@ -1174,6 +1174,38 @@ async function startServer() {
   });
 
   // 21b. Professional Coach Session — one question, one complete class (5 modules, per-module clips)
+  // Real player photo — Wikipedia REST summary (keyless), 24h in-memory cache, 3s timeout.
+  const PLAYER_PHOTO_CACHE = new Map<string, { photo: string | null; fetchedAtMs: number }>();
+  app.get('/api/ai/player-photo', async (req, res) => {
+    const name = typeof req.query.name === 'string' ? req.query.name.trim() : '';
+    if (!name) return res.status(400).json({ error: 'name required' });
+    const cached = PLAYER_PHOTO_CACHE.get(name);
+    if (cached && Date.now() - cached.fetchedAtMs < 24 * 3600 * 1000) {
+      return res.json({ photo: cached.photo });
+    }
+    let photo: string | null = null;
+    try {
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 3000);
+      const resp = await fetch(
+        `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name.replace(/\./g, ''))}`,
+        { signal: ctl.signal, headers: { 'User-Agent': 'AIPETROS/1.0 (coach card)' } }
+      );
+      clearTimeout(timer);
+      if (resp.ok) {
+        const body: unknown = await resp.json();
+        photo =
+          (body as { thumbnail?: { source?: string }; originalimage?: { source?: string } })?.thumbnail?.source ??
+          (body as { originalimage?: { source?: string } })?.originalimage?.source ??
+          null;
+      }
+    } catch {
+      photo = null;
+    }
+    PLAYER_PHOTO_CACHE.set(name, { photo, fetchedAtMs: Date.now() });
+    res.json({ photo });
+  });
+
   app.get('/api/ai/coach-session', async (req, res) => {
     try {
       const gameId = normalizeCoachGameId(req.query.gameId);

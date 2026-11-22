@@ -267,7 +267,7 @@ export async function runAdkMultiAgentConsultation(req: AdkConsultRequest): Prom
   };
 
   topicWithVectors.adkIntel = adkIntel;
-  topicWithVectors.answerBlock = buildCoachAnswerBlock(req.query, req.realm);
+  topicWithVectors.answerBlock = buildCoachAnswerBlock(req.query, req.realm) ?? undefined;
   return topicWithVectors;
 }
 

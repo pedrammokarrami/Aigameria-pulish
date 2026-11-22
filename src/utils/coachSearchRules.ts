@@ -78,6 +78,20 @@ export interface AdkMultiAgentReport {
 
 export type CoachAnswerIntent = 'formation' | 'loadout' | 'item' | 'map' | 'tactic' | 'economy' | 'generic';
 
+export interface PlayerAssignment {
+  slot: string;
+  roleFa: string;
+  playerName: string;
+  noteFa: string;
+}
+
+export interface PlayerAssignment {
+  slot: string;
+  roleFa: string;
+  playerName: string;
+  noteFa: string;
+}
+
 export interface CoachAnswerBlock {
   intent: CoachAnswerIntent;
   titleFa: string;
@@ -85,6 +99,7 @@ export interface CoachAnswerBlock {
   linesFa: string[];
   linesEn: string[];
   options?: string[];
+  playerAssignments?: Record<string, PlayerAssignment[]>;
 }
 
 export interface CoachConsultationTopic {
@@ -115,30 +130,61 @@ export function detectAnswerIntent(query: string): CoachAnswerIntent {
   if (/item|gear|\u0622\u06cc\u062a\u0645|\u0627\u06cc\u062a\u0645|equipment/.test(q)) return 'item';
   if (/\u0646\u0642\u0634\u0647|map position|callout|\u0645\u0648\u0642\u0639\u06cc\u062a/.test(q)) return 'map';
   if (/economy|eco|\u0627\u0642\u062a\u0635\u0627\u062f|\u062e\u0631\u06cc\u062f/.test(q)) return 'economy';
-  return 'tactic';
+  if (/\u062a\u0627\u06a9\u062a\u06cc\u06a9|\u0627\u0633\u062a\u0631\u0627\u062a\u0698\u06cc|\u067e\u0644\u0646|strategy|tactic|game plan/.test(q)) return 'tactic';
+  return 'generic';
 }
 
 /** Deterministic structured answer for the detected intent (bilingual). */
-export function buildCoachAnswerBlock(query: string, realm: RealmId): CoachAnswerBlock {
+export function buildCoachAnswerBlock(query: string, realm: RealmId): CoachAnswerBlock | null {
   const intent = detectAnswerIntent(query);
+  if (intent === 'generic') return null;
   if (intent === 'formation') {
+    const assignments: Record<string, PlayerAssignment[]> = {
+      '4-2-3-1': [
+        { slot: 'GK', roleFa: 'دروازه‌بان', playerName: 'Courtois', noteFa: 'رفلکس ۹۰+؛ بهترین برای شوت نزدیک' },
+        { slot: 'RB', roleFa: 'دفاع راست', playerName: 'Alexander-Arnold', noteFa: 'پاس طولی ۹۲ — از پشت خط پاس عمقی بده' },
+        { slot: 'CB', roleFa: 'دفاع میانی', playerName: 'van Dijk', noteFa: 'هوا قوی؛ عمق ۴۵ نگه‌دار' },
+        { slot: 'CB', roleFa: 'دفاع میانی', playerName: 'Rúben Dias', noteFa: 'پرس اول؛ توپ‌گیری از بازیکن سریع' },
+        { slot: 'LB', roleFa: 'دفاع چپ', playerName: 'Balde', noteFa: 'سرعت ۹۱ — پشتیبانی حمله از پهلو' },
+        { slot: 'CDM', roleFa: 'هافبک دفاعی', playerName: 'Rodri', noteFa: 'کنترل ریتم؛ هرگز پرس بالای نیمه‌میدان' },
+        { slot: 'CDM', roleFa: 'هافبک جعبه‌به‌جعبه', playerName: 'Bellingham', noteFa: 'ورود تو ربع آخر — شوت از لبه محوطه' },
+        { slot: 'CAM', roleFa: 'هافبک هجومی', playerName: 'De Bruyne', noteFa: 'پاس کلیدی ۹۴ — فرصت‌ساز اصلی' },
+        { slot: 'RW', roleFa: 'وینگر راست', playerName: 'Vinícius Jr.', noteFa: 'دیبل ۱و۱؛ داخل‌شدن از پهلو' },
+        { slot: 'ST', roleFa: 'مهاجم نوک', playerName: 'Mbappé', noteFa: 'سرعت ۹۷ — پشت دفاع بدو، نه خط میانی' },
+        { slot: 'LW', roleFa: 'وینگر چپ', playerName: 'Yamal', noteFa: 'قطع با پای چپ؛ پاس به لبه محوطه' },
+      ],
+      '4-3-3 (2)': [
+        { slot: 'GK', roleFa: 'دروازه‌بان', playerName: 'Alisson', noteFa: 'خروج با پا؛ پخش سریع' },
+        { slot: 'RB', roleFa: 'دفاع راست', playerName: 'Cancelo', noteFa: 'داخل‌شدن تو میانه میدان' },
+        { slot: 'CB', roleFa: 'دفاع میانی', playerName: 'Rúben Dias', noteFa: 'خط عمق ۴۵' },
+        { slot: 'CB', roleFa: 'دفاع میانی', playerName: 'Saliba', noteFa: 'سرعت ۸۴؛ پوشش پشت' },
+        { slot: 'LB', roleFa: 'دفاع چپ', playerName: 'Theo Hernández', noteFa: 'همپوشانی حمله؛ شوت دور' },
+        { slot: 'CM', roleFa: 'هافبک مرکزی', playerName: 'Rodri', noteFa: 'پست پایین برای پاس‌خروجی' },
+        { slot: 'CM', roleFa: 'هافبک جعبه‌به‌جعبه', playerName: 'Wirtz', noteFa: 'پاس بین خطوط' },
+        { slot: 'CM', roleFa: 'هافبک هجومی', playerName: 'De Bruyne', noteFa: 'ضرب آزاد و کرنر' },
+        { slot: 'RW', roleFa: 'وینگر راست', playerName: 'Salah', noteFa: 'پای چپ؛ داخل از راست' },
+        { slot: 'ST', roleFa: 'مهاجم', playerName: 'Haaland', noteFa: 'تک‌ضرب داخل محوطه؛ شوت فوری' },
+        { slot: 'LW', roleFa: 'وینگر چپ', playerName: 'Mbappé', noteFa: 'پرس از پهلو؛ سرعت ۹۷' },
+      ],
+    };
     return {
       intent,
-      titleFa: '\u062a\u0631\u06a9\u06cc\u0628 \u067e\u06cc\u0634\u0646\u0647\u0627\u062f\u06cc (\u0645\u062a\u0627\u06cc \u0641\u0639\u0644\u06cc)',
-      titleEn: 'Recommended formation (current meta)',
+      titleFa: 'ترکیب پیشنهادی — با بازیکن واقعی و جای دقیق',
+      titleEn: 'Recommended formation — real players & slots',
       linesFa: [
-        '4-2-3-1 \u2192 \u06a9\u0646\u062a\u0631\u0644 \u0648\u0633\u0637 \u0648 \u0636\u062f\u062d\u0645\u0644\u0647\u061b \u0627\u0645\u0646\u200c\u062a\u0631\u06cc\u0646 \u0627\u0646\u062a\u062e\u0627\u0628 \u0631\u0646\u06a9.',
-        '4-3-3(2) \u2192 \u067e\u0631\u0633 \u0628\u0627\u0644\u0627 \u0648 \u0648\u06cc\u0646\u06af\u200c\u0647\u0627\u06cc \u0633\u0631\u06cc\u0639.',
-        '4-2-1-3 \u2192 \u0641\u0634\u0627\u0631 \u062d\u062f\u0627\u06a9\u062b\u0631\u06cc\u061b \u06cc\u06a9 CDM \u0647\u0645\u06cc\u0634\u0647 \u0628\u0645\u0648\u0646\u0647.',
-        '\u0639\u0631\u0636 \u062f\u0641\u0627\u0639 40\u060c \u0627\u0631\u062a\u0641\u0627\u0639 \u062e\u0637 55\u2013\u06f6\u06f0\u060c \u067e\u0631\u0633 \u0628\u0639\u062f \u0627\u0632 \u067e\u0627\u0633 \u0639\u0631\u0636\u06cc.',
+        '4-2-3-1 → کنترل وسط و ضدحمله؛ امن‌ترین انتخاب رنک.',
+        '4-3-3(2) → پرس بالا و وینگ‌های سریع.',
+        'روی هر بازیکن تو زمین کلیک کن تا ببینی چرا اونجاست.',
+        'عرض دفاع 40، ارتفاع خط 55–60، پرس بعد از پاس عرضی.',
       ],
       linesEn: [
-        '4-2-3-1 \u2192 central control + counter; safest ranked pick.',
-        '4-3-3(2) \u2192 high press with fast wingers.',
-        '4-2-1-3 \u2192 max pressure; keep one CDM home.',
+        '4-2-3-1 → central control + counter; safest ranked pick.',
+        '4-3-3(2) → high press with fast wingers.',
+        'Tap any player on the pitch to see why they are there.',
         'Def width 40, line height 55-60, press after sideways pass.',
       ],
-      options: ['4-2-3-1', '4-3-3 (2)', '4-2-1-3', '3-5-2'],
+      options: ['4-2-3-1', '4-3-3 (2)', '3-5-2'],
+      playerAssignments: assignments,
     };
   }
   if (intent === 'loadout') {

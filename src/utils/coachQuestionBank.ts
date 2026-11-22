@@ -171,32 +171,46 @@ function bankFor(gameId: LobbyGameId): { bank: IndexedQuestion[]; starters: stri
   return { bank: BANKS[gameId], starters: STARTERS[gameId] };
 }
 
-/** Live suggestions: direct word hits ranked; off-topic typing falls back to
- *  the game's own curated starters (never random unrelated questions). */
+/** Live suggestions: direct word hits ranked; the game whose bank covers MOST of
+ *  the typed tokens wins (typing «فرماسیون» inside shooter → football questions).
+ *  Off-topic typing falls back to the current game's curated starters. */
 export function suggestCoachQuestions(query: string, gameId: LobbyGameId, limit = 8): string[] {
-  const { bank, starters } = bankFor(gameId);
+  const gameIds = Object.keys(DOMAINS) as LobbyGameId[];
   const normalizedQuery = normalize(query);
-  if (!normalizedQuery) return starters.slice(0, limit);
+  if (!normalizedQuery) return bankFor(gameId).starters.slice(0, limit);
   const tokens = tokenize(normalizedQuery);
-  if (tokens.length === 0) return starters.slice(0, limit);
-  const scored: { q: string; score: number; direct: boolean }[] = [];
-  for (const entry of bank) {
-    let score = 0;
-    let direct = false;
-    for (const token of tokens) {
-      if (entry.hay.includes(token)) {
-        score += 3;
-        direct = true;
-      } else if (entry.tokens.some((w) => w.startsWith(token.slice(0, 4)) || token.startsWith(w.slice(0, 4)))) {
-        score += 1;
+  if (tokens.length === 0) return bankFor(gameId).starters.slice(0, limit);
+
+  const rankBank = (bank: IndexedQuestion[]) => {
+    const scored: { q: string; score: number; coverage: number }[] = [];
+    for (const entry of bank) {
+      let score = 0;
+      let coverage = 0;
+      for (const token of tokens) {
+        if (entry.hay.includes(token)) {
+          score += 3;
+          coverage += 1;
+        } else if (entry.tokens.some((w) => w.startsWith(token.slice(0, 4)) || token.startsWith(w.slice(0, 4)))) {
+          score += 1;
+        }
       }
+      if (score > 0) scored.push({ q: entry.q, score, coverage });
     }
-    if (score > 0) scored.push({ q: entry.q, score, direct });
+    scored.sort((a, b) => b.score - a.score || a.q.length - b.q.length);
+    return scored;
+  };
+
+  // Pick the game bank with the best token coverage (current game wins ties).
+  let best: { gameId: LobbyGameId; scored: ReturnType<typeof rankBank>; coverage: number } | null = null;
+  for (const g of [gameId, ...gameIds.filter((x) => x !== gameId)]) {
+    const scored = rankBank(bankFor(g).bank);
+    const coverage = Math.max(0, ...scored.map((s) => s.coverage));
+    if (coverage > (best?.coverage ?? 0)) best = { gameId: g, scored, coverage };
+    if (g === gameId && coverage > 0 && (best?.gameId ?? g) === g && coverage === best?.coverage && coverage >= tokens.length) break; // full coverage locally — stop early
   }
-  if (scored.length === 0) return starters.slice(0, limit);
-  scored.sort((a, b) => b.score - a.score || a.q.length - b.q.length);
-  const result = scored.slice(0, limit).map((e) => e.q);
-  // pad with starters when direct hits are few
+  if (!best || best.scored.length === 0) return bankFor(gameId).starters.slice(0, limit);
+  const { starters } = bankFor(best.gameId);
+  const result = best.scored.slice(0, limit).map((e) => e.q);
   for (const s of starters) {
     if (result.length >= limit) break;
     if (!result.includes(s)) result.push(s);

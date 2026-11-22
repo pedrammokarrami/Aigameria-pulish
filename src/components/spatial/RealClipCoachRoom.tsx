@@ -221,10 +221,19 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
     };
   }, [isGameDropdownOpen, libraryQuery, libraryRealmFilter]);
 
+  const [iframeFailed, setIframeFailed] = useState<boolean>(false);
+  const iframeLoadedRef = useRef<boolean>(false);
   const handleStartVideoPlayback = () => {
     onClearUploadedMedia();
+    iframeLoadedRef.current = false;
+    setIframeFailed(false);
     setIsPlaying(true);
     setPlayerNonce((n) => n + 1);
+    // If the YouTube embed never fires load (blocked/offline), fall back to a
+    // direct-link card instead of an empty black player.
+    window.setTimeout(() => {
+      if (!iframeLoadedRef.current) setIframeFailed(true);
+    }, 6000);
   };
 
   const handleSelectChapter = (chapter: ScrubberChapterDot) => {
@@ -390,6 +399,37 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
                     className="w-full h-full object-contain bg-black"
                   />
                 )
+              ) : isPlaying && embedUrl && activeClip && !iframeFailed ? (
+                <iframe
+                  key={`${activeClip.youtubeId}-${activeStartSec}-${playerNonce}`}
+                  data-testid="real-youtube-player"
+                  src={embedUrl}
+                  title={activeClip.title}
+                  className="w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  onLoad={() => {
+                    iframeLoadedRef.current = true;
+                  }}
+                />
+              ) : isPlaying && activeClip && iframeFailed ? (
+                <div
+                  data-testid="video-fallback-card"
+                  className="w-full h-full flex flex-col items-center justify-center gap-2 px-4 text-center"
+                  style={{ background: `linear-gradient(135deg, ${accent}22, #05070B)` }}
+                >
+                  <p className="text-[12.5px] font-black text-white">پخش تو‌صفحه ممکن نشد — مستقیم تو یوتیوب ببین</p>
+                  <a
+                    href={`https://www.youtube.com/watch?v=${activeClip.youtubeId}&t=${activeStartSec}s`}
+                    target="_blank"
+                    rel="noreferrer"
+                    data-testid="video-fallback-link"
+                    className="px-3.5 py-1.5 rounded-full text-[12px] font-black cursor-pointer"
+                    style={{ backgroundColor: accent, color: '#05070B' }}
+                  >
+                    ▶ باز کردن کلیپ در یوتیوب
+                  </a>
+                </div>
               ) : isPlaying && embedUrl && activeClip ? (
                 <iframe
                   key={`${activeClip.youtubeId}-${activeStartSec}-${playerNonce}`}

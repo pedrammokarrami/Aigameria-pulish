@@ -653,6 +653,27 @@ export function App() {
   );
 
   /** Ask a free question from the lobby: best local skill wins, else the coach session gets the raw question. */
+  /** Free question asked inside the coach room: refresh the intent answer board
+   *  (race-guarded) so the board matches THIS question, not the previous topic. */
+  const handleCoachRoomQuestion = useCallback(
+    (q: string) => {
+      setClipProblemQuery(q);
+      fetchProClipsAgent(selectedGame, q, false);
+      const seq = nextCoachSearchSeq();
+      fetch(
+        `/api/coach/search?realm=${encodeURIComponent(selectedGame.realm)}&q=${encodeURIComponent(q)}`
+      )
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.topic && seq === coachSearchSeqRef.current) {
+            setActiveTopic((prev) => (prev ? { ...prev, answerBlock: data.topic.answerBlock } : prev));
+          }
+        })
+        .catch(() => undefined);
+    },
+    [selectedGame]
+  );
+
   const handleAskLobbyQuestion = useCallback(
     (question: string) => {
       setLobbySearchQuery(question);
@@ -1231,14 +1252,8 @@ export function App() {
               isAnalyzingUpload={isAnalyzingUpload}
               answerBlock={activeTopic.answerBlock}
               onSelectGame={handleSelectCoachGame}
-              onSubmitProblemQuery={(q) => {
-                setClipProblemQuery(q);
-                fetchProClipsAgent(selectedGame, q, false);
-              }}
-              onAskCoachQuestion={(q) => {
-                setClipProblemQuery(q);
-                fetchProClipsAgent(selectedGame, q, false);
-              }}
+              onSubmitProblemQuery={handleCoachRoomQuestion}
+              onAskCoachQuestion={handleCoachRoomQuestion}
               onRefreshAgents={() => {
                 fetchMotionCoachAgent(selectedGame, true);
                 fetchProClipsAgent(selectedGame, clipProblemQuery, true);

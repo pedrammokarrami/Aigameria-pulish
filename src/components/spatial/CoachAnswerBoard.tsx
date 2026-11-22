@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Crosshair, Package, MapPin, Coins, ListChecks, Users } from 'lucide-react';
-import type { CoachAnswerBlock } from '../../utils/coachSearchRules';
+import type { CoachAnswerBlock, PlayerAssignment } from '../../utils/coachSearchRules';
 
 interface CoachAnswerBoardProps {
   answerBlock: CoachAnswerBlock;
@@ -37,6 +37,74 @@ const FORMATION_LAYOUTS: Record<string, Array<{ x: number; y: number; role: 'gk'
   ],
 };
 
+/** Real player photos from Wikipedia — keyless, cached in-memory per name. */
+const PHOTO_CACHE = new Map<string, string | null>();
+async function fetchPlayerPhoto(name: string): Promise<string | null> {
+  if (PHOTO_CACHE.has(name)) return PHOTO_CACHE.get(name) ?? null;
+  try {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 3500);
+    const res = await fetch(`/api/ai/player-photo?name=${encodeURIComponent(name)}`, { signal: ctl.signal });
+    clearTimeout(timer);
+    const url = res.ok ? ((await res.json())?.photo ?? null) : null;
+    PHOTO_CACHE.set(name, url);
+    return url;
+  } catch {
+    PHOTO_CACHE.set(name, null);
+    return null;
+  }
+}
+
+const PlayerDot: React.FC<{
+  dot: { x: number; y: number; role: 'gk' | 'def' | 'mid' | 'att' };
+  assignment: PlayerAssignment | undefined;
+  selected: boolean;
+  accentHex: string;
+  onSelect: () => void;
+}> = ({ dot, assignment, selected, accentHex, onSelect }) => {
+  const style = ROLE_STYLE[dot.role] ?? ROLE_STYLE.mid;
+  const [photo, setPhoto] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    if (assignment?.playerName) {
+      fetchPlayerPhoto(assignment.playerName).then((p) => {
+        if (!cancelled) setPhoto(p);
+      });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [assignment?.playerName]);
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      data-testid={`player-slot-${assignment?.slot ?? dot.role}-${assignment?.playerName ?? 'x'}`}
+      className={`absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center cursor-pointer transition ${selected ? 'z-20' : 'z-10'}`}
+      style={{ left: `${dot.x}%`, top: `${dot.y}%`, width: '16%' }}
+    >
+      <span
+        className={`relative w-full aspect-square rounded-full border-2 flex items-center justify-center overflow-hidden shadow-lg ${selected ? 'scale-110' : ''}`}
+        style={{
+          backgroundColor: selected ? accentHex : style.bg,
+          borderColor: selected ? '#FFFFFF' : 'rgba(0,0,0,0.45)',
+        }}
+      >
+        {photo ? (
+          <img src={photo} alt={assignment?.playerName ?? style.label} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+        ) : (
+          <span className="font-mono-tabular text-[8px] font-black" style={{ color: '#05070B' }}>{style.label || (assignment?.slot ?? '')}</span>
+        )}
+      </span>
+      {assignment && (
+        <span dir="ltr" className="mt-0.5 w-full truncate text-center text-[8px] font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+          {assignment.playerName}
+        </span>
+      )}
+    </button>
+  );
+};
+
 const ROLE_STYLE: Record<string, { bg: string; label: string }> = {
   gk: { bg: '#F5C542', label: 'GK' },
   def: { bg: '#38BDF8', label: '' },
@@ -66,6 +134,7 @@ function resolveFormationFromText(lines: string[], options: string[]): { key: st
 
 export const CoachAnswerBoard: React.FC<CoachAnswerBoardProps> = ({ answerBlock, accentHex }) => {
   const [selectedFormation, setSelectedFormation] = useState<string | null>(null);
+  const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null);
   const Icon = INTENT_ICON[answerBlock.intent] ?? ListChecks;
   const isFaLines = answerBlock.linesFa?.length > 0;
   const lines = isFaLines ? answerBlock.linesFa : answerBlock.linesEn;
@@ -113,25 +182,41 @@ export const CoachAnswerBoard: React.FC<CoachAnswerBoardProps> = ({ answerBlock,
             <div className="absolute left-1/2 bottom-0 -translate-x-1/2 w-[36%] h-[13%] border border-white/25 border-b-0 rounded-t-sm" />
             <div className="absolute left-1/2 top-0 -translate-x-1/2 w-[36%] h-[13%] border border-white/25 border-t-0 rounded-b-sm" />
             {formationDots.map((dot, i) => {
-              const style = ROLE_STYLE[dot.role] ?? ROLE_STYLE.mid;
+              const assignments = answerBlock.playerAssignments ?? {};
+              const assignment = (assignments[activeFormation ?? ''] ?? Object.values(assignments)[0])?.[i];
               return (
-                <div
+                <PlayerDot
                   key={i}
-                  className="absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full border border-black/40 shadow-md"
-                  style={{
-                    left: `${dot.x}%`,
-                    top: `${dot.y}%`,
-                    width: '9.5%',
-                    aspectRatio: '1',
-                    backgroundColor: style.bg,
-                    color: '#05070B',
-                  }}
-                >
-                  <span className="font-mono-tabular text-[8px] font-black">{style.label}</span>
-                </div>
+                  dot={dot}
+                  assignment={assignment}
+                  selected={selectedSlotIndex === i}
+                  accentHex={accentHex}
+                  onSelect={() => setSelectedSlotIndex(selectedSlotIndex === i ? null : i)}
+                />
               );
             })}
           </div>
+          {(() => {
+            const assignments = answerBlock.playerAssignments ?? {};
+            const list = assignments[activeFormation ?? ''] ?? Object.values(assignments)[0];
+            const sel = selectedSlotIndex !== null ? list?.[selectedSlotIndex] : null;
+            if (!sel) {
+              return list ? (
+                <p className="text-[11px] font-bold text-white/60 text-center">روی هر بازیکن کلیک کن تا نقش و دستور دقیقش رو ببینی</p>
+              ) : null;
+            }
+            return (
+              <div data-testid="player-slot-detail" className="px-2.5 py-2 rounded-lg bg-white/5 border border-white/10">
+                <p className="text-[12px] font-black text-white">
+                  <span dir="ltr" className="font-mono-tabular">{sel.slot}</span>
+                  {' — '}
+                  <span dir="ltr">{sel.playerName}</span>
+                  <span className="text-white/50"> ({sel.roleFa})</span>
+                </p>
+                <p className="text-[11.5px] font-bold" style={{ color: accentHex }}>▸ {sel.noteFa}</p>
+              </div>
+            );
+          })()}
           {answerBlock.options && answerBlock.options.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {answerBlock.options.map((opt) => {
