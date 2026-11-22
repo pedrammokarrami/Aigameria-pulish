@@ -24,6 +24,13 @@ import {
   formatDistanceLabel,
 } from '../../utils/platformMapEngine';
 import type { MasterHubId } from './MasterHubSwitcher';
+import {
+  fetchLiveGrid,
+  projectToViewport,
+  LIVE_GRID_PRESETS,
+  type GridCoord,
+  type LiveGrid,
+} from '../../utils/liveGridEngine';
 
 interface PlatformMapModalProps {
   open: boolean;
@@ -316,6 +323,22 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
     [activeHub, query, kindFilter, radiusMeters]
   );
 
+  // ── LIVE GRID: real OSM buildings + roads around a coordinate ──
+  const [liveGrid, setLiveGrid] = useState<LiveGrid | null>(null);
+  const [gridLoading, setGridLoading] = useState(false);
+  const [gridError, setGridError] = useState<string | null>(null);
+  const loadLiveGrid = React.useCallback((center: GridCoord, label: string) => {
+    setGridLoading(true);
+    setGridError(null);
+    fetchLiveGrid(center, label)
+      .then((grid) => setLiveGrid(grid))
+      .catch(() => {
+        setLiveGrid(null);
+        setGridError('grid-failed');
+      })
+      .finally(() => setGridLoading(false));
+  }, []);
+
   // ── Real home location (GPS) — shown live in the GTA-style HUD ──
   const [homeLocation, setHomeLocation] = useState<{ lat: number; lng: number; accuracyM: number } | null>(null);
   const [homeError, setHomeError] = useState<string | null>(null);
@@ -335,6 +358,7 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
           accuracyM: Math.round(pos.coords.accuracy),
         });
         setHomeError(null);
+        loadLiveGrid({ lat: pos.coords.latitude, lng: pos.coords.longitude }, isFa ? 'لوکیشن من (GPS)' : 'My location (GPS)');
       },
       (err) => {
         if (!cancelled) setHomeError(err.code === 1 ? 'denied' : 'unavailable');
@@ -418,6 +442,37 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
           {/* Unified deep map canvas */}
           <MapCanvas />
 
+          {/* ── LIVE GRID: real OSM buildings + roads projected from lat/lng ── */}
+          {liveGrid && (
+            <svg
+              data-testid="live-grid-svg"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              className="absolute inset-0 w-full h-full pointer-events-none"
+              style={{ zIndex: 3, opacity: 0.95 }}
+              aria-hidden="true"
+            >
+              {liveGrid.roads.map((way, i) => {
+                const pts = way.points.reduce<string[]>((acc, v, idx) => {
+                  if (idx % 2 !== 0) return acc;
+                  const { xPct, yPct } = projectToViewport(liveGrid.center, liveGrid.radiusM, { lat: v, lng: way.points[idx + 1] });
+                  acc.push(`${xPct.toFixed(2)},${yPct.toFixed(2)}`);
+                  return acc;
+                }, []);
+                return <polyline key={`r${i}`} points={pts.join(' ')} fill="none" stroke="rgba(148,163,184,0.55)" strokeWidth={way.roadClass === 'primary' || way.roadClass === 'secondary' ? 1.1 : 0.6} strokeLinecap="round" />;
+              })}
+              {liveGrid.buildings.map((way, i) => {
+                const pts = way.points.reduce<string[]>((acc, v, idx) => {
+                  if (idx % 2 !== 0) return acc;
+                  const { xPct, yPct } = projectToViewport(liveGrid.center, liveGrid.radiusM, { lat: v, lng: way.points[idx + 1] });
+                  acc.push(`${xPct.toFixed(2)},${yPct.toFixed(2)}`);
+                  return acc;
+                }, []);
+                return <polygon key={`b${i}`} points={pts.join(' ')} fill="rgba(16,185,129,0.16)" stroke="rgba(52,211,153,0.5)" strokeWidth="0.28" />;
+              })}
+            </svg>
+          )}
+
           {/* Radar vignette (GTA skin) */}
           <div className="radar-vignette" aria-hidden="true" />
 
@@ -490,16 +545,45 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
                   </span>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <h2 className={`text-[16px] font-bold leading-tight ${theme.headerText}`}>{headerTitle}</h2>
-                      {/* GTA V wanted stars */}
-                      <span className="flex items-center gap-0.5" aria-hidden="true" data-testid="map-wanted-stars">
-                        {[0, 1, 2, 3, 4].map((i) => (
-                          <Star key={i} className={`w-3.5 h-3.5 ${i === 0 ? 'star-active' : 'star-inactive'}`} fill={i === 0 ? 'currentColor' : 'none'} />
-                        ))}
-                      </span>
+                      <h2 className="font-gta font-bold text-sm sm:text-base text-white tracking-wider" dir="ltr">
+                        LOS SANTOS // LIVE GRID
+                      </h2>
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
                     </div>
-                    <p className={`text-[11.5px] leading-tight ${theme.headerMuted}`}>{headerSubtitle}</p>
+                    <p
+                      data-testid="grid-location-subtitle"
+                      className={`text-[11px] sm:text-xs text-slate-400 truncate max-w-[190px] sm:max-w-xs leading-tight`}
+                    >
+                      {gridLoading
+                        ? (isFa ? 'در حال آماده‌سازی نقشه واقعی…' : 'Loading real map…')
+                        : liveGrid
+                          ? `${liveGrid.label} · BLD ${liveGrid.buildingCount} · RDS ${liveGrid.roadCount}`
+                          : homeError
+                            ? (isFa ? 'لوکیشن واقعی رو از دکمه GPS انتخاب کن' : 'Pick a real location via GPS')
+                            : headerSubtitle}
+                    </p>
                   </div>
+                </div>
+                <div className="pointer-events-auto flex flex-col items-end gap-1.5">
+                  {/* GTA V wanted stars */}
+                  <div
+                    data-testid="map-wanted-stars"
+                    className="bg-[#0c1017]/90 backdrop-blur-md border border-white/15 rounded-xl px-3 py-1.5 flex items-center gap-1 shadow-xl"
+                    title={isFa ? 'سطح هشدار منطقه' : 'Area alert level'}
+                  >
+                    <span className="font-gta text-xs text-slate-400 ml-1.5">WANTED</span>
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <Star key={i} className={`w-4 h-4 ${i < 2 ? 'star-active' : 'star-inactive'}`} fill="currentColor" />
+                    ))}
+                  </div>
+                  {/* Live stats badge */}
+                  {liveGrid && (
+                    <div className="bg-[#0c1017]/85 border border-white/10 rounded-lg px-2.5 py-1 text-[11px] font-gta text-slate-300 flex items-center gap-2" dir="ltr">
+                      <span data-testid="grid-building-count">BLD: {liveGrid.buildingCount}</span>
+                      <span className="text-slate-600">|</span>
+                      <span data-testid="grid-road-count">RDS: {liveGrid.roadCount}</span>
+                    </div>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -510,6 +594,47 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
                 >
                   <X className="w-4 h-4" />
                 </button>
+              </div>
+
+              {/* Action bar: real GPS + quick real cities */}
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pointer-events-auto py-0.5">
+                <button
+                  type="button"
+                  data-testid="btn-my-gps"
+                  onClick={() => {
+                    if (homeLocation) {
+                      loadLiveGrid({ lat: homeLocation.lat, lng: homeLocation.lng }, isFa ? 'لوکیشن من (GPS)' : 'My location (GPS)');
+                    } else if ('geolocation' in navigator) {
+                      navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                          setHomeLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracyM: Math.round(pos.coords.accuracy) });
+                          setHomeError(null);
+                          loadLiveGrid({ lat: pos.coords.latitude, lng: pos.coords.longitude }, isFa ? 'لوکیشن من (GPS)' : 'My location (GPS)');
+                        },
+                        (err) => setHomeError(err.code === 1 ? 'denied' : 'unavailable'),
+                        { enableHighAccuracy: true, timeout: 8000 }
+                      );
+                    }
+                  }}
+                  className="shrink-0 bg-cyan-500 hover:bg-cyan-400 active:scale-95 text-slate-950 font-extrabold text-xs px-3.5 py-2 rounded-lg shadow-lg shadow-cyan-500/25 flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M12 2v3m0 14v3M2 12h3m14 0h3" />
+                  </svg>
+                  <span>{isFa ? 'لوکیشن واقعی من (GPS)' : 'My real location (GPS)'}</span>
+                </button>
+                {LIVE_GRID_PRESETS.map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    data-testid={`grid-preset-${preset.label.replace(/[^\w]/g, '')}`}
+                    onClick={() => loadLiveGrid({ lat: preset.lat, lng: preset.lng }, preset.label)}
+                    className={`shrink-0 bg-[#131923]/90 hover:bg-slate-800 border border-white/15 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg transition cursor-pointer ${preset.emoji ? 'font-gta' : ''}`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
               </div>
 
               {/* Compact search */}
