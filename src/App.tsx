@@ -6,6 +6,8 @@ import { CoachStage3D } from './components/spatial/CoachStage3D';
 import { CrossGameSpatialProfilePage } from './components/identity/CrossGameSpatialProfilePage';
 import { GameNativeTournamentHub } from './components/spatial/GameNativeTournamentHub';
 import { GameSwitcherBar } from './components/spatial/GameSwitcherBar';
+import { QuestionSuggestions } from './components/spatial/QuestionSuggestions';
+import { loadLastStyleSelection, saveLastStyleSelection, defaultGameForStyle } from './utils/gameStyles';
 import { GlobalEarthLanguageButton } from './components/spatial/GlobalEarthLanguageButton';
 import { GtaSocialWorld } from './components/spatial/GtaSocialWorld';
 import { LanguageSelectorModal } from './components/spatial/LanguageSelectorModal';
@@ -83,6 +85,7 @@ import {
   getLobbyGameTab,
   resolveLobbyGameFromAppState,
 } from './utils/lobbySkillCatalog';
+import { LOBBY_SKILLS_BY_GAME } from './utils/lobbySkillCatalog';
 
 const STORAGE_REALM_KEY = 'aipetros-coach-realm-v5';
 const STORAGE_SOCIAL_KEY = 'aipetros-gta-social-v5';
@@ -224,6 +227,8 @@ export function App() {
     realm: 'sports',
   }));
   const [lobbyGameId, setLobbyGameId] = useState<LobbyGameId>(() =>
+    // Default = the LAST style/game the user selected (persisted), else current realm.
+    loadLastStyleSelection()?.gameId ??
     resolveLobbyGameFromAppState(mapRealmToGameId(activeRealm), activeRealm)
   );
   const [lobbyCategoryId, setLobbyCategoryId] = useState<string>('all');
@@ -588,6 +593,7 @@ export function App() {
       const tab = getLobbyGameTab(nextGameId);
       const catalogHit = findCatalogGameById(tab.catalogGameId);
       setLobbyGameId(nextGameId);
+      saveLastStyleSelection(nextGameId); // remember last selection → next visit defaults to it
       setLobbyCategoryId('all');
       setLobbySearchQuery('');
       setActiveRealm(tab.realm);
@@ -603,7 +609,8 @@ export function App() {
   );
 
   const handleSelectLobbySkill = useCallback(
-    (skill: LobbySkillCardItem) => {
+    (skill: LobbySkillCardItem, questionOverride?: string) => {
+      const askedQuestion = questionOverride?.trim() || skill.problemQuery;
       setIsGtaSocialOpen(false);
       const tab = getLobbyGameTab(skill.gameId);
       const catalogHit = findCatalogGameById(tab.catalogGameId);
@@ -614,13 +621,13 @@ export function App() {
         realm: tab.realm,
         steamAppId: catalogHit?.steamAppId,
       });
-      setClipProblemQuery(skill.problemQuery);
+      setClipProblemQuery(askedQuestion);
       setUploadedMedia(null);
 
       const baseTopic = resolveCoachTopic(tab.realm, skill.topicId);
       const resolvedTopic: CoachConsultationTopic = {
         ...baseTopic,
-        titleFa: skill.titleFa,
+        titleFa: questionOverride?.trim() || skill.titleFa,
       };
       setActiveTopic(resolvedTopic);
       triggerCoachSpeech(resolvedTopic.coachVoiceEn);
@@ -628,7 +635,7 @@ export function App() {
       const seq = nextCoachSearchSeq();
       fetch(
         `/api/coach/search?realm=${encodeURIComponent(tab.realm)}&q=${encodeURIComponent(
-          skill.problemQuery
+          askedQuestion
         )}`
       )
         .then((res) => (res.ok ? res.json() : null))
@@ -636,13 +643,30 @@ export function App() {
           if (data?.topic && seq === coachSearchSeqRef.current) {
             setActiveTopic({
               ...(data.topic as CoachConsultationTopic),
-              titleFa: skill.titleFa,
+              titleFa: questionOverride?.trim() || skill.titleFa,
             });
           }
         })
         .catch(() => undefined);
     },
     [triggerCoachSpeech]
+  );
+
+  /** Ask a free question from the lobby: best local skill wins, else the coach session gets the raw question. */
+  const handleAskLobbyQuestion = useCallback(
+    (question: string) => {
+      setLobbySearchQuery(question);
+      const matches = filterLobbySkills(lobbyGameId, lobbySearchQuery === question ? lobbySearchQuery : '', question);
+      const ranked = matches.length > 0 ? matches : filterLobbySkills(lobbyGameId, question, 'all');
+      if (ranked.length > 0) {
+        handleSelectLobbySkill(ranked[0], question);
+        return;
+      }
+      // No local skill matched → open coach room with the game's default topic but the real question.
+      const fallback = (LOBBY_SKILLS_BY_GAME[lobbyGameId] ?? [])[0];
+      if (fallback) handleSelectLobbySkill(fallback, question);
+    },
+    [lobbyGameId, lobbySearchQuery, handleSelectLobbySkill]
   );
 
   const handleToggleLobbyVoiceSearch = useCallback(() => {
@@ -1270,6 +1294,7 @@ export function App() {
                   <GameSwitcherBar
                     activeGameId={lobbyGameId}
                     onSelectGame={handleLobbyGameSwitch}
+                    onSelectStyle={() => undefined}
                     onOpenTournamentHub={() => {
                       setTournamentInitialGame(resolveTournamentGameFromLobby(lobbyGameId));
                       setIsTournamentHubOpen(true);
@@ -1287,6 +1312,12 @@ export function App() {
                 onSelectCategory={setLobbyCategoryId}
                 isListeningVoice={isListeningSearchVoice}
                 onToggleVoiceSearch={handleToggleLobbyVoiceSearch}
+              />
+              <QuestionSuggestions
+                gameId={lobbyGameId}
+                query={lobbySearchQuery}
+                accentHex={getLobbyGameTab(lobbyGameId).accentHex}
+                onSelectQuestion={handleAskLobbyQuestion}
               />
             </div>
 

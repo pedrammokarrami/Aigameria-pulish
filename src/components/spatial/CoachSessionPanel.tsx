@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { GraduationCap, Play, RefreshCw, Send, Search } from 'lucide-react';
 import { toPersianDigits } from '../../services/liveMetaSyncService';
+import { QuestionSuggestions } from './QuestionSuggestions';
 import type { CoachSession, CoachSessionModule } from '../../agents/coachSession';
+import type { LobbyGameId } from '../../utils/lobbySkillCatalog';
 
 interface CoachSessionPanelProps {
   gameId: string;
@@ -137,6 +139,18 @@ export const CoachSessionPanel: React.FC<CoachSessionPanelProps> = ({
           <Send className="w-4 h-4" />
         </button>
       </form>
+
+      {/* Live suggested questions — appear while typing, clickable to run instantly */}
+      <QuestionSuggestions
+        gameId={gameId as LobbyGameId}
+        query={draft}
+        accentHex={accentHex}
+        onSelectQuestion={(q) => {
+          onSubmitQuestion(q);
+          setDraft('');
+        }}
+        limit={5}
+      />
 
       {/* Module tabs */}
       <div className="flex gap-1.5 overflow-x-auto no-scrollbar">

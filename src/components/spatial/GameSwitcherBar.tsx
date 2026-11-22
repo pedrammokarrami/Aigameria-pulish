@@ -1,24 +1,35 @@
 import React from 'react';
 import { ShieldCheck, Trophy, Users } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { GAME_STYLES, gameStyleForGame, defaultGameForStyle, type GameStyle } from '../../utils/gameStyles';
 import { LOBBY_GAME_TABS, type LobbyGameId } from '../../utils/lobbySkillCatalog';
 
 interface GameSwitcherBarProps {
   activeGameId: LobbyGameId;
   onSelectGame: (gameId: LobbyGameId) => void;
+  onSelectStyle: (styleId: string) => void;
   onOpenTournamentHub: () => void;
   onOpenSocialClub: () => void;
   onOpenIdentityProfile?: () => void;
 }
 
+/**
+ * Top bar shows game STYLES (سبک بازی: ورزشی / شوتر / داستانی / استراتژی),
+ * NOT raw game names. Clicking a style jumps to the last-used game in it.
+ * When the active style holds more than one game, small game pills appear below.
+ */
 export const GameSwitcherBar: React.FC<GameSwitcherBarProps> = ({
   activeGameId,
   onSelectGame,
+  onSelectStyle,
   onOpenTournamentHub,
   onOpenSocialClub,
   onOpenIdentityProfile,
 }) => {
   const { copy, isRtl } = useLanguage();
+  const activeStyle: GameStyle = gameStyleForGame(activeGameId);
+  const styleGames = activeStyle.games;
+  const isRtlLang = true; // lobby is Persian-first; labels are bilingual already
 
   return (
     <header className="w-full shrink-0">
@@ -28,22 +39,28 @@ export const GameSwitcherBar: React.FC<GameSwitcherBarProps> = ({
         dir="ltr"
         className="flex items-center justify-start gap-1.5 overflow-x-auto no-scrollbar py-1 px-0.5"
       >
-        {LOBBY_GAME_TABS.map((tab) => {
-          const isActive = tab.id === activeGameId;
+        {GAME_STYLES.map((style) => {
+          const isActive = style.id === activeStyle.id;
           return (
             <button
-              key={tab.id}
+              key={style.id}
               type="button"
-              data-testid={`game-pill-${tab.id}`}
+              data-testid={`game-style-pill-${style.id}`}
               aria-pressed={isActive}
-              onClick={() => onSelectGame(tab.id)}
-              className={`shrink-0 whitespace-nowrap min-h-[38px] px-2.5 sm:px-3.5 rounded-full text-[12px] font-bold tracking-wide backdrop-blur-xl transition-all duration-200 cursor-pointer border ${
+              onClick={() => {
+                if (isActive && style.games.length === 1) return; // already here
+                const target = defaultGameForStyle(style.id);
+                onSelectStyle(style.id);
+                onSelectGame(target);
+              }}
+              className={`shrink-0 whitespace-nowrap min-h-[38px] px-3 sm:px-4 rounded-full text-[12.5px] font-black tracking-wide backdrop-blur-xl transition-all duration-200 cursor-pointer border inline-flex items-center gap-1.5 ${
                 isActive
                   ? 'border-emerald-400/70 bg-emerald-500/20 text-white shadow-[0_0_16px_rgba(16,185,129,0.3)]'
                   : 'border-white/15 bg-slate-950/45 text-white/80 hover:bg-slate-900/65 hover:text-white'
               }`}
             >
-              {tab.label}
+              <span aria-hidden="true">{style.icon}</span>
+              <span dir={isRtlLang ? 'rtl' : 'ltr'}>{style.labelFa}</span>
             </button>
           );
         })}
@@ -85,6 +102,35 @@ export const GameSwitcherBar: React.FC<GameSwitcherBarProps> = ({
           <span>{copy.socialClub}</span>
         </button>
       </nav>
+
+      {styleGames.length > 1 ? (
+        <div
+          data-testid="style-game-subpills"
+          dir="ltr"
+          className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 px-0.5"
+        >
+          {styleGames.map((gameId) => {
+            const tab = LOBBY_GAME_TABS.find((t) => t.id === gameId);
+            const isGameActive = gameId === activeGameId;
+            return (
+              <button
+                key={gameId}
+                type="button"
+                data-testid={`game-pill-${gameId}`}
+                aria-pressed={isGameActive}
+                onClick={() => onSelectGame(gameId)}
+                className={`shrink-0 whitespace-nowrap min-h-[26px] px-2.5 rounded-full text-[11px] font-bold transition-all duration-150 cursor-pointer border ${
+                  isGameActive
+                    ? 'border-white/45 bg-white/10 text-white'
+                    : 'border-white/10 bg-slate-950/40 text-white/60 hover:text-white hover:border-white/25'
+                }`}
+              >
+                {tab?.label ?? gameId}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
     </header>
   );
 };
