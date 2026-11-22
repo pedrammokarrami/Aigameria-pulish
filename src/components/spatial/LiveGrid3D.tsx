@@ -41,47 +41,14 @@ function toLocalMeters(center: GridCoord, radiusM: number, lat: number, lng: num
   return { x: ((xPct - 50) / 100) * span, z: ((yPct - 50) / 100) * span };
 }
 
-/** Rounded pill label rendered once into a canvas texture (GTA blip chip). */
-function makeLabelSprite(text: string, color: string): THREE.Sprite {
-  const cnv = document.createElement('canvas');
-  cnv.width = 320;
-  cnv.height = 96;
-  const ctx = cnv.getContext('2d')!;
-  ctx.clearRect(0, 0, 320, 96);
-  // pill background
-  ctx.fillStyle = 'rgba(2,6,12,0.72)';
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 5;
-  const r = 34;
-  ctx.beginPath();
-  ctx.roundRect(6, 6, 308, 84, r);
-  ctx.fill();
-  ctx.globalAlpha = 0.9;
-  ctx.stroke();
-  ctx.globalAlpha = 1;
-  // color dot
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.arc(46, 48, 15, 0, Math.PI * 2);
-  ctx.fill();
-  // label text (first word like GTA)
-  ctx.fillStyle = '#f1f5f9';
-  ctx.font = 'bold 34px Vazirmatn, Tahoma, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  const label = text.split(' ')[0].slice(0, 12);
-  ctx.fillText(label, 186, 50);
-  const tex = new THREE.CanvasTexture(cnv);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
-  sprite.scale.set(72, 21.5, 1);
-  return sprite;
-}
-
 const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, waypointBlipId, onPickBlip }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const pickRef = useRef(onPickBlip);
   pickRef.current = onPickBlip;
+  // floating HTML blip chips (spec CSS .gta-blip), projected 3D -> screen at ~10fps
+  const chipRefs = useRef(new Map<string, HTMLDivElement | null>());
+  const frameCountRef = useRef(0);
+  const HOME_POS = new THREE.Vector3(0, 34, 0);
   // world positions of blips + a mutable purple route line, for the waypoint effect
   const routeRef = useRef<{ updateRoute: (wpId: string | null) => void } | null>(null);
   const wpRef = useRef(waypointBlipId ?? null);
@@ -258,7 +225,7 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, wa
     playerGroup.add(playerMesh, outlineRing, pulseRing);
 
     // ── In-scene blips: beam + glowing head + sprite label (GTA chip) ──
-    const blipMeshes = new Map<string, { group: THREE.Group; beacon: THREE.Mesh; label: THREE.Sprite }>();
+    const blipMeshes = new Map<string, { group: THREE.Group; beacon: THREE.Mesh }>();
     blips.forEach((b) => {
       const group = new THREE.Group();
       const color = new THREE.Color(b.color);
@@ -269,20 +236,11 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, wa
       cyl.position.y = 30;
       const head = new THREE.Mesh(new THREE.SphereGeometry(4.4, 16, 12), new THREE.MeshBasicMaterial({ color }));
       head.position.y = 62;
-      const label = makeLabelSprite(b.title, b.color);
-      label.position.y = 78;
-      label.userData.blipId = b.id;
-      group.add(cyl, head, label);
+      group.add(cyl, head);
       group.position.set(b.offsetX, 0, b.offsetZ);
       blipGroup.add(group);
-      blipMeshes.set(b.id, { group, beacon: head, label });
+      blipMeshes.set(b.id, { group, beacon: head });
     });
-    // «خانه من» marker over the real GPS point (player cursor home)
-    const homeLabel = makeLabelSprite('🏠 خونه من', '#22d3ee');
-    homeLabel.position.set(0, 46, 0);
-    homeLabel.userData.home = true;
-    scene.add(homeLabel);
-
     // ── Purple GTA GPS waypoint route (player -> blip arc) ──
     const routeLine = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ color: 0xa855f7 }));
     routeLine.visible = false;
@@ -328,10 +286,9 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, wa
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     const pickTargets: THREE.Object3D[] = [];
-    blipMeshes.forEach(({ beacon, label }, id) => {
+    blipMeshes.forEach(({ beacon }, id) => {
       beacon.userData.blipId = id;
-      label.userData.blipId = id;
-      pickTargets.push(beacon, label);
+      pickTargets.push(beacon);
     });
     const onPointerDown = (e: PointerEvent) => {
       const rect = renderer.domElement.getBoundingClientRect();
@@ -366,6 +323,7 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, wa
       const now = performance.now();
       if (now - lastRender < 33) return; // ~30fps cap
       lastRender = now;
+      controls.update(); // orient camera BEFORE projecting chips / rendering
       const dt = Math.min(0.08, clock.getDelta());
       const t = clock.getElapsedTime();
       // pulse ring breathing
@@ -380,14 +338,30 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, wa
           car.mesh.position.copy(p);
         }
       }
-      // selected blip: beacon + label bounce
-      blipMeshes.forEach(({ beacon, label }, id) => {
+      // selected blip: beacon bounce
+      blipMeshes.forEach(({ beacon }, id) => {
         const sel = id === selectedBlipId;
-        const k = sel ? 1.5 + Math.sin(t * 4) * 0.25 : 1;
-        beacon.scale.setScalar(k);
-        label.scale.set(72 * k, 21.5 * k, 1);
+        beacon.scale.setScalar(sel ? 1.5 + Math.sin(t * 4) * 0.25 : 1);
       });
-      controls.update();
+      // floating HTML chips track the camera (throttled ~10fps, light DOM churn)
+      frameCountRef.current += 1;
+      if (frameCountRef.current % 3 === 0) {
+        const w = container.clientWidth;
+        const h = Math.max(1, container.clientHeight);
+        chipRefs.current.forEach((el, key) => {
+          const pos = key === '__home__' ? HOME_POS : blipWorld.get(key);
+          if (!el || !pos) return;
+          const v = pos.clone().project(camera);
+          if (v.z > 1) {
+            el.style.display = 'none';
+            return;
+          }
+          el.style.display = 'flex';
+          el.style.left = `${((v.x * 0.5 + 0.5) * w).toFixed(1)}px`;
+          el.style.top = `${((v.y * -0.5 + 0.5) * h).toFixed(1)}px`;
+          el.classList.toggle('is-active', key === selectedBlipId);
+        });
+      }
       renderer.render(scene, camera);
     };
     if (!reducedMotion) tick();
@@ -395,10 +369,14 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, wa
       controls.update();
       renderer.render(scene, camera);
     }
+    // fallback driver: some environments (offscreen preview tabs) never fire rAF
+    const intervalId = window.setInterval(tick, 200);
 
     return () => {
       stopped = true;
       cancelAnimationFrame(raf);
+      window.clearInterval(intervalId);
+      chipRefs.current.clear();
       window.removeEventListener('resize', onResize);
       renderer.domElement.removeEventListener('pointerdown', onPointerDown);
       controls.dispose();
@@ -426,13 +404,36 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, wa
   }, [waypointBlipId, selectedBlipId, blips]);
 
   return (
-    <div
-      ref={containerRef}
-      className="absolute inset-0"
-      style={{ zIndex: 2 }}
-      data-testid="live-grid-3d"
-      data-blip-count={blips.length}
-    />
+    <div className="absolute inset-0" style={{ zIndex: 2 }} data-testid="live-grid-3d" data-blip-count={blips.length}>
+      <div ref={containerRef} className="absolute inset-0" />
+      {/* floating projected blips (spec CSS .gta-blip / .blip-icon / .blip-label) */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-5" data-testid="blips-3d-layer">
+        <div
+          ref={(el) => { chipRefs.current.set('__home__', el); }}
+          className="gta-blip"
+          data-testid="home-gps-chip"
+        >
+          <span className="blip-icon" style={{ color: '#22d3ee' }}>
+            <span className="text-[15px] leading-none">🏠</span>
+          </span>
+          <span className="blip-label font-gta" style={{ color: '#67e8f9' }}>خونه من</span>
+        </div>
+        {blips.map((b) => (
+          <div
+            key={b.id}
+            ref={(el) => { chipRefs.current.set(b.id, el); }}
+            onClick={() => onPickBlip(b.id)}
+            className="gta-blip"
+            data-testid={`blip-3d-${b.id}`}
+          >
+            <span className="blip-icon" style={{ color: b.color }}>
+              <span className="block w-3 h-3 rounded-full" style={{ backgroundColor: b.color }} />
+            </span>
+            <span className="blip-label font-gta">{b.title.split(' ')[0]}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 
