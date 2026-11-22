@@ -26,6 +26,20 @@ from telethon.sessions import StringSession
 
 BRIDGE = Path(__file__).resolve().parent
 QUEUE = BRIDGE / 'queue'
+BLOCKLIST_FILE = BRIDGE / 'queue' / 'blocked_users.json'
+
+def load_blocklist() -> set:
+    try:
+        return set(json.loads(BLOCKLIST_FILE.read_text(encoding='utf-8')))
+    except Exception:
+        return set()
+
+def add_to_blocklist(user_id) -> None:
+    bl = load_blocklist()
+    bl.add(str(user_id))
+    BLOCKLIST_FILE.parent.mkdir(exist_ok=True)
+    BLOCKLIST_FILE.write_text(json.dumps(sorted(bl)), encoding='utf-8')
+    print(f'blocked user {user_id} added to blocklist')
 INBOX = QUEUE / 'inbox.jsonl'
 WEBHOOK_FILE = BRIDGE / 'webhook_url.txt'
 SESSION_FILE = BRIDGE / 'session_new.txt'
@@ -136,7 +150,8 @@ async def answer_and_send(text: str, chat_id: int | None) -> None:
 
 def is_prompt_chat(chat_id) -> bool:
     """Only Saved Messages ('me') and direct user chats are prompts.
-    Groups / channels are NEVER answered — that would spam other people's chats."""
+    Groups / channels are NEVER answered — that would spam other people's chats.
+    Blocked users (scammers/spammers) are also never answered."""
     if chat_id in ('me', None):
         return True
     try:
@@ -144,7 +159,9 @@ def is_prompt_chat(chat_id) -> bool:
     except (TypeError, ValueError):
         return False
     # Telegram supergroup/channel ids start with -100; DMs are positive.
-    return cid > 0
+    if cid <= 0:
+        return False
+    return str(cid) not in load_blocklist()
 
 
 def load_webhook() -> str:

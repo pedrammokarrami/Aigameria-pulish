@@ -1,2 +1,10 @@
 [overnight] start 8h / 1000 users → C:\Users\ELI\Desktop\aipetros\logs
 [overnight] Phase 1 — registering 1000 users…
+[overnight] registered: 1000
+node:internal/process/promises:394
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+
+[DOMException [AbortError]: This operation was aborted]
+
+Node.js v24.22.1
