@@ -52,6 +52,7 @@ export const SkillCardList: React.FC<SkillCardListProps> = ({
         data-testid="skill-card-list"
         className="w-[70%] min-w-[238px] max-w-[292px] flex flex-col gap-2.5 overflow-y-auto no-scrollbar py-1"
       >
+        {searchQuery.trim().length >= 3 && <LiveWebAnswer gameId={gameId} searchQuery={searchQuery} />}
         {skills.length === 0 ? (
           <div
             dir={isRtl ? 'rtl' : 'ltr'}

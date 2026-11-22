@@ -8,12 +8,35 @@ interface LiveWebAnswerProps {
   searchQuery: string;
 }
 
-const GAME_REALM: Record<LobbyGameId, string> = {
+const GAME_REALM: Record<string, string> = {
   fc27: 'sports',
+  efootball: 'sports',
+  nba2k: 'sports',
+  mlb: 'sports',
+  'f1-25': 'sports',
   cs2: 'shooter',
   valorant: 'shooter',
+  cod: 'shooter',
+  'apex-legends': 'shooter',
+  'rocket-league': 'sports',
   gta: 'story',
+  'cyberpunk-2077': 'story',
+  'baldur-s-gate-3': 'story',
+  'elden-ring': 'strategy',
+  dota2: 'strategy',
+  'league-of-legends': 'strategy',
+  minecraft: 'strategy',
+  roblox: 'story',
+  fortnite: 'shooter',
+  genshin: 'story',
 };
+
+interface GameChoice {
+  gameId: string;
+  labelFa: string;
+  icon: string;
+  reason: string;
+}
 
 interface CoachTopic {
   titleFa: string;
@@ -41,21 +64,34 @@ export const LiveWebAnswer: React.FC<LiveWebAnswerProps> = ({ gameId, searchQuer
   const { languageCode, isRtl } = useLanguage();
   const isFa = languageCode === 'fa' || languageCode.startsWith('fa') || languageCode === 'prs';
   const [topic, setTopic] = useState<CoachTopic | null>(null);
+  const [gameChoices, setGameChoices] = useState<GameChoice[] | null>(null);
+  const [forcedGameId, setForcedGameId] = useState<string | null>(null);
+  const [choicesDismissed, setChoicesDismissed] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setForcedGameId(null);
+    setChoicesDismissed(false);
+  }, [searchQuery]);
 
   useEffect(() => {
     const query = searchQuery.trim();
     if (query.length < 3) {
       setTopic(null);
+      setGameChoices(null);
       return;
     }
+    const activeGameId = forcedGameId ?? gameId;
     let cancelled = false;
     setLoading(true);
     setTopic(null);
-    fetch(`/api/coach/search?realm=${GAME_REALM[gameId]}&gameId=${encodeURIComponent(gameId)}&q=${encodeURIComponent(query)}&_t=${Date.now()}`, { cache: 'no-store' })
+    fetch(`/api/coach/search?realm=${GAME_REALM[activeGameId as LobbyGameId] ?? 'shooter'}&gameId=${encodeURIComponent(activeGameId)}&q=${encodeURIComponent(query)}&_t=${Date.now()}`, { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('bad status'))))
       .then((body) => {
-        if (!cancelled && body?.topic) setTopic(body.topic as CoachTopic);
+        if (cancelled) return;
+        if (body?.topic) setTopic(body.topic as CoachTopic);
+        const choices = body?.gameChoices as { ambiguous: boolean; candidates: GameChoice[] } | undefined;
+        setGameChoices(choices?.ambiguous && !choicesDismissed ? (choices.candidates ?? null) : null);
       })
       .catch(() => {
         /* offline — card just stays hidden */
@@ -66,7 +102,7 @@ export const LiveWebAnswer: React.FC<LiveWebAnswerProps> = ({ gameId, searchQuer
     return () => {
       cancelled = true;
     };
-  }, [gameId, searchQuery]);
+  }, [gameId, forcedGameId, searchQuery, choicesDismissed]);
 
   const sources = topic?.adkIntel?.liveSources ?? [];
 
@@ -82,6 +118,26 @@ export const LiveWebAnswer: React.FC<LiveWebAnswerProps> = ({ gameId, searchQuer
           {isFa ? 'پاسخ زنده از وب (منابع واقعی آنلاین)' : 'Live web answer (real online sources)'}
         </span>
       </div>
+
+      {!loading && gameChoices && (
+        <div data-testid="game-choice-bar" className="flex flex-col gap-1.5">
+          <span className="text-[12px] font-black text-amber-200">
+            {isFa ? '🤔 این سوال برای چند بازی معنی‌داره — کدوم رو می‌خوای؟' : 'This question fits several games — pick one:'}
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {gameChoices.map((c) => (
+              <button
+                key={c.gameId}
+                data-testid={`game-choice-${c.gameId}`}
+                onClick={() => { setChoicesDismissed(true); setForcedGameId(c.gameId); }}
+                className="px-2.5 py-1 rounded-full bg-sky-500/20 border border-sky-300/40 text-[12px] font-bold text-sky-100 hover:bg-sky-500/40 active:scale-95 transition"
+              >
+                {c.icon} {c.labelFa}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {loading && (
         <div className="flex items-center gap-2 text-[12.5px] text-white/70">

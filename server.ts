@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import { triLayerQuery } from './src/agents/triLayerQuery';
+import { detectGameAmbiguity } from './src/agents/gameAmbiguity';
 import type { LobbyGameId } from './src/utils/lobbySkillCatalog';
 import fs from 'fs';
 import path from 'path';
@@ -915,7 +916,10 @@ async function startServer() {
         // Resilient fallback to pre-verified local tactical images
       }
 
-      res.json({ topic });
+      res.json({
+        topic,
+        gameChoices: detectGameAmbiguity(q),
+      });
     } catch (err) {
       res.status(500).json({
         error: err instanceof Error ? err.message : 'ADK Coach search failed.',
@@ -968,7 +972,10 @@ async function startServer() {
         ].slice(0, 3);
       }
 
-      res.json({ topic });
+      res.json({
+        topic,
+        gameChoices: detectGameAmbiguity(query),
+      });
     } catch (err) {
       res.status(500).json({
         error: err instanceof Error ? err.message : 'ADK multi-agent consultation failed.',
