@@ -137,3 +137,53 @@ export const LIVE_GRID_PRESETS: Array<{ label: string; lat: number; lng: number;
   { label: 'قشم', lat: 26.9581, lng: 56.2719 },
   { label: 'NYC (GTA IV)', lat: 40.758, lng: -73.9855 },
 ];
+
+
+/**
+ * Procedural fallback city (Overpass busy / offline): a Manhattan-style
+ * simulation grid so the radar never renders empty. Same LiveGrid shape as
+ * real OSM data, so the 3D engine and 2D SVG render it unchanged.
+ */
+export function buildFallbackGrid(center: GridCoord, label: string, radiusM = 420): LiveGrid {
+  const step = 45; // block pitch in meters
+  const span = radiusM * 2;
+  const buildings: GridWay[] = [];
+  const roads: GridWay[] = [];
+  const latStep = step / 111_320;
+  const lngStep = step / (111_320 * Math.cos((center.lat * Math.PI) / 180));
+  const rows = Math.floor(span / step);
+  // Streets both directions
+  for (let i = -Math.floor(rows / 2); i <= Math.floor(rows / 2); i++) {
+    roads.push({
+      points: [
+        center.lng + i * lngStep, center.lat - span / 2 / 111_320,
+        center.lng + i * lngStep, center.lat + span / 2 / 111_320,
+      ],
+      roadClass: Math.abs(i) % 3 === 0 ? 'secondary' : 'residential',
+    });
+    roads.push({
+      points: [
+        center.lng - span / 2 / (111_320 * Math.cos((center.lat * Math.PI) / 180)), center.lat + i * latStep,
+        center.lng + span / 2 / (111_320 * Math.cos((center.lat * Math.PI) / 180)), center.lat + i * latStep,
+      ],
+      roadClass: Math.abs(i) % 3 === 0 ? 'tertiary' : 'residential',
+    });
+  }
+  // Buildings inside each block
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < rows; c++) {
+      const lat0 = center.lat - span / 2 / 111_320 + r * latStep;
+      const lng0 = center.lng - span / 2 / (111_320 * Math.cos((center.lat * Math.PI) / 180)) + c * lngStep;
+      const inset = 0.18;
+      buildings.push({
+        points: [
+          lng0 + inset * lngStep, lat0 + inset * latStep,
+          lng0 + (1 - inset) * lngStep, lat0 + inset * latStep,
+          lng0 + (1 - inset) * lngStep, lat0 + (1 - inset) * latStep,
+          lng0 + inset * lngStep, lat0 + (1 - inset) * latStep,
+        ],
+      });
+    }
+  }
+  return { center, radiusM, label, buildings, roads, buildingCount: buildings.length, roadCount: roads.length, fetchedAtMs: Date.now() };
+}

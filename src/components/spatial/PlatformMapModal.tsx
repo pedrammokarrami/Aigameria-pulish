@@ -26,6 +26,7 @@ import {
 import type { MasterHubId } from './MasterHubSwitcher';
 import LiveGrid3D from './LiveGrid3D';
 import {
+  buildFallbackGrid,
   fetchLiveGrid,
   projectToViewport,
   LIVE_GRID_PRESETS,
@@ -369,11 +370,11 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
     fetchLiveGrid(center, label)
       .then((grid) => setLiveGrid(grid))
       .catch(() => {
-        setLiveGrid(null);
+        setLiveGrid(buildFallbackGrid(center, label)); // شبیه‌سازی شهری وقتی سرور شلوغه
         setGridError('grid-failed');
         showToast(isFa
-          ? '⚠️ دریافت نقشه واقعی ناموفق — چند لحظه بعد دوباره امتحان کن'
-          : 'Real map fetch failed — try again shortly');
+          ? '⚠️ سرور نقشه شلوغ بود؛ نمای شبیه‌سازی شهری بارگذاری شد.'
+          : 'Map server busy — simulation city view loaded');
       })
       .finally(() => setGridLoading(false));
   }, []);
@@ -869,8 +870,11 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
             >
               <div className="w-14 h-14 border-4 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin mb-4" aria-hidden="true" />
               <h2 className="text-base sm:text-lg font-bold text-white mb-1">
-                {isFa ? 'در حال دریافت نقشه سه‌بعدی محله…' : 'Fetching the real neighborhood…'}
+                {isFa ? 'در حال اسکن ماهواره‌ای محله…' : 'Scanning the neighborhood…'}
               </h2>
+              <p className="text-[11px] font-gta text-cyan-300/80 mb-1" dir="ltr">
+                {`مختصات: ${liveGrid?.center.lat.toFixed(4) ?? '—'}, ${liveGrid?.center.lng.toFixed(4) ?? '—'}`}
+              </p>
               <p className="text-xs sm:text-sm text-slate-400 max-w-xs">
                 {isFa
                   ? 'اتصال مستقیم به OpenStreetMap بدون نیاز به API Key برای ساخت خیابان‌ها و ساختمان‌ها'

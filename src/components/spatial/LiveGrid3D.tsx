@@ -106,9 +106,9 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, on
     const gridRef = grid;
     if (gridRef) {
       // ── Real buildings: extruded footprints, GTA slate blocks ──
-      const wallMat = new THREE.MeshLambertMaterial({ color: 0x1a2330 });
-      const roofMat = new THREE.MeshLambertMaterial({ color: 0x223044 });
-      const edgeMat = new THREE.LineBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.35 });
+      const wallMat = new THREE.MeshStandardMaterial({ color: 0x151b26, roughness: 0.75, metalness: 0.25 });
+      const roofMat = new THREE.MeshStandardMaterial({ color: 0x1c2433, roughness: 0.8, metalness: 0.2 });
+      const edgeMat = new THREE.LineBasicMaterial({ color: 0x475569, transparent: true, opacity: 0.75 });
       gridRef.buildings.slice(0, 140).forEach((b) => {
         const pts = b.points;
         if (pts.length < 8) return;
@@ -136,18 +136,22 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, on
       });
 
       // ── Real roads: flat dark ribbons along OSM polylines ──
-      const roadMat = new THREE.MeshLambertMaterial({ color: 0x2a3340 });
-      const primaryMat = new THREE.MeshLambertMaterial({ color: 0x3a4452 });
+      const roadMat = new THREE.MeshLambertMaterial({ color: 0x334155 });
+      const primaryMat = new THREE.MeshLambertMaterial({ color: 0x64748b });
+      const FOOTWAY_CLASSES = new Set(['footway', 'steps', 'path', 'cycleway']);
+      const MAIN_CLASSES = new Set(['primary', 'secondary', 'trunk', 'motorway', 'tertiary']);
       gridRef.roads.slice(0, 110).forEach((r) => {
         if (r.points.length < 4) return;
+        if (r.roadClass && FOOTWAY_CLASSES.has(r.roadClass)) return; // keep radar crisp
+        const isMain = !!r.roadClass && MAIN_CLASSES.has(r.roadClass);
         const curvePts: THREE.Vector3[] = [];
         for (let i = 0; i < r.points.length; i += 2) {
           const { x, z } = toLocalMeters(gridRef.center, gridRef.radiusM, r.points[i], r.points[i + 1]);
           curvePts.push(new THREE.Vector3(x, 0.5, z));
         }
         const curve = new THREE.CatmullRomCurve3(curvePts);
-        const width = r.roadClass === 'primary' || r.roadClass === 'secondary' ? 9 : 5.5;
-        const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 14, width / 2, 4, false), r.roadClass === 'primary' ? primaryMat : roadMat);
+        const width = isMain ? 8.5 : 4.8;
+        const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 14, width / 2, 4, false), isMain ? primaryMat : roadMat);
         tube.scale.y = 0.16; // flatten to a ribbon
         roadsGroup.add(tube);
       });
@@ -156,7 +160,7 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, on
       const carGeo = new THREE.BoxGeometry(4.4, 1.6, 2.2);
       const carColors = [0x22d3ee, 0xfacc15, 0xf43f5e, 0x4ade80, 0xe2e8f0];
       const roadCurves = gridRef.roads
-        .filter((r) => r.points.length >= 6)
+        .filter((r) => r.points.length >= 6 && !(r.roadClass && FOOTWAY_CLASSES.has(r.roadClass)))
         .slice(0, 12)
         .map((r) => {
           const curvePts: THREE.Vector3[] = [];
