@@ -24,6 +24,7 @@ import {
   formatDistanceLabel,
 } from '../../utils/platformMapEngine';
 import type { MasterHubId } from './MasterHubSwitcher';
+import LiveGrid3D from './LiveGrid3D';
 import {
   fetchLiveGrid,
   projectToViewport,
@@ -339,6 +340,25 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
     [activeHub, query, kindFilter, radiusMeters]
   );
 
+  // 3D radar blips: entities positioned in meters relative to the real GPS center
+  const radarBlips = React.useMemo(() => {
+    const palette: Record<MapEntityKind, string> = {
+      user: '#22d3ee',
+      club: '#f43f5e',
+      store: '#facc15',
+      drop: '#4ade80',
+    };
+    const span = 1075; // meters across (matches the grid span)
+    const nameOf = (entity: PlatformMapEntity) => (isRtl ? entity.nameFa : entity.nameEn);
+    return entities.slice(0, 8).map((e) => ({
+      id: e.id,
+      title: nameOf(e),
+      color: palette[e.kind],
+      offsetX: Math.round(((e.xPct - 50) / 100) * span),
+      offsetZ: Math.round(((e.yPct - 50) / 100) * span),
+    }));
+  }, [entities, isRtl]);
+
   // ── LIVE GRID: real OSM buildings + roads around a coordinate ──
   const [liveGrid, setLiveGrid] = useState<LiveGrid | null>(null);
   const [gridLoading, setGridLoading] = useState(false);
@@ -461,7 +481,17 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
           {/* Unified deep map canvas */}
           <MapCanvas />
 
-          {/* ── LIVE GRID: real OSM buildings + roads projected from lat/lng ── */}
+          {/* ── GTA V 3D LIVE RADAR (WebGL, real OSM geometry) ── */}
+          {liveGrid && (
+            <LiveGrid3D
+              grid={liveGrid}
+              blips={radarBlips}
+              selectedBlipId={selectedEntityId}
+              onPickBlip={(id) => setSelectedEntityId(id)}
+            />
+          )}
+
+          {/* ── LIVE GRID fallback SVG (2D projection) ── */}
           {liveGrid && (
             <svg
               data-testid="live-grid-svg"
