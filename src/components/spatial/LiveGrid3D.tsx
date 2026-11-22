@@ -326,10 +326,11 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, wa
       controls.update(); // orient camera BEFORE projecting chips / rendering
       const dt = Math.min(0.08, clock.getDelta());
       const t = clock.getElapsedTime();
-      // pulse ring breathing
-      const s = 1 + (Math.sin(t * 2.2) * 0.5 + 0.5) * 0.85;
-      pulseRing.scale.set(s, s, 1);
-      (pulseRing.material as THREE.MeshBasicMaterial).opacity = 0.7 - ((Math.sin(t * 2.2) * 0.5 + 0.5) * 0.45);
+      // pulse radar ring around the player arrow (spec: 2s linear expand-fade)
+      const cycle = (Date.now() % 2000) / 2000;
+      const prScale = 1 + cycle * 2.4;
+      pulseRing.scale.set(prScale, prScale, 1);
+      (pulseRing.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.65 * (1 - (prScale - 1) / 2.4));
       // traffic
       if (!reducedMotion) {
         for (const car of traffic) {

@@ -692,7 +692,7 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
                             ? '⚠️ دسترسی GPS مسدود است یا در محیط پیش‌نمایش محدود شده؛ از دکمه‌های شهرها استفاده کن.'
                             : 'GPS access blocked or limited in preview; use the city presets.');
                         },
-                        { enableHighAccuracy: true, timeout: 8000 }
+                        { enableHighAccuracy: true, timeout: 10000 }
                       );
                     } else {
                       showToast(isFa ? '⚠️ مرورگر شما از GPS پشتیبانی نمی‌کند. یکی از شهرها را انتخاب کن.' : 'Your browser does not support GPS. Pick a city.');
@@ -861,7 +861,7 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
                       setWaypointId(next);
                       showToast(
                         next
-                          ? (isFa ? '🟣 مسیریابی GPS به سبک GTA فعال شد' : 'GTA waypoint set')
+                          ? (isFa ? `مسیر GPS به سمت ${selectedEntity.nameFa} تنظیم شد.` : `GPS route set to ${selectedEntity.nameEn}.`)
                           : (isFa ? 'مسیریابی لغو شد' : 'Waypoint cleared')
                       );
                     }}
