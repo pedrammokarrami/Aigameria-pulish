@@ -56,6 +56,17 @@ const FA_QUERY_TERMS: Array<[RegExp, string]> = [
   [/چترت|تیلت/g, 'tilt'],
   [/اقتصاد/g, 'economy'],
   [/کشیدن ?طناب|طناب ?کشی/g, 'rope pull'],
+  [/هریک|سرزنی/gi, 'header'],
+  [/دبل ?س/gi, 'double scissor'],
+  [/بارسا|بارسلونا/gi, 'Barcelona'],
+  [/رئال|ر ?مادرید/gi, 'Real Madrid'],
+  [/میلان/gi, 'AC Milan'],
+  [/لیورپول/gi, 'Liverpool'],
+  [/یوونتوس/gi, 'Juventus'],
+  [/با ?یرن/gi, 'Bayern Munich'],
+  [/پاری ?سن ?ژرمن/gi, 'PSG'],
+  [/فیفا|ف ?ای ?فا/gi, 'FIFA'],
+  [/(?<![\w])فی(?![\w])/gi, 'FC'],
 ];
 
 /** Produce an English-friendly variant of a (possibly Persian) query. */

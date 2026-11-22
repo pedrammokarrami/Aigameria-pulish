@@ -1,5 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
+import { triLayerQuery } from './src/agents/triLayerQuery';
+import type { LobbyGameId } from './src/utils/lobbySkillCatalog';
 import fs from 'fs';
 import path from 'path';
 import {
@@ -1240,39 +1242,24 @@ async function startServer() {
     }
   });
 
-  // World 10k Knowledge Engine — FTS5 RAG DB (built by backend/knowledge_engine)
+  // World 10k Knowledge Engine — 3-layer triage: L1 normalize (fa→en + 2026 bump),
+  // L2 local SQLite (FTS5 + knowledge_cards), L3 free-API web search with auto-store.
   app.get('/api/ai/knowledge-engine', async (req, res) => {
     const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
     const platform = typeof req.query.platform === 'string' ? req.query.platform.trim() : '';
-    const limitRaw = Number(req.query.limit ?? 8);
+    const gameId = (typeof req.query.gameId === 'string' ? req.query.gameId.trim() : 'fc27') as LobbyGameId;
     if (!q) return res.status(400).json({ error: 'q required' });
     try {
-      const { DatabaseSync } = await import('node:sqlite');
-      const ragPath = path.join(process.cwd(), 'backend', 'knowledge_engine', 'knowledge_10k.db');
-      if (!fs.existsSync(ragPath)) {
-        return res.json({ success: true, data: { results: [], note: 'engine DB not built yet' } });
-      }
-      const rag = new DatabaseSync(ragPath, { readOnly: true });
-      const tokens = q.toLowerCase().match(/[\w\u0600-\u06FF]+/g) ?? [];
-      const match = tokens.map((t) => `"${t}"`).join(' ') || q;
-      const rows = rag
-        .prepare(
-          `SELECT m.game_id, m.name, m.platform, m.kind, m.title, m.body, m.source_url, bm25(chunks_fts) AS rank
-           FROM chunks_fts f JOIN chunks_meta m ON m.id = f.rowid
-           WHERE chunks_fts MATCH ? ${platform ? 'AND m.platform LIKE ?' : ''}
-           ORDER BY rank LIMIT ?`
-        )
-        .all(...(platform ? [match, `%${platform}%`, Math.min(50, limitRaw)] : [match, Math.min(50, limitRaw)]));
-      const t0 = Date.now();
-      void t0;
+      const result = await triLayerQuery(q, gameId, platform || undefined);
       res.json({
         success: true,
         data: {
-          tookMs: 0,
-          results: rows.map((r) => ({
-            gameId: r.game_id, name: r.name, platform: r.platform, kind: r.kind,
-            title: r.title, body: r.body, sourceUrl: r.source_url,
-          })),
+          layer: result.layer,
+          normalizedEn: result.normalizedEn,
+          bumpedEn: result.bumpedEn,
+          tookMs: result.tookMs,
+          local: result.local,
+          web: result.web,
         },
       });
     } catch (err) {
