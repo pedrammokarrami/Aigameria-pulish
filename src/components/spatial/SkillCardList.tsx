@@ -3,7 +3,6 @@ import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getSkillCategoryLabel, getSkillTitle } from '../../utils/i18nEngine';
 import type { LobbySkillCardItem, LobbyGameId } from '../../utils/lobbySkillCatalog';
-import { LiveWebAnswer } from './LiveWebAnswer';
 
 interface SkillCardListProps {
   skills: LobbySkillCardItem[];
@@ -52,7 +51,6 @@ export const SkillCardList: React.FC<SkillCardListProps> = ({
         data-testid="skill-card-list"
         className="w-[70%] min-w-[238px] max-w-[292px] flex flex-col gap-2.5 overflow-y-auto no-scrollbar py-1"
       >
-        {searchQuery.trim().length >= 3 && <LiveWebAnswer gameId={gameId} searchQuery={searchQuery} />}
         {skills.length === 0 ? (
           <div
             dir={isRtl ? 'rtl' : 'ltr'}
@@ -62,7 +60,6 @@ export const SkillCardList: React.FC<SkillCardListProps> = ({
             <p className="text-[13px] font-bold text-white/90 leading-relaxed">
               {copy.noSkillsFound}
             </p>
-            {searchQuery.trim().length >= 3 && <LiveWebAnswer gameId={gameId} searchQuery={searchQuery} />}
             <button
               type="button"
               onClick={onResetFilters}

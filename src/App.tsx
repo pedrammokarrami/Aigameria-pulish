@@ -21,6 +21,7 @@ import {
   type UploadedCoachMedia,
 } from './components/spatial/RealClipCoachRoom';
 import { SkillCardList } from './components/spatial/SkillCardList';
+import { LiveWebAnswer } from './components/spatial/LiveWebAnswer';
 import { SkillSearchHeader } from './components/spatial/SkillSearchHeader';
 import {
   type TournamentGameId,
@@ -1335,6 +1336,14 @@ export function App() {
                 onSelectQuestion={handleAskLobbyQuestion}
               />
             </div>
+
+            {/* Full-width live coach answer + game-choice chips (mobile-first: sits above the
+                narrow skill column so it is never pushed off-screen) */}
+            {lobbySearchQuery.trim().length >= 3 && (
+              <div className="w-full shrink-0">
+                <LiveWebAnswer gameId={lobbyGameId} searchQuery={lobbySearchQuery} />
+              </div>
+            )}
 
             <SkillCardList
               skills={filteredLobbySkills}

@@ -66,6 +66,15 @@ const FA_QUERY_TERMS: Array<[RegExp, string]> = [
   [/با ?یرن/gi, 'Bayern Munich'],
   [/پاری ?سن ?ژرمن/gi, 'PSG'],
   [/فیفا|ف ?ای ?فا/gi, 'FIFA'],
+  [/سریع[\s‌]?ترین/g, 'fastest'],
+  [/سریع[\s‌]?تر/g, 'fast'],
+  [/بازیکن/gi, 'player'],
+  [/پوزیشن/gi, 'position'],
+  [/مهارت/gi, 'skill'],
+  [/ریتینگ|امتیاز/gi, 'rating'],
+  [/پچ/gi, 'patch'],
+  [/ایجنت/gi, 'agent'],
+  [/ویدیو|فیلم/gi, 'video'],
   [/(?<![\w])فی(?![\w])/gi, 'FC'],
 ];
 

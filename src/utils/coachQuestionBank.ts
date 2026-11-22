@@ -12,7 +12,7 @@ interface GameDomain {
   subjects: string[];
   /** in-game contexts the subject can live in */
   contexts: string[];
-  /** Persian intent heads */
+  /** Persian intent templates — `{s}` = subject, `{c}` = context, `{m}` = modifier */
   intents: string[];
   /** quality/skill modifiers */
   modifiers: string[];
@@ -29,7 +29,12 @@ const FC_DOMAIN: GameDomain = {
     'هافبک دفاعی', 'کنج آرنا', 'تیم پرس', 'تکنیک فلیر', 'چمیون شپ', 'فینال چهار',
   ],
   contexts: ['تو حریف قوی', 'تو رند آخر', 'با باد پشت سر', 'با خستگی بازیکن‌ها', 'تو باران', 'بعد از پچ جدید', 'تو کول‌داون', 'با تیم دفاعی', 'با تیم جوان', 'با کاپیتان'],
-  intents: ['چطور بهترین بذارم', 'کی بهتره', 'بهترین تنظیماتش چیه', 'کجا باید استفاده کنم', 'چرا جواب نمی‌ده', 'بهترین ترفندش چیه', 'چطور تمرینش کنم', 'بهترین کامبو چیه', 'چطور پیشرفت کنم', 'بهترین ترکیبش چیه'],
+  intents: [
+    '{s} رو چطور بهتر کنم؟', '{s} کی بهتره؟', 'بهترین تنظیمات {s} چیه؟', '{s} کجا باید استفاده کنم؟',
+    'چرا {s} جواب نمی‌ده؟', 'بهترین ترفند {s} چیه؟', '{s} رو چطور تمرین کنم؟', 'بهترین کامبو با {s} چیه؟',
+    'با {s} چطور پیشرفت کنم؟', 'بهترین {s} چیه؟', '{s} تو {c} چطور بزنم؟', 'بهترین {s} برای {c} چیه؟',
+    '{s} {m} چطور استفاده می‌شه؟', 'برای {m}، {s} چطور بذارم؟',
+  ],
   modifiers: ['برای مبتدی', 'برای رنک بالا', 'حرفه‌ای', 'سریع', 'با کمترین هزینه', 'بدون کمیسیون'],
   starters: [
     'بهترین ترکیب فرماسیون برای فشار بالاست؟',
@@ -49,7 +54,12 @@ const CS_DOMAIN: GameDomain = {
     'اسلو راند', 'تریک بوتر', 'نیف راند', 'هاوک-ای', 'ونتیج پوزیشن',
   ],
   contexts: ['دور میراژ', 'دور اینفرنو', 'دور نیکی', 'دور داست ۲', 'تو رند اکو', 'تو کلانچ ۱v۲', 'تو پست‌پلنت', 'با سگک', 'با تیم‌میت بی‌سیم', 'بعد از پچ'],
-  intents: ['چطور بهتر کنم', 'بهترین روشش چیه', 'کجا بذارم', 'کی باید بزنم', 'چرا خطا می‌زنم', 'بهترین تمرینش چیه', 'چطور اجرا کنم', 'بهترین پوزیشن چیه', 'چطور دفاع کنم', 'بهترین استراتژی چیه'],
+  intents: [
+    '{s} رو چطور بهتر کنم؟', 'بهترین روش {s} چیه؟', '{s} کجا بذارم؟', '{s} رو کی باید بزنم؟',
+    'چرا {s} خطا می‌زنه؟', 'بهترین تمرین {s} چیه؟', '{s} رو چطور اجرا کنم؟', 'بهترین پوزیشن {s} چیه؟',
+    'با {s} چطور دفاع کنم؟', 'بهترین استراتژی {s} چیه؟', '{s} تو {c} چطور بذارم؟', 'بهترین {s} برای {c} چیه؟',
+    '{s} {m} چطوره؟', 'برای {m}، {s} رو چطور بزنم؟',
+  ],
   modifiers: ['برای مبتدی', 'برای لول فیس', 'حرفه‌ای', 'سریع', 'بدون بت', 'تو پینگ بالا'],
   starters: [
     'چطور ایمم رو بهتر کنم؟',
@@ -68,7 +78,12 @@ const VALORANT_DOMAIN: GameDomain = {
     'اپراتور', 'واندال', 'فانتوم', 'شریف', 'چمبر لوداوت', 'جیت دشف', 'سایفر کم',
   ],
   contexts: ['دور هایندر', 'دور اسپلیت', 'دور بایند', 'دور اسینت', 'تو راند گان', 'تو کلانچ ۱v۳', 'تو اکو راند', 'با تیم‌میت‌های رندوم', 'بعد از پچ جدید'],
-  intents: ['بهترین لوداوت چیه', 'چطور بهتر کنم', 'کجا بندازم', 'کی باید استفاده کنم', 'بهترین روش اجراش چیه', 'چطور تمرین کنم', 'بهترین پوزیشن چیه', 'چطور کلانچ ببرم', 'بهترین استراتژی راند آخر چیه'],
+  intents: [
+    'بهترین لوداوت {s} چیه؟', '{s} رو چطور بهتر کنم؟', '{s} کجا بندازم؟', '{s} رو کی باید استفاده کنم؟',
+    'بهترین روش اجرای {s} چیه؟', '{s} رو چطور تمرین کنم؟', 'بهترین پوزیشن {s} چیه؟',
+    'با {s} چطور کلانچ ببرم؟', 'بهترین استراتژی {s} تو راند آخر چیه؟',
+    '{s} تو {c} چطور اجرا شه؟', 'بهترین {s} برای {c} چیه؟', '{s} {m} چطوره؟', 'برای {m}، {s} رو چیکار کنم؟',
+  ],
   modifiers: ['برای مبتدی', 'برای رنک امرالد', 'حرفه‌ای', 'با کمترین هزینه', 'تو پینگ بالا'],
   starters: [
     'بهترین لوداوت ویکچر برای سایت A؟',
@@ -87,7 +102,12 @@ const GTA_DOMAIN: GameDomain = {
     'کشتن سریع', 'هیلی‌کوپتر', 'تایتان', 'کِیو مأموریت', 'تیل‌بیلدینگ', 'راکستار سوشیال کلاب',
   ],
   contexts: ['تو آنلاین', 'با دو تا دوست', 'تو سرور پر', 'با کمدی بازیکن', 'تو شب', 'بعد از آپدیت'],
-  intents: ['چطور انجامش بدم', 'بهترین روشش چیه', 'چطور پول جمع کنم', 'کجا پناه بگیرم', 'بهترین مسیر چیه', 'چطور زنده بمونم', 'بهترین استراتژی چیه', 'چطور سریع پیشرفت کنم'],
+  intents: [
+    '{s} رو چطور انجام بدم؟', 'بهترین روش {s} چیه؟', 'با {s} چطور پول جمع کنم؟', '{s} کجا پناه بگیرم؟',
+    'بهترین مسیر {s} چیه؟', 'با {s} چطور زنده بمونم؟', 'بهترین استراتژی {s} چیه؟',
+    'با {s} چطور سریع پیشرفت کنم؟', '{s} تو {c} چطور انجام بدم؟', 'بهترین {s} برای {c} چیه؟',
+    '{s} {m} چطوره؟', 'برای {m}، {s} رو چیکار کنم؟',
+  ],
   modifiers: ['برای مبتدی', 'برای لون وولف', 'با تیم', 'بدون سپند'],
   starters: [
     'هیست کاسینو چطوری انجام بدم؟',
@@ -141,22 +161,24 @@ function buildBank(gameId: LobbyGameId): { bank: IndexedQuestion[]; starters: st
   };
   // 1. curated starters first
   domain.starters.forEach(push);
-  // 2. combinatorial generation: subject × intent, subject × context × intent, intent × subject
+  // 2. combinatorial generation from grammatical templates (subject × intent × context × modifier)
+  const fill = (tpl: string, subject: string, context: string, modifier: string): string =>
+    tpl.replace(/\{s\}/g, subject).replace(/\{c\}/g, context).replace(/\{m\}/g, modifier);
   for (const subject of domain.subjects) {
     for (const intent of domain.intents) {
-      push(`${intent} ${subject}؟`);
-    }
-    for (const context of domain.contexts) {
-      push(`${subject} ${context} چیکار کنم؟`);
-      push(`بهترین ${subject} ${context} چیه؟`);
-    }
-    for (const modifier of domain.modifiers) {
-      push(`${subject} ${modifier} چطور؟`);
-    }
-  }
-  for (const intent of domain.intents) {
-    for (const context of domain.contexts) {
-      push(`${intent} ${context}؟`);
+      const needsContext = intent.includes('{c}');
+      const needsModifier = intent.includes('{m}');
+      if (!needsContext && !needsModifier) {
+        push(fill(intent, subject, domain.contexts[0], domain.modifiers[0]));
+        continue;
+      }
+      const poolC = needsContext ? domain.contexts : [domain.contexts[0]];
+      const poolM = needsModifier ? domain.modifiers : [domain.modifiers[0]];
+      for (const c of poolC) {
+        for (const m of poolM) {
+          push(fill(intent, subject, c, m));
+        }
+      }
     }
   }
   return { bank, starters: domain.starters };

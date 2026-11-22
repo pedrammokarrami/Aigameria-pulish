@@ -858,6 +858,18 @@ async function startServer() {
   });
 
   // 14. Google ADK (adk.dev) Multi-Agent Coach Consultation + Live Web Media Search
+  // 14b. Fast game-choice probe: tells the UI which games a question is meaningful for
+  app.get('/api/ai/game-choices', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    const q = String(req.query.q ?? '').trim();
+    const result = detectGameAmbiguity(q);
+    return res.json({
+      ambiguous: result.ambiguous,
+      resolvedGameId: result.resolvedGameId,
+      candidates: result.candidates,
+    });
+  });
+
   app.get('/api/coach/search', async (req, res) => {
     res.setHeader('Cache-Control', 'no-store'); // live data — never let the browser serve stale answers
     try {
@@ -1212,6 +1224,32 @@ async function startServer() {
       }
     } catch {
       photo = null;
+    }
+    // Fallback: Wikipedia search (handles accents like «Mbappé» → «Mbappe»)
+    if (!photo) {
+      try {
+        const plain = name
+          .normalize('NFD')
+          .replace(/[̀-ͯ]/g, '')
+          .replace(/['’]/g, '')
+          .trim();
+        const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=${encodeURIComponent(
+          plain
+        )}&gsrlimit=1&prop=pageimages&piprop=thumbnail&pithumbsize=400`;
+        const sResp = await fetch(searchUrl, {
+          signal: AbortSignal.timeout(3000),
+          headers: { 'User-Agent': 'AIPETROS/1.0 (coach card)' },
+        });
+        if (sResp.ok) {
+          const sBody = (await sResp.json()) as {
+            query?: { pages?: Record<string, { thumbnail?: { source?: string } }> };
+          };
+          const pages = Object.values(sBody.query?.pages ?? {});
+          photo = pages[0]?.thumbnail?.source ?? null;
+        }
+      } catch {
+        photo = null;
+      }
     }
     PLAYER_PHOTO_CACHE.set(name, { photo, fetchedAtMs: Date.now() });
     res.json({ photo });

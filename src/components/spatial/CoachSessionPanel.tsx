@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { GraduationCap, Play, RefreshCw, Send, Search } from 'lucide-react';
 import { toPersianDigits } from '../../services/liveMetaSyncService';
 import { QuestionSuggestions } from './QuestionSuggestions';
+import { GameChoiceBar } from './GameChoiceBar';
 import type { CoachSession, CoachSessionModule } from '../../agents/coachSession';
 import type { LobbyGameId } from '../../utils/lobbySkillCatalog';
 
@@ -15,6 +16,30 @@ interface CoachSessionPanelProps {
 }
 
 type SessionData = { session: CoachSession };
+
+/** Short labels appended to the question so the backend resolves the game unambiguously. */
+const GAME_LABEL: Record<string, string> = {
+  fc27: 'FC 27',
+  efootball: 'eFootball',
+  nba2k: 'NBA 2K',
+  mlb: 'MLB',
+  cs2: 'CS2',
+  valorant: 'Valorant',
+  cod: 'Call of Duty',
+  'apex-legends': 'Apex Legends',
+  'f1-25': 'F1 25',
+  gta: 'GTA',
+  dota2: 'Dota 2',
+  'elden-ring': 'Elden Ring',
+  minecraft: 'Minecraft',
+  roblox: 'Roblox',
+  fortnite: 'Fortnite',
+  genshin: 'Genshin Impact',
+  'baldur-s-gate-3': 'Baldurs Gate 3',
+  'cyberpunk-2077': 'Cyberpunk 2077',
+  'rocket-league': 'Rocket League',
+  'league-of-legends': 'League of Legends',
+};
 
 function StatBar({ label, value, max, accentHex }: { label: string; value: number; max: number; accentHex: string }) {
   const pct = Math.max(4, Math.min(100, Math.round((value / Math.max(1, max)) * 100)));
@@ -146,6 +171,16 @@ export const CoachSessionPanel: React.FC<CoachSessionPanelProps> = ({
           <Send className="w-4 h-4" />
         </button>
       </form>
+
+      {/* Ambiguous question → the user picks the game explicitly (never guessed) */}
+      <GameChoiceBar
+        query={draft}
+        onSelect={(gid) => {
+          const label = GAME_LABEL[gid] ?? gid;
+          onSubmitQuestion(`${draft.trim()} ${label}`);
+          setDraft('');
+        }}
+      />
 
       {/* Live suggested questions — appear while typing, clickable to run instantly */}
       <QuestionSuggestions

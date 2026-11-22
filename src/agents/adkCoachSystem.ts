@@ -234,13 +234,26 @@ export async function runAdkMultiAgentConsultation(req: AdkConsultRequest): Prom
     const tokens = (bumped || req.query).toLowerCase().split(/\s+/).filter((t) => t.length >= 3);
     const ranked = rows
       .map((r) => {
-        const hay = `${r.title} ${r.body}`.toLowerCase();
+        const title = r.title.toLowerCase();
+        const body = r.body.toLowerCase();
         let score = r.kind === 'qa' ? 1 : 0;
-        for (const t of tokens) if (hay.includes(t)) score += 4;
-        return { r, score };
+        let titleHits = 0;
+        let bodyHits = 0;
+        for (const t of tokens) {
+          if (title.includes(t)) {
+            titleHits += 1;
+            score += 6;
+          } else if (body.includes(t)) {
+            bodyHits += 1;
+            score += 2;
+          }
+        }
+        return { r, score, titleHits, bodyHits };
       })
       .sort((a, b) => b.score - a.score)
-      .filter((e) => e.score >= 4) // require a REAL token hit — never unrelated filler
+      // A card must be ABOUT the query: hit in its TITLE, or several body mentions.
+      // (a single body mention is not enough — that is how unrelated filler sneaks in)
+      .filter((e) => e.titleHits >= 1 || e.bodyHits >= 2)
       .slice(0, 3);
     for (const { r } of ranked) {
       archiveNotes.push(`${r.title}\n${r.body}`);
