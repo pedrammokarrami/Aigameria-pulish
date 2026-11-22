@@ -159,20 +159,25 @@ export const CoachAnswerBoard: React.FC<CoachAnswerBoardProps> = ({ answerBlock,
   return (
     <div
       data-testid="coach-answer-board"
-      className="fc27-card p-3 flex flex-col gap-2.5"
+      className="hud-motion-card is-playing flex flex-col gap-2.5"
     >
-      <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-white/10">
-        <span className="flex items-center gap-1.5 font-mono-tabular text-[10px] font-black" style={{ color: accentHex }}>
-          <Icon className="w-3.5 h-3.5" />
-          AnswerBoardAgent · {answerBlock.titleFa}
+      {/* خط اسکن لیزری — مرحله اول نمایش */}
+      <div className="laser-scanner" aria-hidden="true" />
+      <div className="hud-header">
+        <span className="live-badge">
+          <span className="pulse-dot" aria-hidden="true" />
+          AnswerBoardAgent
         </span>
         <span
-          className="px-1.5 py-0.5 font-mono-tabular text-[9px] font-black"
+          className="px-2 py-0.5 rounded-full font-mono-tabular text-[9px] font-black"
           style={{ backgroundColor: accentHex, color: '#05070B' }}
         >
           {answerBlock.intent.toUpperCase()}
         </span>
       </div>
+      <h3 className="kinetic-title" style={{ fontSize: 16, margin: 0 }}>
+        {answerBlock.titleFa}
+      </h3>
 
       {/* Formation pitch */}
       {answerBlock.intent === 'formation' && formationDots && (
@@ -290,19 +295,11 @@ export const CoachAnswerBoard: React.FC<CoachAnswerBoardProps> = ({ answerBlock,
 
       {/* Loadout slots */}
       {answerBlock.intent === 'loadout' && (
-        <div data-testid="answer-loadout-board" className="flex flex-col gap-1.5">
+        <div data-testid="answer-loadout-board" className="tips-stack">
           {lines.map((line, i) => (
-            <div
-              key={i}
-              className="flex items-start gap-2 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[12px] text-white font-bold leading-relaxed"
-            >
-              <span
-                className="w-5 h-5 shrink-0 flex items-center justify-center rounded font-mono-tabular text-[10px] font-black"
-                style={{ backgroundColor: accentHex, color: '#05070B' }}
-              >
-                {i + 1}
-              </span>
-              <span>{line}</span>
+            <div key={i} className="tip-card">
+              <span className="tip-index">{i + 1}</span>
+              <span className="text-white/90">{line}</span>
             </div>
           ))}
         </div>
@@ -310,12 +307,12 @@ export const CoachAnswerBoard: React.FC<CoachAnswerBoardProps> = ({ answerBlock,
 
       {/* Generic structured lines (item / economy / tactic / fallback) */}
       {answerBlock.intent !== 'formation' && answerBlock.intent !== 'map' && answerBlock.intent !== 'loadout' && (
-        <div className="flex flex-col gap-1.5">
+        <div className="tips-stack">
           {lines.map((line, i) => (
-            <p key={i} className="text-[12.5px] text-white/85 font-bold leading-relaxed flex items-start gap-1.5">
-              <span style={{ color: accentHex }} className="shrink-0">▸</span>
-              <span>{line}</span>
-            </p>
+            <div key={i} className="tip-card">
+              <span className="tip-index">{i + 1}</span>
+              <span className="text-white/90">{line}</span>
+            </div>
           ))}
         </div>
       )}

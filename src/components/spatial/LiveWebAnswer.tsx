@@ -106,17 +106,24 @@ export const LiveWebAnswer: React.FC<LiveWebAnswerProps> = ({ gameId, searchQuer
 
   const sources = topic?.adkIntel?.liveSources ?? [];
 
+  // Remount the phase-choreography on every NEW answer: key by topic id/query.
+  // (CSS animations only fire when the element is (re)mounted — a reused node
+  // that keeps the .is-playing class stays frozen at opacity 0 in some browsers.)
   return (
     <div
       dir={isRtl ? 'rtl' : 'ltr'}
       data-testid="live-web-answer"
-      className="w-full rounded-2xl bg-gradient-to-b from-sky-950/60 to-slate-950/55 backdrop-blur-xl border border-sky-400/30 p-4 text-start flex flex-col gap-2.5"
+      key={`${searchQuery}|${forcedGameId}|${topic ? 'loaded' : 'pending'}`}
+      className="hud-motion-card is-playing w-full flex flex-col gap-2.5 text-start"
     >
-      <div className="flex items-center gap-2">
-        <Globe className="w-4 h-4 text-sky-300" />
-        <span className="text-[12px] font-bold text-sky-200 tracking-wide">
-          {isFa ? 'پاسخ زنده از وب (منابع واقعی آنلاین)' : 'Live web answer (real online sources)'}
+      {/* خط اسکن لیزری — مرحله اول نمایش */}
+      <div className="laser-scanner" aria-hidden="true" />
+      <div className="hud-header">
+        <span className="live-badge">
+          <span className="pulse-dot" aria-hidden="true" />
+          {isFa ? 'پاسخ زنده از وب' : 'Live web answer'}
         </span>
+        <Globe className="w-4 h-4 text-emerald-300" />
       </div>
 
       {!loading && gameChoices && (
@@ -148,7 +155,7 @@ export const LiveWebAnswer: React.FC<LiveWebAnswerProps> = ({ gameId, searchQuer
 
       {!loading && topic && (
         <>
-          <p className="text-[13px] font-bold text-white/95 leading-relaxed">{topic.titleFa}</p>
+          <h3 className="kinetic-title" style={{ fontSize: 15.5, margin: 0 }}>{topic.titleFa}</h3>
           {topic.answerBlock && (
             <div className="rounded-xl border border-sky-400/25 bg-sky-950/40 p-2.5 flex flex-col gap-1.5">
               <span className="text-[12px] font-black text-sky-200">{topic.answerBlock.titleFa}</span>
@@ -173,12 +180,15 @@ export const LiveWebAnswer: React.FC<LiveWebAnswerProps> = ({ gameId, searchQuer
               ))}
             </div>
           )}
-          <p className="text-[12.5px] text-white/75 leading-relaxed">
-            {isFa ? topic.coachAdviceFa : topic.coachVoiceEn || topic.coachAdviceFa}
-          </p>
+          <div className="tip-card" style={{ animationDelay: '0.6s' }}>
+            <span className="tip-index">★</span>
+            <span className="text-white/90 whitespace-pre-line">
+              {isFa ? topic.coachAdviceFa : topic.coachVoiceEn || topic.coachAdviceFa}
+            </span>
+          </div>
           {sources.length > 0 && (
-            <div className="flex flex-col gap-1.5 pt-1">
-              <span className="text-[11px] font-bold text-sky-200/90">
+            <div className="hud-footer">
+              <span className="text-[11px] font-bold text-emerald-200/80">
                 {isFa ? `منابع زنده (${sources.length}):` : `Live sources (${sources.length}):`}
               </span>
               {sources.slice(0, 4).map((s, i) => (
@@ -187,11 +197,11 @@ export const LiveWebAnswer: React.FC<LiveWebAnswerProps> = ({ gameId, searchQuer
                   href={s.url}
                   target="_blank"
                   rel="noopener noreferrer nofollow"
-                  className="group flex items-start gap-1.5 text-[12px] text-emerald-200/90 hover:text-emerald-100 leading-snug"
+                  className="hud-source"
                 >
-                  <ExternalLink className="w-3 h-3 mt-0.5 shrink-0 opacity-70 group-hover:opacity-100" />
+                  <ExternalLink className="w-3 h-3 mt-0.5 shrink-0 opacity-70" />
                   <span className="min-w-0">
-                    <span className="text-white/60">[{s.source}]</span> {s.title}
+                    <span className="src-tag">[{s.source}]</span> {s.title}
                   </span>
                 </a>
               ))}
