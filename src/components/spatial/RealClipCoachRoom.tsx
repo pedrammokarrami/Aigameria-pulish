@@ -276,6 +276,11 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
           ? CLEAN_CINEMATIC_COVER_BY_REALM.strategy
           : CLEAN_CINEMATIC_COVER_BY_REALM.story;
 
+  // REAL gameplay screenshot preference: the top on-topic clip's actual
+  // thumbnail comes from the very game being coached — never an invented render.
+  const realGameplayCoverUrl = proClipsData?.clips?.[0]?.thumbnailUrl ?? null;
+  const effectiveCoverUrl = realGameplayCoverUrl ?? cinematicCoverUrl;
+
   const featuredGames = useMemo(
     () =>
       FEATURED_DROPDOWN_GAME_IDS.map((id) => PC_GAME_CATALOG.find((g) => g.id === id)).filter(
@@ -447,7 +452,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
                   className="relative w-full h-full overflow-hidden"
                 >
                   <img
-                    src={cinematicCoverUrl}
+                    src={effectiveCoverUrl}
                     alt={motionPayload.gameName}
                     referrerPolicy="no-referrer"
                     onError={(e) => {
@@ -660,7 +665,14 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
               }
             }}
           />
-          {answerBlock && <CoachAnswerBoard answerBlock={answerBlock} accentHex={accent} />}
+          {answerBlock && (
+            <CoachAnswerBoard
+              answerBlock={answerBlock}
+              accentHex={accent}
+              gameId={motionPayload.gameId}
+              gameClipThumbnail={proClipsData?.clips?.[0]?.thumbnailUrl ?? null}
+            />
+          )}
           <MotionCoachCard
             payload={motionPayload}
             activePhase={activePhase}

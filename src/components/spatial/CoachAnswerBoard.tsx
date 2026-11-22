@@ -5,6 +5,8 @@ import type { CoachAnswerBlock, PlayerAssignment } from '../../utils/coachSearch
 interface CoachAnswerBoardProps {
   answerBlock: CoachAnswerBlock;
   accentHex: string;
+  gameId?: string;
+  gameClipThumbnail?: string | null;
 }
 
 /** Player dot positions per formation (xPct, yPct from top). */
@@ -132,7 +134,15 @@ function resolveFormationFromText(lines: string[], options: string[]): { key: st
   return { key: chosen, layout: FORMATION_LAYOUTS[chosen] ?? FORMATION_LAYOUTS['4-2-3-1'] };
 }
 
-export const CoachAnswerBoard: React.FC<CoachAnswerBoardProps> = ({ answerBlock, accentHex }) => {
+/** Per-game pitch identity — every game its own surface, colors and look. */
+const PITCH_THEME_BY_GAME: Record<string, { bg: string; line: string; label: string }> = {
+  fc27: { bg: 'repeating-linear-gradient(90deg, #0e5c2f 0px, #0e5c2f 34px, #0f6433 34px, #0f6433 68px)', line: 'rgba(255,255,255,0.25)', label: 'FC 27' },
+  efootball: { bg: 'repeating-linear-gradient(90deg, #123a2c 0px, #123a2c 34px, #144434 34px, #144434 68px)', line: 'rgba(160,255,220,0.3)', label: 'eFootball' },
+  nba: { bg: 'linear-gradient(180deg, #8a5a2b 0%, #a06a33 45%, #8a5a2b 100%)', line: 'rgba(255,255,255,0.35)', label: 'NBA' },
+  baseball: { bg: 'radial-gradient(circle at 50% 85%, #7a9d4e 0%, #6c8f44 55%, #55743a 100%)', line: 'rgba(255,255,255,0.35)', label: 'Baseball' },
+};
+
+export const CoachAnswerBoard: React.FC<CoachAnswerBoardProps> = ({ answerBlock, accentHex, gameId, gameClipThumbnail }) => {
   const [selectedFormation, setSelectedFormation] = useState<string | null>(null);
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null);
   const Icon = INTENT_ICON[answerBlock.intent] ?? ListChecks;
@@ -172,10 +182,22 @@ export const CoachAnswerBoard: React.FC<CoachAnswerBoardProps> = ({ answerBlock,
             className="relative w-full rounded-lg overflow-hidden border border-white/15"
             style={{
               aspectRatio: '16 / 10',
-              background:
-                'repeating-linear-gradient(90deg, #0e5c2f 0px, #0e5c2f 34px, #0f6433 34px, #0f6433 68px)',
+              background: PITCH_THEME_BY_GAME[gameId ?? 'fc27']?.bg ?? PITCH_THEME_BY_GAME.fc27.bg,
             }}
           >
+            {gameClipThumbnail && (
+              <img
+                src={gameClipThumbnail}
+                alt="گیم‌پلی واقعی همین بازی"
+                referrerPolicy="no-referrer"
+                data-testid="pitch-real-gameplay-bg"
+                className="absolute inset-0 w-full h-full object-cover opacity-35"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            )}
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(5,7,11,0.55), rgba(5,7,11,0.25))' }} />
             {/* halfway line + center circle + boxes */}
             <div className="absolute inset-x-0 top-1/2 h-px bg-white/25" />
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[22%] aspect-square rounded-full border border-white/25" />
