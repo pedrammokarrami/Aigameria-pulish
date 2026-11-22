@@ -307,7 +307,7 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
   const showToast = React.useCallback((text: string) => {
     setToast(text);
     if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
-    toastTimerRef.current = window.setTimeout(() => setToast(null), 3200);
+    toastTimerRef.current = window.setTimeout(() => setToast(null), 4000);
   }, []);
   const KIND_LABEL_FA: Record<MapEntityKind, string> = {
     user: 'NEARBY PLAYER',
@@ -318,6 +318,8 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
   // GTA V minimap bars — deterministic per session (no fake randomness)
   const GTA_BARS = { health: 86, armor: 72, stamina: 64 };
 
+  // Auto-start: attempt real GPS on open, fall back to Tehran Azadi when blocked
+  const autoStartedRef = React.useRef(false);
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -327,7 +329,27 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
       }
     };
     window.addEventListener('keydown', onKeyDown);
+    if (!autoStartedRef.current && !liveGrid && !gridLoading) {
+      autoStartedRef.current = true;
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setHomeLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracyM: Math.round(pos.coords.accuracy) });
+            setHomeError(null);
+            loadLiveGrid({ lat: pos.coords.latitude, lng: pos.coords.longitude }, isFa ? 'موقعیت واقعی شما (GPS)' : 'Your real location (GPS)');
+          },
+          () => {
+            setHomeError('unavailable');
+            loadLiveGrid({ lat: 35.6997, lng: 51.338 }, isFa ? 'تهران - میدان آزادی (پیش‌فرض)' : 'Tehran - Azadi Square (default)');
+          },
+          { timeout: 4500 }
+        );
+      } else {
+        loadLiveGrid({ lat: 35.6997, lng: 51.338 }, isFa ? 'تهران - میدان آزادی' : 'Tehran - Azadi Square');
+      }
+    }
     return () => window.removeEventListener('keydown', onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, onClose]);
 
   const entities = useMemo(
