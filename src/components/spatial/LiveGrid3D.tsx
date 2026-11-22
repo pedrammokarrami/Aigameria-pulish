@@ -77,12 +77,24 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, on
 
     // Tactical lighting
     scene.add(new THREE.AmbientLight(0x94a3b8, 0.75));
-    const keyLight = new THREE.DirectionalLight(0xe2e8f0, 1.1);
-    keyLight.position.set(120, 220, 90);
+    const keyLight = new THREE.DirectionalLight(0x38bdf8, 0.85);
+    keyLight.position.set(180, 350, 140);
     scene.add(keyLight);
-    const rimLight = new THREE.DirectionalLight(0x22d3ee, 0.35);
-    rimLight.position.set(-160, 120, -140);
+    const rimLight = new THREE.DirectionalLight(0xa855f7, 0.45);
+    rimLight.position.set(-200, 200, -180);
     scene.add(rimLight);
+
+    // Ground plane + subtle tactical cyber grid (GTA radar floor)
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(2400, 2400),
+      new THREE.MeshStandardMaterial({ color: 0x0b0f17, roughness: 0.92, metalness: 0.1 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.5;
+    scene.add(ground);
+    const gridHelper = new THREE.GridHelper(1600, 64, 0x1e293b, 0x111827);
+    gridHelper.position.y = -0.3;
+    scene.add(gridHelper);
 
     const buildingsGroup = new THREE.Group();
     const roadsGroup = new THREE.Group();
@@ -162,20 +174,32 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, on
       }
     }
 
-    // ── Player pulse ring at the center (real GPS point) ──
+    // ── Classic GTA V delta player cursor at the center (real GPS point) ──
+    const playerGroup = new THREE.Group();
+    scene.add(playerGroup);
+    const arrowShape = new THREE.Shape();
+    arrowShape.moveTo(0, 11);
+    arrowShape.lineTo(8, -8);
+    arrowShape.lineTo(0, -4);
+    arrowShape.lineTo(-8, -8);
+    arrowShape.closePath();
+    const arrowGeo = new THREE.ExtrudeGeometry(arrowShape, { depth: 2.5, bevelEnabled: true, bevelThickness: 0.5, bevelSize: 0.5 });
+    arrowGeo.rotateX(-Math.PI / 2);
+    const playerMesh = new THREE.Mesh(arrowGeo, new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    playerMesh.position.y = 2.5;
+    const outlineRing = new THREE.Mesh(
+      new THREE.RingGeometry(11, 13.5, 32),
+      new THREE.MeshBasicMaterial({ color: 0x22d3ee, side: THREE.DoubleSide, transparent: true, opacity: 0.85 })
+    );
+    outlineRing.rotation.x = -Math.PI / 2;
+    outlineRing.position.y = 1.2;
     const pulseRing = new THREE.Mesh(
-      new THREE.RingGeometry(9, 12, 48),
-      new THREE.MeshBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.85, side: THREE.DoubleSide })
+      new THREE.RingGeometry(12, 14, 48),
+      new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.6 })
     );
     pulseRing.rotation.x = -Math.PI / 2;
-    pulseRing.position.y = 1.2;
-    scene.add(pulseRing);
-    const playerDot = new THREE.Mesh(
-      new THREE.ConeGeometry(5, 14, 4),
-      new THREE.MeshBasicMaterial({ color: 0x22d3ee })
-    );
-    playerDot.position.y = 10;
-    scene.add(playerDot);
+    pulseRing.position.y = 1.0;
+    playerGroup.add(playerMesh, outlineRing, pulseRing);
 
     // ── Interactive blips: vertical beacon + floating marker ──
     const blipMeshes = new Map<string, { group: THREE.Group; beacon: THREE.Mesh }>();
@@ -239,9 +263,9 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, on
       const dt = Math.min(0.08, clock.getDelta());
       const t = clock.getElapsedTime();
       // pulse ring breathing
-      const s = 1 + (Math.sin(t * 2.2) * 0.5 + 0.5) * 0.55;
+      const s = 1 + (Math.sin(t * 2.2) * 0.5 + 0.5) * 0.85;
       pulseRing.scale.set(s, s, 1);
-      (pulseRing.material as THREE.MeshBasicMaterial).opacity = 0.9 - ((Math.sin(t * 2.2) * 0.5 + 0.5) * 0.5);
+      (pulseRing.material as THREE.MeshBasicMaterial).opacity = 0.7 - ((Math.sin(t * 2.2) * 0.5 + 0.5) * 0.45);
       // traffic
       if (!reducedMotion) {
         for (const car of traffic) {
