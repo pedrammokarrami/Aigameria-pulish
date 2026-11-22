@@ -1206,6 +1206,40 @@ async function startServer() {
     res.json({ photo });
   });
 
+  // Coach memory — knowledge_cards store (200+ questions, tricks, glitches per game)
+  app.get('/api/ai/knowledge', async (req, res) => {
+    const gameId = typeof req.query.gameId === 'string' ? req.query.gameId.trim() : '';
+    const kind = typeof req.query.kind === 'string' ? req.query.kind.trim() : '';
+    const q = typeof req.query.q === 'string' ? req.query.q.trim().toLowerCase() : '';
+    if (!gameId) return res.status(400).json({ error: 'gameId required' });
+    try {
+      const rows = getDb().prepare(
+        `SELECT kind, title, body, source, url, updated_at FROM knowledge_cards
+         WHERE game_id = ? ${kind ? "AND kind = ?" : ''}
+         ORDER BY updated_at DESC LIMIT 400`
+      ).all(...(kind ? [gameId, kind] : [gameId]));
+      let cards = rows;
+      if (q) {
+        const tokens = q.split(/\s+/).filter((t) => t.length >= 3);
+        cards = cards
+          .map((c) => {
+            const hay = `${c.title} ${c.body}`.toLowerCase();
+            let score = 0;
+            for (const t of tokens) if (hay.includes(t)) score += 2;
+            return { c, score };
+          })
+          .filter((e) => e.score > 0)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 12)
+          .map((e) => ({ ...e.c, relevance: e.score }));
+      }
+      const stats = getDb().prepare('SELECT kind, COUNT(*) AS n FROM knowledge_cards WHERE game_id = ? GROUP BY kind').all(gameId);
+      res.json({ success: true, data: { gameId, stats, cards } });
+    } catch (err) {
+      res.status(500).json({ error: err instanceof Error ? err.message : 'knowledge read failed' });
+    }
+  });
+
   app.get('/api/ai/coach-session', async (req, res) => {
     try {
       const gameId = normalizeCoachGameId(req.query.gameId);
