@@ -133,6 +133,19 @@ async def answer_and_send(text: str, chat_id: int | None) -> None:
     await deliver(answer, chat_id)
 
 
+def is_prompt_chat(chat_id) -> bool:
+    """Only Saved Messages ('me') and direct user chats are prompts.
+    Groups / channels are NEVER answered — that would spam other people's chats."""
+    if chat_id in ('me', None):
+        return True
+    try:
+        cid = int(chat_id)
+    except (TypeError, ValueError):
+        return False
+    # Telegram supergroup/channel ids start with -100; DMs are positive.
+    return cid > 0
+
+
 def load_webhook() -> str:
     return WEBHOOK_FILE.read_text(encoding='utf-8').strip() if WEBHOOK_FILE.exists() else ''
 
@@ -170,6 +183,9 @@ async def on_saved(event):
         return
     last_chat_id = event.chat_id
     enqueue(text, event.chat_id)
+    if not is_prompt_chat(event.chat_id):
+        print(f'group chat ignored (no auto-reply): {event.chat_id}')
+        return
     await push_to_webhook(text, event.chat_id)
     asyncio.create_task(answer_and_send(text, event.chat_id))
 
@@ -185,6 +201,9 @@ async def on_any_message(event):
         return
     last_chat_id = event.chat_id
     enqueue(text, event.chat_id)
+    if not is_prompt_chat(event.chat_id):
+        print(f'group chat ignored (no auto-reply): {event.chat_id}')
+        return
     await push_to_webhook(text, event.chat_id)
     asyncio.create_task(answer_and_send(text, event.chat_id))
 
