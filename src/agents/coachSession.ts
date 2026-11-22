@@ -1,5 +1,5 @@
 import { computeCompositeDNA } from '../utils/aipetrosRules.ts';
-import type { EcosystemState } from '../types/aipetros.ts';
+import type { EcosystemState, MatchRecord, SkillDNAAxes } from '../types/aipetros.ts';
 import { topicsByRealm, type CoachKnowledgeTopic } from './coachKnowledge.ts';
 import {
   buildEnglishQuery,
@@ -28,7 +28,26 @@ export interface CoachSessionModule {
   stats: Array<{ labelFa: string; labelEn: string; value: number; max: number }>;
   clips: RealCoachClip[];
   sources: Array<{ title: string; url: string; source: string }>;
+  matchBreakdown?: MatchDiagnosis[];
+  playerPicks?: Array<{ name: string; roleFa: string; whyFa: string; tier: 'S' | 'A' | 'B' }>;
 }
+
+/**
+ * Current meta player picks — real names, deterministic roles. The live patch
+ * news section (when online) confirms which archetypes the latest update favors.
+ */
+const META_PLAYERS: Record<string, Array<{ name: string; roleFa: string; whyFa: string; tier: 'S' | 'A' | 'B' }>> = {
+  sports: [
+    { name: 'Kylian Mbappé', roleFa: 'مهاجم نوک/چپ', whyFa: 'سرعت + فینیش = بهترین گزینه حمله متا', tier: 'S' },
+    { name: 'Jude Bellingham', roleFa: 'هافبک هجومی', whyFa: 'ورود تو محوطه + دقت پاس بالا', tier: 'S' },
+    { name: 'Erling Haaland', roleFa: 'مهاجم نوک', whyFa: 'فینیش یک‌ضرب داخل محوطه بی‌رقیب', tier: 'S' },
+    { name: 'Vinícius Júnior', roleFa: 'وینگ چپ', whyFa: 'دریبل ۱-۱؛ برای شکستن دفاع پایین', tier: 'A' },
+    { name: 'Rodri', roleFa: 'هافبک دفاعی', whyFa: 'قطع توپ + پاس عمقی؛ ستون ضدحمله', tier: 'A' },
+    { name: 'Jamal Musiala', roleFa: 'هافبک چپ/وسط', whyFa: 'چرخش سریع بین خطوط؛ برای دفاع پرس‌بالا', tier: 'A' },
+    { name: 'Alexander Isak', roleFa: 'مهاجم دوم', whyFa: 'قد + سرعت؛ بعد از پچ‌های دفاعی بهترین جایگزین', tier: 'A' },
+    { name: 'Achraf Hakimi', roleFa: 'بک راست هجومی', whyFa: 'سرعت خط‌شکن؛ برای فورکرا متا', tier: 'B' },
+  ],
+};
 
 export interface CoachSession {
   gameId: string;
@@ -78,12 +97,74 @@ async function discoverModuleClips(
   }
 }
 
+export interface MatchDiagnosis {
+  opponent: string;
+  score: string;
+  result: 'win' | 'loss' | 'draw';
+  possession: number;
+  passAcc: number;
+  xg: number;
+  diagnosisFa: string;
+  diagnosisEn: string;
+}
+
+/** Parse one match's metricsSummary into numbers. */
+function parseMatchMetrics(metricsSummary: string): { possession: number; passAcc: number; xg: number } {
+  return {
+    possession: Number(metricsSummary.match(/(\d{1,3})% ?Poss/i)?.[1] ?? 0),
+    passAcc: Number(metricsSummary.match(/(\d{1,3})% ?Pass/i)?.[1] ?? 0),
+    xg: Number(metricsSummary.match(/([\d.]+) ?xG/i)?.[1] ?? 0),
+  };
+}
+
+/** Deterministic per-match diagnosis from real telemetry. */
+function diagnoseMatch(match: MatchRecord, dna: SkillDNAAxes, isFa: boolean): MatchDiagnosis {
+  const { possession, passAcc, xg } = parseMatchMetrics(match.metricsSummary);
+  const partsFa: string[] = [];
+  const partsEn: string[] = [];
+  if (possession >= 55 && xg > 0 && xg < 1.5) {
+    partsFa.push('مالکیت بالا بدون خطر — محوطه خالی می‌مونه؛ یک پاس عمقی بعد از پرس ۲-۱-۲');
+    partsEn.push('high possession, no danger — occupy the box, one through ball after the 2-1-2 press');
+  }
+  if (possession < 42 && possession > 0) {
+    partsFa.push('مالکیت کم — لاین وسط رو با ۱-۲ کوتاه باز کن، توپ پرشی کمتر');
+    partsEn.push('low possession — build through the middle with short 1-2s, fewer long balls');
+  }
+  if (passAcc > 0 && passAcc < 82) {
+    partsFa.push(`دقت پاس ${passAcc}٪ — پاس عرضی ریسکی حذف شه`);
+    partsEn.push(`pass accuracy ${passAcc}% — cut risky sideways passes`);
+  }
+  if (xg >= 2.2 && match.result === 'loss') {
+    partsFa.push(`xG ${xg} ولی باخت — فینیش ضعیف، تایمینگ سبز تمرین شه`);
+    partsEn.push(`xG ${xg} yet a loss — finishing problem, practice green timing`);
+  }
+  if (match.result === 'loss' && dna.riskDiscipline < 80) {
+    partsFa.push('ریسک بالا وسط زمین — قبل از پاس عمقی چک ۳‌زاویه‌ای');
+    partsEn.push('risky midfield play — 3-angle check before deep passes');
+  }
+  if (partsFa.length === 0) {
+    partsFa.push('الگوی قابل‌توجهی نیست — همون مسیر رو با شدت بیشتر ادامه بده');
+    partsEn.push('no notable pattern — keep the same path with higher intensity');
+  }
+  return {
+    opponent: match.opponent,
+    score: match.scoreDisplay,
+    result: match.result,
+    possession,
+    passAcc,
+    xg,
+    diagnosisFa: partsFa.join(' · '),
+    diagnosisEn: partsEn.join(' · '),
+  };
+}
+
 /* ---------------- Module 4: real mistake review from telemetry ---------------- */
 
 function buildMistakeReview(state: EcosystemState, isFa: boolean): {
   linesFa: string[];
   linesEn: string[];
   stats: CoachSessionModule['stats'];
+  matchBreakdown: MatchDiagnosis[];
 } {
   const { profile, matches } = state;
   const dna = profile.skillDNA;
@@ -91,11 +172,12 @@ function buildMistakeReview(state: EcosystemState, isFa: boolean): {
   const recent = matches.slice(0, 5);
   const wins = recent.filter((m) => m.result === 'win').length;
 
+  // Per-match breakdown table (real data, one row per match)
+  const matchBreakdown = recent.map((m) => diagnoseMatch(m, dna, isFa));
+
   // Deterministic mistake extraction from the metrics summary + DNA
   const metrics = latest?.metricsSummary ?? '';
-  const possession = Number(metrics.match(/(\d{1,3})% ?Poss/i)?.[1] ?? 0);
-  const passAcc = Number(metrics.match(/(\d{1,3})% ?Pass/i)?.[1] ?? 0);
-  const xg = Number(metrics.match(/([\d.]+) ?xG/i)?.[1] ?? 0);
+  const { possession, passAcc, xg } = parseMatchMetrics(metrics);
 
   const linesFa: string[] = [];
   const linesEn: string[] = [];
@@ -134,6 +216,7 @@ function buildMistakeReview(state: EcosystemState, isFa: boolean): {
       { labelFa: 'دقت پاس', labelEn: 'Pass accuracy', value: passAcc || 85, max: 100 },
       { labelFa: 'xG', labelEn: 'xG', value: Math.round((xg || 1.2) * 100), max: 400 },
     ],
+    matchBreakdown,
   };
 }
 
@@ -271,16 +354,18 @@ export async function buildCoachSession(
       stats: [],
       clips: updatesClips,
       sources: intel.sources.slice(0, 4),
+      playerPicks: META_PLAYERS[realm] ?? [],
     },
     {
       id: 'mistakes',
-      titleFa: '🔍 تحلیل اشتباهات بازی آخر (از دیتای واقعی تو)',
-      titleEn: '🔍 Last-match mistake review (your real data)',
+      titleFa: '🔍 تحلیل بازی‌به‌بازی اشتباهات (از دیتای واقعی تو)',
+      titleEn: '🔍 Per-match mistake review (your real data)',
       linesFa: mistakeReview.linesFa,
       linesEn: mistakeReview.linesEn,
       stats: mistakeReview.stats,
       clips: mistakesClips,
       sources: [],
+      matchBreakdown: mistakeReview.matchBreakdown,
     },
     {
       id: 'training',
