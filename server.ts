@@ -858,6 +858,7 @@ async function startServer() {
 
   // 14. Google ADK (adk.dev) Multi-Agent Coach Consultation + Live Web Media Search
   app.get('/api/coach/search', async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store'); // live data — never let the browser serve stale answers
     try {
       const rawRealm = String(req.query.realm ?? 'shooter');
       const realm: RealmId =

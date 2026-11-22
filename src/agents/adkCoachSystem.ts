@@ -225,19 +225,22 @@ export async function runAdkMultiAgentConsultation(req: AdkConsultRequest): Prom
   try {
     const { getDb } = await import('../server/db');
     const db = getDb();
+    // Rank with the ENGLISH-normalized tokens — archive cards are English.
+    const { normalizeQuery2026 } = await import('./triLayerQuery');
+    const { bumped } = normalizeQuery2026(req.query);
     const rows = db
       .prepare("SELECT title, body, url, kind FROM knowledge_cards WHERE game_id = ? AND kind IN ('qa','meta') ORDER BY updated_at DESC LIMIT 40")
       .all(archiveGameId) as Array<{ title: string; body: string; url: string; kind: string }>;
-    const tokens = req.query.toLowerCase().split(/\s+/).filter((t) => t.length >= 3);
+    const tokens = (bumped || req.query).toLowerCase().split(/\s+/).filter((t) => t.length >= 3);
     const ranked = rows
       .map((r) => {
         const hay = `${r.title} ${r.body}`.toLowerCase();
-        let score = 1;
-        for (const t of tokens) if (hay.includes(t)) score += 3;
-        if (/skill|mechanic|map|tactic|meta|glitch|exploit|trick|tip/i.test(r.title)) score += 2;
+        let score = r.kind === 'qa' ? 1 : 0;
+        for (const t of tokens) if (hay.includes(t)) score += 4;
         return { r, score };
       })
       .sort((a, b) => b.score - a.score)
+      .filter((e) => e.score >= 4) // require a REAL token hit — never unrelated filler
       .slice(0, 3);
     for (const { r } of ranked) {
       archiveNotes.push(`${r.title}\n${r.body}`);
