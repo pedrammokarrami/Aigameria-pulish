@@ -145,6 +145,7 @@ const PITCH_THEME_BY_GAME: Record<string, { bg: string; line: string; label: str
 export const CoachAnswerBoard: React.FC<CoachAnswerBoardProps> = ({ answerBlock, accentHex, gameId, gameClipThumbnail }) => {
   const [selectedFormation, setSelectedFormation] = useState<string | null>(null);
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null);
+  const boardRef = React.useRef<HTMLDivElement | null>(null);
   const Icon = INTENT_ICON[answerBlock.intent] ?? ListChecks;
   const isFaLines = answerBlock.linesFa?.length > 0;
   const lines = isFaLines ? answerBlock.linesFa : answerBlock.linesEn;
@@ -158,6 +159,7 @@ export const CoachAnswerBoard: React.FC<CoachAnswerBoardProps> = ({ answerBlock,
 
   return (
     <div
+      ref={boardRef}
       data-testid="coach-answer-board"
       className="hud-motion-card is-playing flex flex-col gap-2.5"
     >
@@ -168,12 +170,21 @@ export const CoachAnswerBoard: React.FC<CoachAnswerBoardProps> = ({ answerBlock,
           <span className="pulse-dot" aria-hidden="true" />
           AnswerBoardAgent
         </span>
-        <span
-          className="px-2 py-0.5 rounded-full font-mono-tabular text-[9px] font-black"
-          style={{ backgroundColor: accentHex, color: '#05070B' }}
+        <button
+          type="button"
+          data-testid="hud-replay-btn"
+          className="hud-replay"
+          onClick={() => {
+            const el = boardRef.current;
+            if (!el) return;
+            el.classList.remove('is-playing');
+            void el.offsetWidth; // force reflow so the choreography restarts
+            el.classList.add('is-playing');
+          }}
+          title={isFaLines ? 'اجرای دوباره انیمیشن' : 'Replay motion'}
         >
-          {answerBlock.intent.toUpperCase()}
-        </span>
+          ↻ {isFaLines ? 'بازپخش موشن' : 'Replay'}
+        </button>
       </div>
       <h3 className="kinetic-title" style={{ fontSize: 16, margin: 0 }}>
         {answerBlock.titleFa}
@@ -297,9 +308,12 @@ export const CoachAnswerBoard: React.FC<CoachAnswerBoardProps> = ({ answerBlock,
       {answerBlock.intent === 'loadout' && (
         <div data-testid="answer-loadout-board" className="tips-stack">
           {lines.map((line, i) => (
-            <div key={i} className="tip-card">
-              <span className="tip-index">{i + 1}</span>
-              <span className="text-white/90">{line}</span>
+            <div key={i} className="tip-module" style={{ cursor: 'default' }}>
+              <div className="tip-title">
+                <span className="tip-dot" aria-hidden="true" />
+                <span dir="ltr" className="font-mono-tabular">{i + 1}</span>
+              </div>
+              <p className="tip-desc">{line}</p>
             </div>
           ))}
         </div>
@@ -309,9 +323,12 @@ export const CoachAnswerBoard: React.FC<CoachAnswerBoardProps> = ({ answerBlock,
       {answerBlock.intent !== 'formation' && answerBlock.intent !== 'map' && answerBlock.intent !== 'loadout' && (
         <div className="tips-stack">
           {lines.map((line, i) => (
-            <div key={i} className="tip-card">
-              <span className="tip-index">{i + 1}</span>
-              <span className="text-white/90">{line}</span>
+            <div key={i} className="tip-module" style={{ cursor: 'default' }}>
+              <div className="tip-title">
+                <span className="tip-dot" aria-hidden="true" />
+                {isFaLines ? `نکته ${i + 1}` : `Tip ${i + 1}`}
+              </div>
+              <p className="tip-desc">{line}</p>
             </div>
           ))}
         </div>

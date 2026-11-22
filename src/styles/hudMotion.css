@@ -209,6 +209,72 @@
   box-shadow: 0 0 10px rgba(16, 185, 129, 0.45);
 }
 
+/* کارت‌های ماژولار نکات — نسخه دوم (tip-module با عنوان و توضیح) */
+.tip-module {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 16px;
+  padding: 12px 14px;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateX(22px);
+  transition: border-color 0.25s, background 0.25s;
+}
+
+.tip-module:hover {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.hud-motion-card.is-playing .tip-module:nth-child(1) { animation: slideModule 0.55s var(--spring-ease) 0.75s forwards; }
+.hud-motion-card.is-playing .tip-module:nth-child(2) { animation: slideModule 0.55s var(--spring-ease) 0.88s forwards; }
+.hud-motion-card.is-playing .tip-module:nth-child(3) { animation: slideModule 0.55s var(--spring-ease) 1.01s forwards; }
+.hud-motion-card.is-playing .tip-module:nth-child(4) { animation: slideModule 0.55s var(--spring-ease) 1.14s forwards; }
+.hud-motion-card.is-playing .tip-module:nth-child(n + 5) { animation: slideModule 0.55s var(--spring-ease) 1.25s forwards; }
+
+.tip-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #f9fafb;
+}
+
+.tip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--emerald-glow);
+  box-shadow: 0 0 8px var(--emerald-glow);
+  flex-shrink: 0;
+}
+
+.tip-desc {
+  font-size: 12.5px;
+  color: #9ca3af;
+  margin-top: 6px;
+  padding-right: 18px;
+  line-height: 1.65;
+}
+
+/* دکمه بازپخش موشن */
+.hud-replay {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.hud-replay:hover {
+  color: #d1fae5;
+  background: rgba(16, 185, 129, 0.1);
+}
+
 /* فوتر / منابع زنده (مرحله چهارم) */
 .hud-footer {
   margin-top: 14px;
@@ -224,6 +290,36 @@
   animation: fadeSlideIn 0.55s ease 1.55s forwards;
 }
 
+.hud-footer {
+  animation-delay: 1.15s !important;
+}
+
+.source-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: 11px;
+  color: #d1d5db;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 6px 12px;
+  border-radius: 99px;
+  text-decoration: none;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.source-chip:hover {
+  border-color: rgba(16, 185, 129, 0.45);
+  color: #a7f3d0;
+}
+
+.source-chip .src-tag {
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 800;
+}
+
+/* fallback list layout (long source titles) */
 .hud-source {
   display: flex;
   align-items: flex-start;
@@ -235,9 +331,20 @@
 }
 
 .hud-source:hover { color: #d1fae5; }
-.hud-source .src-tag {
-  color: rgba(255, 255, 255, 0.5);
-  font-weight: 800;
+
+/* ردیف چیپ‌های منابع (مرحله چهارم — اسکرول افقی) */
+.sources-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.hud-motion-card.is-playing .sources-row {
+  animation: fadeSlideIn 0.5s ease 1.15s forwards;
 }
 
 /* keyframes مشترک */
@@ -260,8 +367,12 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.55; transform: scale(1.25); }
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.5; }
+}
+
+@keyframes slideModule {
+  to { opacity: 1; transform: translateX(0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -270,6 +381,8 @@
   .kinetic-title,
   .stat-pill,
   .tip-card,
+  .tip-module,
+  .sources-row,
   .hud-footer {
     animation: none !important;
     opacity: 1 !important;

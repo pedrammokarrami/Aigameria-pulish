@@ -67,6 +67,7 @@ export const LiveWebAnswer: React.FC<LiveWebAnswerProps> = ({ gameId, searchQuer
   const [gameChoices, setGameChoices] = useState<GameChoice[] | null>(null);
   const [forcedGameId, setForcedGameId] = useState<string | null>(null);
   const [choicesDismissed, setChoicesDismissed] = useState(false);
+  const [replayTick, setReplayTick] = useState(0);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -113,7 +114,7 @@ export const LiveWebAnswer: React.FC<LiveWebAnswerProps> = ({ gameId, searchQuer
     <div
       dir={isRtl ? 'rtl' : 'ltr'}
       data-testid="live-web-answer"
-      key={`${searchQuery}|${forcedGameId}|${topic ? 'loaded' : 'pending'}`}
+      key={`${searchQuery}|${forcedGameId}|${topic ? 'loaded' : 'pending'}|r${replayTick}`}
       className="hud-motion-card is-playing w-full flex flex-col gap-2.5 text-start"
     >
       {/* خط اسکن لیزری — مرحله اول نمایش */}
@@ -123,7 +124,15 @@ export const LiveWebAnswer: React.FC<LiveWebAnswerProps> = ({ gameId, searchQuer
           <span className="pulse-dot" aria-hidden="true" />
           {isFa ? 'پاسخ زنده از وب' : 'Live web answer'}
         </span>
-        <Globe className="w-4 h-4 text-emerald-300" />
+        <button
+          type="button"
+          data-testid="hud-replay-btn"
+          className="hud-replay"
+          onClick={() => setReplayTick((t) => t + 1)}
+          title={isFa ? 'اجرای دوباره انیمیشن' : 'Replay motion'}
+        >
+          ↻ {isFa ? 'بازپخش موشن' : 'Replay'}
+        </button>
       </div>
 
       {!loading && gameChoices && (
@@ -180,29 +189,30 @@ export const LiveWebAnswer: React.FC<LiveWebAnswerProps> = ({ gameId, searchQuer
               ))}
             </div>
           )}
-          <div className="tip-card" style={{ animationDelay: '0.6s' }}>
-            <span className="tip-index">★</span>
-            <span className="text-white/90 whitespace-pre-line">
-              {isFa ? topic.coachAdviceFa : topic.coachVoiceEn || topic.coachAdviceFa}
-            </span>
+          <div className="tips-stack">
+            <div className="tip-module" style={{ cursor: 'default' }}>
+              <div className="tip-title">
+                <span className="tip-dot" aria-hidden="true" />
+                {isFa ? 'نکته مربی' : 'Coach note'}
+              </div>
+              <p className="tip-desc whitespace-pre-line">
+                {isFa ? topic.coachAdviceFa : topic.coachVoiceEn || topic.coachAdviceFa}
+              </p>
+            </div>
           </div>
           {sources.length > 0 && (
-            <div className="hud-footer">
-              <span className="text-[11px] font-bold text-emerald-200/80">
-                {isFa ? `منابع زنده (${sources.length}):` : `Live sources (${sources.length}):`}
-              </span>
-              {sources.slice(0, 4).map((s, i) => (
+            <div className="sources-row" data-testid="live-sources-row">
+              {sources.slice(0, 6).map((s, i) => (
                 <a
                   key={i}
                   href={s.url}
                   target="_blank"
                   rel="noopener noreferrer nofollow"
-                  className="hud-source"
+                  className="source-chip"
                 >
-                  <ExternalLink className="w-3 h-3 mt-0.5 shrink-0 opacity-70" />
-                  <span className="min-w-0">
-                    <span className="src-tag">[{s.source}]</span> {s.title}
-                  </span>
+                  <ExternalLink className="w-3 h-3 shrink-0 opacity-70" />
+                  <span className="src-tag">{s.source}:</span>
+                  <span className="min-w-0 truncate">{s.title}</span>
                 </a>
               ))}
             </div>
