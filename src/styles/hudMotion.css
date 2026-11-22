@@ -390,3 +390,25 @@
     filter: none !important;
   }
 }
+
+/* نسخه فشرده گیج‌ها داخل هدر جلسه مربی */
+.hud-stats-inline .stats-grid {
+  margin-bottom: 0;
+  gap: 6px;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.hud-stats-inline .stat-pill {
+  padding: 6px 8px;
+  border-radius: 12px;
+}
+
+.hud-stats-inline .stat-top {
+  font-size: 10px;
+  margin-bottom: 4px;
+  gap: 4px;
+}
+
+.hud-stats-inline .stat-val {
+  font-size: 10px;
+}

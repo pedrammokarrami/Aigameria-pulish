@@ -3,6 +3,7 @@ import { GraduationCap, Play, RefreshCw, Send, Search } from 'lucide-react';
 import { toPersianDigits } from '../../services/liveMetaSyncService';
 import { QuestionSuggestions } from './QuestionSuggestions';
 import { GameChoiceBar } from './GameChoiceBar';
+import { HudStatGauges } from './HudStatGauges';
 import type { CoachSession, CoachSessionModule } from '../../agents/coachSession';
 import type { LobbyGameId } from '../../utils/lobbySkillCatalog';
 
@@ -40,21 +41,6 @@ const GAME_LABEL: Record<string, string> = {
   'rocket-league': 'Rocket League',
   'league-of-legends': 'League of Legends',
 };
-
-function StatBar({ label, value, max, accentHex }: { label: string; value: number; max: number; accentHex: string }) {
-  const pct = Math.max(4, Math.min(100, Math.round((value / Math.max(1, max)) * 100)));
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-[11px] font-bold text-white/70 w-20 shrink-0">{label}</span>
-      <div className="flex-1 h-2 rounded-full bg-white/10 overflow-hidden">
-        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: accentHex }} />
-      </div>
-      <span dir="ltr" className="text-[10px] font-mono-tabular font-black text-white/80 w-9 text-right">
-        {value}
-      </span>
-    </div>
-  );
-}
 
 export const CoachSessionPanel: React.FC<CoachSessionPanelProps> = ({
   gameId,
@@ -124,6 +110,18 @@ export const CoachSessionPanel: React.FC<CoachSessionPanelProps> = ({
                 OVR {session.telemetry.ovr} · {session.telemetry.strongest.name} {session.telemetry.strongest.val} · {session.telemetry.weakest.name} {session.telemetry.weakest.val}
                 {session.telemetry.lastMatch ? ` · ${session.telemetry.lastMatch.score} ${session.telemetry.lastMatch.opponent}` : ''}
               </p>
+            )}
+            {session && (
+              <div className="hud-stats-inline">
+                <HudStatGauges
+                  dataTestId="session-header-stats"
+                  stats={[
+                    { label: isFa ? 'امتیاز کل' : 'OVR', value: session.telemetry.ovr, max: 100 },
+                    { label: session.telemetry.strongest.name, value: session.telemetry.strongest.val, max: 100 },
+                    { label: session.telemetry.weakest.name, value: session.telemetry.weakest.val, max: 100 },
+                  ]}
+                />
+              </div>
             )}
           </div>
         </div>
@@ -228,11 +226,10 @@ export const CoachSessionPanel: React.FC<CoachSessionPanelProps> = ({
           </p>
 
           {activeModule.stats.length > 0 && (
-            <div className="flex flex-col gap-1.5 rounded-xl bg-white/5 border border-white/10 p-2.5">
-              {activeModule.stats.map((s) => (
-                <StatBar key={s.labelEn} label={s.labelFa} value={s.value} max={s.max} accentHex={accentHex} />
-              ))}
-            </div>
+            <HudStatGauges
+              dataTestId={`session-stats-${activeModule.id}`}
+              stats={activeModule.stats.map((st) => ({ label: st.labelFa, value: st.value, max: st.max }))}
+            />
           )}
 
           <div className="flex flex-col gap-1.5">
