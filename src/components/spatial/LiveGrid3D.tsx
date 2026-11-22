@@ -7,8 +7,8 @@ import { projectToViewport } from '../../utils/liveGridEngine';
 /**
  * GTA V 3D LIVE RADAR — real OSM buildings/roads extruded into a Three.js
  * scene with the user-specified radar aesthetics: exponential fog, angled
- * pause-menu camera, damped orbit controls, pulse ring at the player,
- * traffic vehicles flowing along real roads.
+ * pause-menu camera, damped orbit controls, classic delta player cursor,
+ * purple GPS waypoint route and in-scene sprite blips (no per-frame DOM).
  *
  * All coordinates are meters relative to the map center (user's real GPS fix).
  */
@@ -27,11 +27,12 @@ interface LiveGrid3DProps {
   /** marker colors per blip */
   blips: RadarBlipSpec[];
   selectedBlipId: string | null;
+  /** entity id with an active GTA waypoint (purple GPS route) */
+  waypointBlipId?: string | null;
   onPickBlip: (id: string) => void;
 }
 
 const FOG_COLOR = 0x080b10;
-const METERS_PER_UNIT = 1; // 1 world unit = 1 meter
 
 /** Convert lat/lng inside the grid to local meters relative to the center. */
 function toLocalMeters(center: GridCoord, radiusM: number, lat: number, lng: number): { x: number; z: number } {
@@ -40,10 +41,51 @@ function toLocalMeters(center: GridCoord, radiusM: number, lat: number, lng: num
   return { x: ((xPct - 50) / 100) * span, z: ((yPct - 50) / 100) * span };
 }
 
-const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, onPickBlip }) => {
+/** Rounded pill label rendered once into a canvas texture (GTA blip chip). */
+function makeLabelSprite(text: string, color: string): THREE.Sprite {
+  const cnv = document.createElement('canvas');
+  cnv.width = 320;
+  cnv.height = 96;
+  const ctx = cnv.getContext('2d')!;
+  ctx.clearRect(0, 0, 320, 96);
+  // pill background
+  ctx.fillStyle = 'rgba(2,6,12,0.72)';
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 5;
+  const r = 34;
+  ctx.beginPath();
+  ctx.roundRect(6, 6, 308, 84, r);
+  ctx.fill();
+  ctx.globalAlpha = 0.9;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  // color dot
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(46, 48, 15, 0, Math.PI * 2);
+  ctx.fill();
+  // label text (first word like GTA)
+  ctx.fillStyle = '#f1f5f9';
+  ctx.font = 'bold 34px Vazirmatn, Tahoma, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const label = text.split(' ')[0].slice(0, 12);
+  ctx.fillText(label, 186, 50);
+  const tex = new THREE.CanvasTexture(cnv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+  sprite.scale.set(72, 21.5, 1);
+  return sprite;
+}
+
+const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, waypointBlipId, onPickBlip }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const pickRef = useRef(onPickBlip);
   pickRef.current = onPickBlip;
+  // world positions of blips + a mutable purple route line, for the waypoint effect
+  const routeRef = useRef<{ updateRoute: (wpId: string | null) => void } | null>(null);
+  const wpRef = useRef(waypointBlipId ?? null);
+  wpRef.current = waypointBlipId ?? null;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -75,7 +117,7 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, on
     controls.maxDistance = 680;
     controls.target.set(0, 0, 0);
 
-    // Tactical lighting
+    // Tactical lighting (spec: sky-blue key + purple rim)
     scene.add(new THREE.AmbientLight(0x94a3b8, 0.75));
     const keyLight = new THREE.DirectionalLight(0x38bdf8, 0.85);
     keyLight.position.set(180, 350, 140);
@@ -105,7 +147,7 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, on
 
     const gridRef = grid;
     if (gridRef) {
-      // ── Real buildings: extruded footprints, GTA slate blocks ──
+      // ── Real buildings: extruded footprints, GTA dark tactile material ──
       const wallMat = new THREE.MeshStandardMaterial({ color: 0x151b26, roughness: 0.75, metalness: 0.25 });
       const roofMat = new THREE.MeshStandardMaterial({ color: 0x1c2433, roughness: 0.8, metalness: 0.2 });
       const edgeMat = new THREE.LineBasicMaterial({ color: 0x475569, transparent: true, opacity: 0.75 });
@@ -138,18 +180,19 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, on
         geo.rotateX(-Math.PI / 2);
         const mesh = new THREE.Mesh(geo, [wallMat, roofMat]);
         buildingsGroup.add(mesh);
+        // crisp GTA edge lines; tall buildings get the sky-blue highlight
         const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 25), height > 26 ? highlightEdgeMat : edgeMat);
         buildingsGroup.add(edges);
       });
 
-      // ── Real roads: flat dark ribbons along OSM polylines ──
-      const roadMat = new THREE.MeshLambertMaterial({ color: 0x334155 });
-      const primaryMat = new THREE.MeshLambertMaterial({ color: 0x64748b });
+      // ── Real roads: crisp ribbons (footways skipped, main roads wider/lighter) ──
       const FOOTWAY_CLASSES = new Set(['footway', 'steps', 'path', 'cycleway']);
       const MAIN_CLASSES = new Set(['primary', 'secondary', 'trunk', 'motorway', 'tertiary']);
+      const roadMat = new THREE.MeshLambertMaterial({ color: 0x334155 });
+      const primaryMat = new THREE.MeshLambertMaterial({ color: 0x64748b });
       gridRef.roads.slice(0, 110).forEach((r) => {
         if (r.points.length < 4) return;
-        if (r.roadClass && FOOTWAY_CLASSES.has(r.roadClass)) return; // keep radar crisp
+        if (r.roadClass && FOOTWAY_CLASSES.has(r.roadClass)) return;
         const isMain = !!r.roadClass && MAIN_CLASSES.has(r.roadClass);
         const curvePts: THREE.Vector3[] = [];
         for (let i = 0; i < r.points.length; i += 2) {
@@ -163,7 +206,7 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, on
         roadsGroup.add(tube);
       });
 
-      // ── Traffic: small cars gliding along road curves ──
+      // ── Traffic: GTA headlight/taillight dots gliding on real roads ──
       const carGeo = new THREE.SphereGeometry(1.5, 8, 8);
       const headMat = new THREE.MeshBasicMaterial({ color: 0xf8fafc });
       const tailMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
@@ -180,7 +223,7 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, on
         });
       for (let i = 0; i < Math.min(35, roadCurves.length); i++) {
         const curve = roadCurves[i % roadCurves.length];
-        const mesh = new THREE.Mesh(carGeo, i % 2 === 0 ? headMat : tailMat); // white headlights / red taillights
+        const mesh = new THREE.Mesh(carGeo, i % 2 === 0 ? headMat : tailMat);
         mesh.position.y = 1.2;
         trafficGroup.add(mesh);
         traffic.push({ mesh, curve, t: Math.random(), speed: 0.008 + Math.random() * 0.012 });
@@ -214,8 +257,8 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, on
     pulseRing.position.y = 1.0;
     playerGroup.add(playerMesh, outlineRing, pulseRing);
 
-    // ── Interactive blips: vertical beacon + floating marker ──
-    const blipMeshes = new Map<string, { group: THREE.Group; beacon: THREE.Mesh }>();
+    // ── In-scene blips: beam + glowing head + sprite label (GTA chip) ──
+    const blipMeshes = new Map<string, { group: THREE.Group; beacon: THREE.Mesh; label: THREE.Sprite }>();
     blips.forEach((b) => {
       const group = new THREE.Group();
       const color = new THREE.Color(b.color);
@@ -226,19 +269,50 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, on
       cyl.position.y = 30;
       const head = new THREE.Mesh(new THREE.SphereGeometry(4.4, 16, 12), new THREE.MeshBasicMaterial({ color }));
       head.position.y = 62;
-      group.add(cyl, head);
+      const label = makeLabelSprite(b.title, b.color);
+      label.position.y = 78;
+      label.userData.blipId = b.id;
+      group.add(cyl, head, label);
       group.position.set(b.offsetX, 0, b.offsetZ);
       blipGroup.add(group);
-      blipMeshes.set(b.id, { group, beacon: head });
+      blipMeshes.set(b.id, { group, beacon: head, label });
     });
+    // «خانه من» marker over the real GPS point (player cursor home)
+    const homeLabel = makeLabelSprite('🏠 خونه من', '#22d3ee');
+    homeLabel.position.set(0, 46, 0);
+    homeLabel.userData.home = true;
+    scene.add(homeLabel);
 
-    // Raycast picking for blip heads
+    // ── Purple GTA GPS waypoint route (player -> blip arc) ──
+    const routeMat = new THREE.LineBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.9 });
+    const routeLine = new THREE.Line(new THREE.BufferGeometry(), routeMat);
+    routeLine.visible = false;
+    scene.add(routeLine);
+    const blipWorld = new Map<string, THREE.Vector3>();
+    blips.forEach((b) => blipWorld.set(b.id, new THREE.Vector3(b.offsetX, 4, b.offsetZ)));
+    const updateRoute = (wpId: string | null) => {
+      const target = wpId ? blipWorld.get(wpId) : null;
+      if (!target) {
+        routeLine.visible = false;
+        return;
+      }
+      const mid = new THREE.Vector3(target.x * 0.5, Math.max(48, target.length() * 0.35), target.z * 0.5);
+      const curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(0, 2, 0), mid, target);
+      routeLine.geometry.dispose();
+      routeLine.geometry = new THREE.BufferGeometry().setFromPoints(curve.getPoints(48));
+      routeLine.visible = true;
+    };
+    updateRoute(wpRef.current);
+    routeRef.current = { updateRoute };
+
+    // Raycast picking for blip heads + labels
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     const pickTargets: THREE.Object3D[] = [];
-    blipMeshes.forEach(({ beacon }, id) => {
+    blipMeshes.forEach(({ beacon, label }, id) => {
       beacon.userData.blipId = id;
-      pickTargets.push(beacon);
+      label.userData.blipId = id;
+      pickTargets.push(beacon, label);
     });
     const onPointerDown = (e: PointerEvent) => {
       const rect = renderer.domElement.getBoundingClientRect();
@@ -261,7 +335,7 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, on
     };
     window.addEventListener('resize', onResize);
 
-    // Animation loop
+    // Animation loop — everything lives in the WebGL scene; zero per-frame DOM
     let stopped = false;
     let raf = 0;
     const clock = new THREE.Clock();
@@ -287,10 +361,12 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, on
           car.mesh.position.copy(p);
         }
       }
-      // selected blip beacon bounces
-      blipMeshes.forEach(({ beacon }, id) => {
+      // selected blip: beacon + label bounce
+      blipMeshes.forEach(({ beacon, label }, id) => {
         const sel = id === selectedBlipId;
-        beacon.scale.setScalar(sel ? 1.5 + Math.sin(t * 4) * 0.25 : 1);
+        const k = sel ? 1.5 + Math.sin(t * 4) * 0.25 : 1;
+        beacon.scale.setScalar(k);
+        label.scale.set(72 * k, 21.5 * k, 1);
       });
       controls.update();
       renderer.render(scene, camera);
@@ -308,7 +384,11 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, on
       renderer.domElement.removeEventListener('pointerdown', onPointerDown);
       controls.dispose();
       scene.traverse((obj) => {
-        if (obj instanceof THREE.Mesh || obj instanceof THREE.LineSegments) {
+        if (obj instanceof THREE.Sprite) {
+          const map = (obj.material as THREE.SpriteMaterial).map;
+          map?.dispose();
+          (obj.material as THREE.SpriteMaterial).dispose();
+        } else if (obj instanceof THREE.Mesh || obj instanceof THREE.LineSegments || obj instanceof THREE.Line) {
           obj.geometry?.dispose();
           const mat = obj.material;
           if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
@@ -321,7 +401,20 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, on
     // rebuild scene when the real grid or selection changes
   }, [grid, selectedBlipId, blips]);
 
-  return <div ref={containerRef} className="absolute inset-0" style={{ zIndex: 2 }} data-testid="live-grid-3d" />;
+  // rebuild the purple GPS route when the waypoint toggles (no full scene rebuild)
+  useEffect(() => {
+    routeRef.current?.updateRoute(waypointBlipId ?? null);
+  }, [waypointBlipId, selectedBlipId, blips]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="absolute inset-0"
+      style={{ zIndex: 2 }}
+      data-testid="live-grid-3d"
+      data-blip-count={blips.length}
+    />
+  );
 };
 
 export default LiveGrid3D;
