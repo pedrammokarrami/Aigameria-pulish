@@ -20,7 +20,7 @@ export const QuestionSuggestions: React.FC<QuestionSuggestionsProps> = ({
   query,
   accentHex,
   onSelectQuestion,
-  limit = 6,
+  limit = 8,
 }) => {
   const suggestions = suggestCoachQuestions(query, gameId, limit);
   if (suggestions.length === 0) return null;

@@ -149,7 +149,7 @@ export const CoachSessionPanel: React.FC<CoachSessionPanelProps> = ({
           onSubmitQuestion(q);
           setDraft('');
         }}
-        limit={5}
+        limit={8}
       />
 
       {/* Module tabs */}

@@ -362,7 +362,8 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
 
         {/* ================= MAIN 2-FRAME CONTENT STACK ================= */}
         <main className="flex-1 flex flex-col gap-2 min-w-0">
-          {/* ---------- LAYER 2: TOP PRO CLIP FRAME (CLEAN CINEMATIC COVER + SCRUBBER CHAPTERS) ---------- */}
+          {/* ---------- LAYER 2: TOP PRO CLIP FRAME — CONDITIONAL: hidden entirely when no real clip is ready ---------- */}
+          {uploadedMedia || activeClip || isLoadingClips ? (
           <section
             data-testid="top-video-frame"
             className="rounded-2xl overflow-hidden bg-slate-950/40 backdrop-blur-md border border-white/15 shadow-[0_18px_45px_rgba(0,0,0,0.55)]"
@@ -409,6 +410,19 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
                     src={cinematicCoverUrl}
                     alt={motionPayload.gameName}
                     referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      // Poster failed → never show an empty black frame; swap to a tinted gradient.
+                      const img = e.currentTarget;
+                      img.style.display = 'none';
+                      const parent = img.parentElement;
+                      if (parent && !parent.querySelector('[data-testid="cover-fallback-bg"]')) {
+                        const fallback = document.createElement('div');
+                        fallback.setAttribute('data-testid', 'cover-fallback-bg');
+                        fallback.className = 'absolute inset-0';
+                        fallback.style.background = `linear-gradient(135deg, ${accent}44 0%, #05070B 55%, ${accent}22 100%)`;
+                        parent.prepend(fallback);
+                      }
+                    }}
                     className="w-full h-full object-cover scale-[1.02] brightness-90"
                   />
                   {/* Measured Cinematic Dark Contrast Scrim */}
@@ -589,6 +603,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
               </div>
             ) : null}
           </section>
+          ) : null}
 
           {/* ---------- LAYER 3: CENTER 3D HOLOGRAPHIC CONTROLLER & COACHING HERO CARD ---------- */}
           <CoachSessionPanel
