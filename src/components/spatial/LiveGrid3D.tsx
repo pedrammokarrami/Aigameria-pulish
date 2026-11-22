@@ -284,23 +284,42 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, wa
     scene.add(homeLabel);
 
     // ── Purple GTA GPS waypoint route (player -> blip arc) ──
-    const routeMat = new THREE.LineBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.9 });
-    const routeLine = new THREE.Line(new THREE.BufferGeometry(), routeMat);
+    const routeLine = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ color: 0xa855f7 }));
     routeLine.visible = false;
     scene.add(routeLine);
     const blipWorld = new Map<string, THREE.Vector3>();
     blips.forEach((b) => blipWorld.set(b.id, new THREE.Vector3(b.offsetX, 4, b.offsetZ)));
+    // destination beacon ring under the waypointed blip
+    const beacon = new THREE.Mesh(
+      new THREE.RingGeometry(6, 9, 32),
+      new THREE.MeshBasicMaterial({ color: 0xc084fc, side: THREE.DoubleSide })
+    );
+    beacon.rotation.x = -Math.PI / 2;
+    beacon.position.y = 1.5;
+    beacon.visible = false;
+    scene.add(beacon);
     const updateRoute = (wpId: string | null) => {
       const target = wpId ? blipWorld.get(wpId) : null;
       if (!target) {
         routeLine.visible = false;
+        beacon.visible = false;
         return;
       }
-      const mid = new THREE.Vector3(target.x * 0.5, Math.max(48, target.length() * 0.35), target.z * 0.5);
-      const curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(0, 2, 0), mid, target);
+      // L-shaped / urban block routed path like GTA GPS
+      const midX = target.x * 0.55;
+      const pathPoints = [
+        new THREE.Vector3(0, 1.8, 0),
+        new THREE.Vector3(midX, 1.8, 0),
+        new THREE.Vector3(midX, 1.8, target.z),
+        new THREE.Vector3(target.x, 1.8, target.z),
+      ];
+      const curve = new THREE.CatmullRomCurve3(pathPoints, false, 'catmullrom', 0.08);
       routeLine.geometry.dispose();
-      routeLine.geometry = new THREE.BufferGeometry().setFromPoints(curve.getPoints(48));
+      routeLine.geometry = new THREE.TubeGeometry(curve, 36, 1.8, 8, false);
+      routeLine.material = new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.92 });
+      beacon.position.set(target.x, 1.5, target.z);
       routeLine.visible = true;
+      beacon.visible = true;
     };
     updateRoute(wpRef.current);
     routeRef.current = { updateRoute };

@@ -488,6 +488,7 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
               grid={liveGrid}
               blips={radarBlips}
               selectedBlipId={selectedEntityId}
+              waypointBlipId={waypointId}
               onPickBlip={(id) => setSelectedEntityId(id)}
             />
           )}
@@ -653,17 +654,26 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
                   data-testid="btn-my-gps"
                   onClick={() => {
                     if (homeLocation) {
+                      showToast(isFa ? '📍 موقعیت واقعی شما پیدا شد!' : 'Your real location found!');
                       loadLiveGrid({ lat: homeLocation.lat, lng: homeLocation.lng }, isFa ? 'لوکیشن من (GPS)' : 'My location (GPS)');
                     } else if ('geolocation' in navigator) {
                       navigator.geolocation.getCurrentPosition(
                         (pos) => {
                           setHomeLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracyM: Math.round(pos.coords.accuracy) });
                           setHomeError(null);
+                          showToast(isFa ? '📍 موقعیت واقعی شما پیدا شد!' : 'Your real location found!');
                           loadLiveGrid({ lat: pos.coords.latitude, lng: pos.coords.longitude }, isFa ? 'لوکیشن من (GPS)' : 'My location (GPS)');
                         },
-                        (err) => setHomeError(err.code === 1 ? 'denied' : 'unavailable'),
+                        (err) => {
+                          setHomeError(err.code === 1 ? 'denied' : 'unavailable');
+                          showToast(isFa
+                            ? '⚠️ دسترسی GPS مسدود است یا در محیط پیش‌نمایش محدود شده؛ از دکمه‌های شهرها استفاده کن.'
+                            : 'GPS access blocked or limited in preview; use the city presets.');
+                        },
                         { enableHighAccuracy: true, timeout: 8000 }
                       );
+                    } else {
+                      showToast(isFa ? '⚠️ مرورگر شما از GPS پشتیبانی نمی‌کند. یکی از شهرها را انتخاب کن.' : 'Your browser does not support GPS. Pick a city.');
                     }
                   }}
                   className="shrink-0 bg-cyan-500 hover:bg-cyan-400 active:scale-95 text-slate-950 font-extrabold text-xs px-3.5 py-2 rounded-lg shadow-lg shadow-cyan-500/25 flex items-center gap-1.5 transition cursor-pointer"
