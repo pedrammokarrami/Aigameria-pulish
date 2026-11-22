@@ -1240,6 +1240,46 @@ async function startServer() {
     }
   });
 
+  // World 10k Knowledge Engine — FTS5 RAG DB (built by backend/knowledge_engine)
+  app.get('/api/ai/knowledge-engine', async (req, res) => {
+    const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+    const platform = typeof req.query.platform === 'string' ? req.query.platform.trim() : '';
+    const limitRaw = Number(req.query.limit ?? 8);
+    if (!q) return res.status(400).json({ error: 'q required' });
+    try {
+      const { DatabaseSync } = await import('node:sqlite');
+      const ragPath = path.join(process.cwd(), 'backend', 'knowledge_engine', 'knowledge_10k.db');
+      if (!fs.existsSync(ragPath)) {
+        return res.json({ success: true, data: { results: [], note: 'engine DB not built yet' } });
+      }
+      const rag = new DatabaseSync(ragPath, { readOnly: true });
+      const tokens = q.toLowerCase().match(/[\w\u0600-\u06FF]+/g) ?? [];
+      const match = tokens.map((t) => `"${t}"`).join(' ') || q;
+      const rows = rag
+        .prepare(
+          `SELECT m.game_id, m.name, m.platform, m.kind, m.title, m.body, m.source_url, bm25(chunks_fts) AS rank
+           FROM chunks_fts f JOIN chunks_meta m ON m.id = f.rowid
+           WHERE chunks_fts MATCH ? ${platform ? 'AND m.platform LIKE ?' : ''}
+           ORDER BY rank LIMIT ?`
+        )
+        .all(...(platform ? [match, `%${platform}%`, Math.min(50, limitRaw)] : [match, Math.min(50, limitRaw)]));
+      const t0 = Date.now();
+      void t0;
+      res.json({
+        success: true,
+        data: {
+          tookMs: 0,
+          results: rows.map((r) => ({
+            gameId: r.game_id, name: r.name, platform: r.platform, kind: r.kind,
+            title: r.title, body: r.body, sourceUrl: r.source_url,
+          })),
+        },
+      });
+    } catch (err) {
+      res.status(500).json({ error: err instanceof Error ? err.message : 'knowledge-engine failed' });
+    }
+  });
+
   app.get('/api/ai/coach-session', async (req, res) => {
     try {
       const gameId = normalizeCoachGameId(req.query.gameId);

@@ -1,0 +1,33 @@
+name: knowledge-engine-sync
+
+# Zero-cost cron sync: resumable harvest pass for the World 10k Games
+# Knowledge Engine — keeps tips/guides/glitches fresh, commits the shards.
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"   # every 6 hours, free tier
+  workflow_dispatch:
+
+jobs:
+  harvest-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Harvest next batch (resumable)
+        run: |
+          cd backend/knowledge_engine
+          python3 harvest_10k_guides.py --max-games 500 --delay 0.35
+      - name: Build FTS5 RAG DB
+        run: |
+          cd backend/knowledge_engine
+          python3 build_10k_rag_db.py --build
+      - name: Commit shards
+        run: |
+          git config user.name "aipetros-engine"
+          git config user.email "engine@aipetros.xyz"
+          git add backend/knowledge_engine/data backend/knowledge_engine/knowledge_10k.db
+          git diff --cached --quiet || git commit -m "chore(knowledge-engine): harvest+build [skip ci]"
+          git push
