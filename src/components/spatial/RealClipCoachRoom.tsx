@@ -37,6 +37,8 @@ import type { ClipSourceKind } from '../../services/realClipAgentService';
 import type { RealmId } from '../../types/spatial';
 import { CoachWorld3D } from './CoachWorld3D';
 import { MotionCoachCard } from './MotionCoachCard';
+import { GamepadTutorialDock } from './GamepadTutorialDock';
+import { formatCompactComboStrip } from '../../utils/controllerCoachTiming';
 import { CoachAnswerBoard } from './CoachAnswerBoard';
 import { CoachSessionPanel } from './CoachSessionPanel';
 import type { CoachAnswerBlock } from '../../utils/coachSearchRules';
@@ -706,6 +708,14 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
             isSpeaking={isSpeaking}
             onToggleSpeak={() => onToggleSpeak(motionPayload.voiceExplanationEn)}
  />
+          {/* Bottom-of-page controller button tutorial (Petros-gamepad theme) */}
+          <GamepadTutorialDock
+            comboTokens={[
+              motionPayload.triggerBadge,
+              motionPayload.executionBadge,
+            ]}
+            accentHex={motionPayload.accentHex || accent}
+          />
         </main>
 
         {/* ================= LAYER 4: COLLAPSED GLASS DRAWER + DARK-GLASS EMERALD CTA + MIC ================= */}
