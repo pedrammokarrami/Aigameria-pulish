@@ -141,6 +141,32 @@ async function startServer() {
     res.json({ ok: true, database: dbHealth().ok });
   });
 
+  // Phone self-diagnostic: tiny no-dependency page the user can open on any
+  // device to see exactly why the app «shows nothing» (webgl/js/cdn/network)
+  app.get('/diag', (_req, res) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AIPETROS — تست گوشی</title>
+<style>body{font-family:Tahoma,sans-serif;background:#0b0f17;color:#e2e8f0;padding:20px;line-height:2}
+.ok{color:#34d399}.bad{color:#f87171}li{margin:8px 0}</style></head><body>
+<h2>🩺 تست اتصال گوشی به AIPETROS</h2><ul id="r"><li>⏳ در حال تست…</li></ul>
+<script>
+function tryWebGL(){try{const c=document.createElement('canvas');return !!(window.WebGLRenderingContext&&(c.getContext('webgl')||c.getContext('experimental-webgl')))}catch(e){return false}}
+(async()=>{const rows=[];const add=(ok,txt)=>rows.push('<li class="'+(ok?'ok':'bad')+'">'+(ok?'✅':'❌')+' '+txt+'</li>');
+add(true,'اتصال به سرور برقراره (این صفحه از خود سرور اومد)');
+add('fetch' in window,'fetch پشتیبانی می‌شه');
+add(tryWebGL(),'WebGL '+(tryWebGL()?'فعاله (سه‌بعدی باید کار کنه)':'پشتیبانی نمی‌شه ← با Chrome باز کن'));
+const t0=Date.now();let js='ok';
+try{const r=await fetch('/assets/'+(document.querySelector('link[rel=modulepreload]')?'x':'x'));}catch(e){js=String(e).slice(0,60)}
+let bundle='?';
+try{const res=await fetch('/index.html');bundle=res.ok?'OK':'HTTP '+res.status}catch(e){bundle=String(e).slice(0,60)}
+add(bundle==='OK','صفحه اصلی قابل دریافت است ('+bundle+' · '+(Date.now()-t0)+'ms)');
+document.getElementById('r').innerHTML=rows.join('');
+})();
+</script></body></html>`);
+  });
+
   // Serve generated assets and user-dropped /media (.mp4 / .glb) cleanly
   // Skip Vite dev module queries (?import / ?url) so Vite can transform ES asset imports if used
   const srcAssetsStatic = express.static(path.resolve(process.cwd(), 'src/assets'));
