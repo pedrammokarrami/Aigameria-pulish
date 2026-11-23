@@ -3,6 +3,7 @@ import { useAutoTranslateFa, isMostlyEnglish } from '../../utils/autoTranslate';
 import { Globe, ExternalLink, Loader2 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import type { LobbyGameId } from '../../utils/lobbySkillCatalog';
+import { CoachYouTubeEmbed, findYoutubeSourceId } from './CoachYouTubeEmbed';
 
 interface LiveWebAnswerProps {
   gameId: LobbyGameId;
@@ -109,6 +110,9 @@ export const LiveWebAnswer: React.FC<LiveWebAnswerProps> = ({ gameId, searchQuer
   }, [gameId, forcedGameId, searchQuery, choicesDismissed]);
 
   const sources = topic?.adkIntel?.liveSources ?? [];
+  // Official YouTube playback (user-approved 2026-11): official nocookie IFrame
+  // instead of any stream proxying.
+  const ytSource = findYoutubeSourceId(sources);
 
   // Remount the phase-choreography on every NEW answer: key by topic id/query.
   // (CSS animations only fire when the element is (re)mounted — a reused node
@@ -203,6 +207,9 @@ export const LiveWebAnswer: React.FC<LiveWebAnswerProps> = ({ gameId, searchQuer
               </p>
             </div>
           </div>
+          {ytSource && (
+            <CoachYouTubeEmbed videoId={ytSource.videoId} title={ytSource.title} />
+          )}
           {sources.length > 0 && (
             <div className="sources-row" data-testid="live-sources-row">
               {sources.slice(0, 6).map((s, i) => (
