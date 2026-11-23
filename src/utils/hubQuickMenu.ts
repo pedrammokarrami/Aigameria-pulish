@@ -47,99 +47,10 @@ function getAudioContext(): AudioContext | null {
  * - 'close': soft descending PS5 exit swoosh
  */
 export function playPs5UiSound(kind: 'open' | 'tick' | 'confirm' | 'close'): void {
-  const ctx = getAudioContext();
-  if (!ctx) return;
-
-  const now = ctx.currentTime;
-
-  try {
-    if (kind === 'tick') {
-      // Short ceramic/glass micro-tick + soft wooden body resonant ping
-      const osc = ctx.createOscillator();
-      const bodyOsc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      const filter = ctx.createBiquadFilter();
-
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(1650, now);
-      filter.Q.setValueAtTime(2.2, now);
-
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(1420, now);
-      osc.frequency.exponentialRampToValueAtTime(760, now + 0.028);
-
-      bodyOsc.type = 'sine';
-      bodyOsc.frequency.setValueAtTime(520, now);
-      bodyOsc.frequency.exponentialRampToValueAtTime(340, now + 0.025);
-
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.linearRampToValueAtTime(0.11, now + 0.003);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.036);
-
-      osc.connect(filter);
-      bodyOsc.connect(filter);
-      filter.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start(now);
-      bodyOsc.start(now);
-      osc.stop(now + 0.04);
-      bodyOsc.stop(now + 0.04);
-      return;
-    }
-
-    if (kind === 'open') {
-      const freqs = [523.25, 783.99, 1046.5];
-      freqs.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const g = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, now + idx * 0.022);
-        g.gain.setValueAtTime(0.0001, now + idx * 0.022);
-        g.gain.linearRampToValueAtTime(0.042, now + idx * 0.022 + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.022 + 0.24);
-        osc.connect(g);
-        g.connect(ctx.destination);
-        osc.start(now + idx * 0.022);
-        osc.stop(now + idx * 0.022 + 0.26);
-      });
-      return;
-    }
-
-    if (kind === 'confirm') {
-      const notes = [880, 1318.5];
-      notes.forEach((f, idx) => {
-        const osc = ctx.createOscillator();
-        const g = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(f, now + idx * 0.035);
-        g.gain.setValueAtTime(0.0001, now + idx * 0.035);
-        g.gain.linearRampToValueAtTime(0.075, now + idx * 0.035 + 0.008);
-        g.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.035 + 0.14);
-        osc.connect(g);
-        g.connect(ctx.destination);
-        osc.start(now + idx * 0.035);
-        osc.stop(now + idx * 0.035 + 0.16);
-      });
-      return;
-    }
-
-    // close
-    const osc = ctx.createOscillator();
-    const g = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(640, now);
-    osc.frequency.exponentialRampToValueAtTime(320, now + 0.11);
-    g.gain.setValueAtTime(0.0001, now);
-    g.gain.linearRampToValueAtTime(0.055, now + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.13);
-    osc.connect(g);
-    g.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.14);
-  } catch {
-    // ignore WebAudio restrictions
-  }
+  // Permanently disabled: user mandate — menu interactions must stay silent,
+  // only coach speech is allowed. Hard no-op regardless of the mute toggle.
+  void kind;
+  return;
 }
 
 /**
