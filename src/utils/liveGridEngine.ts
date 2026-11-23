@@ -91,6 +91,10 @@ export async function fetchLiveGrid(
   // fast failover: at most 2 endpoints × 14s so the radar never hangs ~2 minutes
   const endpoints = OVERPASS_ENDPOINTS.slice(0, 2);
   for (const endpoint of endpoints) {
+    // manual abort: AbortSignal.timeout is missing on older phone browsers and
+    // left the loader spinning forever there
+    const ctrl = new AbortController();
+    const abortTimer = setTimeout(() => ctrl.abort(new Error('overpass timeout')), 14000);
     try {
       const resp = await fetch(endpoint, {
         method: 'POST',
@@ -100,7 +104,7 @@ export async function fetchLiveGrid(
           Accept: 'application/json',
         },
         body: `data=${encodeURIComponent(query)}`,
-        signal: AbortSignal.timeout(14000),
+        signal: ctrl.signal,
       });
       if (!resp.ok) throw new Error(`overpass ${resp.status}`);
       const body = (await resp.json()) as { elements?: OverpassElement[] };
@@ -132,6 +136,8 @@ export async function fetchLiveGrid(
       };
     } catch (err) {
       lastErr = err;
+    } finally {
+      clearTimeout(abortTimer);
     }
   }
   throw lastErr instanceof Error ? lastErr : new Error('overpass unavailable');

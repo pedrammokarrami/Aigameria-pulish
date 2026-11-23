@@ -386,12 +386,41 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
   const [liveGrid, setLiveGrid] = useState<LiveGrid | null>(null);
   const [gridLoading, setGridLoading] = useState(false);
   const [gridError, setGridError] = useState<string | null>(null);
+  // watchdog: whatever happens (old phone browser, dead network), the loader
+  // must NEVER spin forever — after 40s force the simulation city
+  const gridWatchdogRef = React.useRef<number | null>(null);
+  const clearGridWatchdog = React.useCallback(() => {
+    if (gridWatchdogRef.current) {
+      window.clearTimeout(gridWatchdogRef.current);
+      gridWatchdogRef.current = null;
+    }
+  }, []);
   const loadLiveGrid = React.useCallback((center: GridCoord, label: string) => {
     setGridLoading(true);
     setGridError(null);
+    clearGridWatchdog();
+    gridWatchdogRef.current = window.setTimeout(() => {
+      gridWatchdogRef.current = null;
+      setLiveGrid(buildFallbackGrid(center, label)); // شبیه‌سازی شهری — لودر هیچ‌وقت نمی‌مونه
+      setGridError('grid-failed');
+      setGridLoading(false);
+      showToast(isFa
+        ? '⏱ سرور نقشه دیر جواب داد؛ نمای شبیه‌سازی شهری بارگذاری شد.'
+        : 'Map server was slow — simulation city view loaded');
+    }, 40000);
     fetchLiveGrid(center, label)
-      .then((grid) => setLiveGrid(grid))
+      .then((grid) => {
+        if (gridWatchdogRef.current) {
+          window.clearTimeout(gridWatchdogRef.current);
+          gridWatchdogRef.current = null;
+        }
+        setLiveGrid(grid);
+      })
       .catch(() => {
+        if (gridWatchdogRef.current) {
+          window.clearTimeout(gridWatchdogRef.current);
+          gridWatchdogRef.current = null;
+        }
         setLiveGrid(buildFallbackGrid(center, label)); // شبیه‌سازی شهری وقتی سرور شلوغه
         setGridError('grid-failed');
         showToast(isFa
