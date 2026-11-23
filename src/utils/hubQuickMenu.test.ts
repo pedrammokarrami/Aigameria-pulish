@@ -29,9 +29,9 @@ test('getGamePs5MenuItems returns core PS5 cards + map/store and optional backdr
   );
 
   const withVideo = getGamePs5MenuItems({ hasVideoBackdrop: true, useVideoBackdrop: true });
-  assert.equal(withVideo.length, 7);
-  assert.equal(withVideo[6].id, 'backdrop');
-  assert.equal(withVideo[6].titleFa, 'حالت صحنه UE 5.8');
+  // backdrop toggle removed from the menu per user request — always 6 items
+  assert.equal(withVideo.length, 6);
+  assert.ok(!withVideo.some((i) => i.id === 'backdrop'));
 });
 
 test('getAudioSpotifyMenuItems and getCinemaNetflixMenuItems expose complete working entries', () => {

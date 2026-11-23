@@ -331,17 +331,7 @@ export function getGamePs5MenuItems(options: {
     },
   ];
 
-  if (options.hasVideoBackdrop) {
-    items.push({
-      id: 'backdrop',
-      titleFa: options.useVideoBackdrop ? 'حالت صحنه UE 5.8' : 'حالت پس‌زمینه ویدیویی',
-      subtitleFa: options.useVideoBackdrop
-        ? 'بازگشت به رندر ریل‌تایم سه‌بعدی'
-        : 'نمایش لوپ ویدیویی استادیوم',
-      accentHex: '#6EE7B7',
-      badgeText: 'تنظیم تصویر',
-    });
-  }
+  // 'backdrop' toggle removed from the quick menu per user request (2026-11-23)
 
   return items;
 }
