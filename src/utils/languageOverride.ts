@@ -816,10 +816,12 @@ let rafHandle = 0;
 function scheduleApply(langCode: string): void {
   pendingLang = langCode;
   if (rafHandle) return;
-  rafHandle = requestAnimationFrame(() => {
+  // setTimeout, not rAF: background/idle browser tabs never tick rAF, so a
+  // rAF-scheduled walk would hang forever and leave stale Persian text.
+  rafHandle = window.setTimeout(() => {
     rafHandle = 0;
     walk(document.body, pendingLang);
-  });
+  }, 16) as unknown as number;
 }
 
 /** Mount-once: translate everything now and keep new DOM translated. */
@@ -836,9 +838,9 @@ export function installGlobalLanguageOverride(langCode: string, active: boolean)
     scheduleApply(langCode);
   } else {
     // Switching back to Persian → restore every original value.
-    rafHandle = requestAnimationFrame(() => {
+    rafHandle = window.setTimeout(() => {
       rafHandle = 0;
       restoreOriginal();
-    });
+    }, 16) as unknown as number;
   }
 }
