@@ -54,10 +54,12 @@ test('getAudioSpotifyMenuItems and getCinemaNetflixMenuItems expose complete wor
 });
 
 test('Web Audio sound helpers and mute toggle fail-safe safely without browser window', () => {
+  // Menu sounds are permanently disabled (user mandate) — the default is muted.
+  assert.equal(isHubMenuSoundMuted(), true);
+  setHubMenuSoundMuted(false);
   assert.equal(isHubMenuSoundMuted(), false);
   setHubMenuSoundMuted(true);
   assert.equal(isHubMenuSoundMuted(), true);
-  setHubMenuSoundMuted(false);
 
   assert.doesNotThrow(() => {
     playPs5UiSound('open');
