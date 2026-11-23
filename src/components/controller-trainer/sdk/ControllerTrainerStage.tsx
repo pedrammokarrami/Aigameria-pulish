@@ -350,7 +350,13 @@ export function ControllerTrainerStage({
   // Load optional static drop-in GLB manifest (`/models/manifest.json`) once on mount (returns 200 OK)
   useEffect(() => {
     let cancelled = false;
-    fetch('/models/manifest.json', { headers: { Accept: 'application/json' } })
+    fetch('/models/manifest.json', {
+      headers: { Accept: 'application/json' },
+      // Stale manifests must never stick: an older cached copy (e.g. an empty
+      // one from before real GLBs were registered) would silently keep the
+      // procedural fallback models forever.
+      cache: 'no-store',
+    })
       .then((res) => (res.ok ? res.json() : null))
       .then((json: unknown) => {
         if (cancelled || !json || typeof json !== 'object') return;
@@ -367,9 +373,22 @@ export function ControllerTrainerStage({
   // Mount Three.js StudioSceneController ONCE inside dedicated isolated ref div
   useEffect(() => {
     const mountEl = canvasMountRef.current;
+    const trace = (s: string) =>
+      document.documentElement.setAttribute(
+        'data-trainer-trace',
+        `${s}:${((document.documentElement.getAttribute('data-trainer-trace') || '').split(':')[0] ? 'x' : '')}${Date.now() % 100000}`,
+      );
+    (window as unknown as Record<string, unknown>).__trainerTrace = [
+      ...(((window as unknown as Record<string, unknown>).__trainerTrace as string[]) || []),
+      `effect mountEl=${!!mountEl}`,
+    ];
     if (!mountEl) return;
 
     const startDevice = activeDeviceRef.current;
+    (window as unknown as Record<string, unknown>).__trainerTrace = [
+      ...(((window as unknown as Record<string, unknown>).__trainerTrace as string[]) || []),
+      'construct',
+    ];
     const controller = new StudioSceneController(
       mountEl,
       startDevice,
@@ -413,6 +432,10 @@ export function ControllerTrainerStage({
       },
     );
 
+    (window as unknown as Record<string, unknown>).__trainerTrace = [
+      ...(((window as unknown as Record<string, unknown>).__trainerTrace as string[]) || []),
+      'constructed ' + !!mountEl.querySelector('canvas'),
+    ];
     controller.setMeshMapping(mappingsRef.current[startDevice]);
     controller.setSurfaceAnchors(anchorsRef.current[startDevice]);
     controllerRef.current = controller;
@@ -432,6 +455,10 @@ export function ControllerTrainerStage({
     }
 
     return () => {
+      (window as unknown as Record<string, unknown>).__trainerTrace = [
+        ...(((window as unknown as Record<string, unknown>).__trainerTrace as string[]) || []),
+        'cleanup',
+      ];
       if (feedbackTimerRef.current !== null) {
         window.clearTimeout(feedbackTimerRef.current);
       }
