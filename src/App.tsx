@@ -1,6 +1,6 @@
 declare const __BUILD_ID__: string;
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, MotionConfig } from 'motion/react';
 import { AudioHubView } from './components/audio/AudioHubView';
 import { CinemaHubView } from './components/cinema/CinemaHubView';
 import { CoachStage3D } from './components/spatial/CoachStage3D';
@@ -53,6 +53,7 @@ import {
   recomputeTelestratorFromTap,
   resolveCoachTopic,
 } from './utils/coachSearchRules';
+import { RAF_FROZEN_EVENT, isRafShimmed } from './utils/rafFallback';
 import {
   type GtaChatMessage,
   type GtaSocialState,
@@ -300,6 +301,19 @@ export function App() {
 
   const clipCacheKey = `${selectedGame.id}:${clipProblemQuery.trim().toLowerCase()}`;
   const activeProClipsData = proClipsMap[clipCacheKey] ?? proClipsMap[`${selectedGame.id}:`] ?? null;
+
+  // When the tab's rAF is frozen to zero ticks (background/idle), motion exit
+  // animations can never finish and hub swaps visually stall. rafFallback
+  // detects that and drives the frameloop manually; while frozen we also
+  // skip animations entirely so swaps complete instantly.
+  const [isRafFrozen, setIsRafFrozen] = useState(() => isRafShimmed());
+  useEffect(() => {
+    const onRafFrozen = (event: Event) => {
+      setIsRafFrozen(Boolean((event as CustomEvent).detail));
+    };
+    window.addEventListener(RAF_FROZEN_EVENT, onRafFrozen);
+    return () => window.removeEventListener(RAF_FROZEN_EVENT, onRafFrozen);
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-realm', activeRealm);
@@ -1090,9 +1104,11 @@ export function App() {
   };
 
   return (
+    <MotionConfig skipAnimations={isRafFrozen}>
     <div
       data-realm={activeRealm}
       data-build={__BUILD_ID__}
+      data-raf-frozen={isRafFrozen ? '1' : '0'}
       data-testid="aipetros-spatial-root"
       aria-busy={!boot.ready}
       className="relative w-full h-dvh min-h-dvh overflow-hidden select-none"
@@ -1107,7 +1123,7 @@ export function App() {
             data-testid="section-warmup-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={isRafFrozen ? undefined : { opacity: 0 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
             style={{
               position: 'absolute',
@@ -1175,9 +1191,9 @@ export function App() {
             key="hub-cinema"
             initial={{ opacity: 0, scale: 0.985 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.985 }}
+            exit={isRafFrozen ? undefined : { opacity: 0, scale: 0.985 }}
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full h-full"
+            className="absolute inset-0"
           >
             <CinemaHubView
               activeHub={activeMasterHub}
@@ -1194,9 +1210,9 @@ export function App() {
             key="hub-audio"
             initial={{ opacity: 0, scale: 0.985 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.985 }}
+            exit={isRafFrozen ? undefined : { opacity: 0, scale: 0.985 }}
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full h-full"
+            className="absolute inset-0"
           >
             <AudioHubView
               activeHub={activeMasterHub}
@@ -1213,9 +1229,9 @@ export function App() {
             key="hub-game-identity"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={isRafFrozen ? undefined : { opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="w-full h-full"
+            className="absolute inset-0"
           >
             <CrossGameSpatialProfilePage
               onBackToLobby={() => setIsIdentityProfileOpen(false)}
@@ -1226,9 +1242,9 @@ export function App() {
             key="hub-game-tournament"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={isRafFrozen ? undefined : { opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="w-full h-full"
+            className="absolute inset-0"
           >
             <GameNativeTournamentHub
               initialGameId={tournamentInitialGame}
@@ -1240,9 +1256,9 @@ export function App() {
             key="hub-game-social"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={isRafFrozen ? undefined : { opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="w-full h-full"
+            className="absolute inset-0"
           >
             {/* 1. Dedicated GTA VI Vice City Social Media & Club World */}
             <GtaSocialWorld
@@ -1289,9 +1305,9 @@ export function App() {
             key="hub-game-coach"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={isRafFrozen ? undefined : { opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="w-full h-full"
+            className="absolute inset-0"
           >
             {/* 2. Unreal 5.8 3D + Dual-Agent (ProClipAnalyzerAgent & MotionCoachAgent) AI Coach Screen */}
             <RealClipCoachRoom
@@ -1333,9 +1349,9 @@ export function App() {
             key="hub-game-lobby"
             initial={{ opacity: 0, scale: 0.985 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.985 }}
+            exit={isRafFrozen ? undefined : { opacity: 0, scale: 0.985 }}
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-            className="relative w-full h-full"
+            className="absolute inset-0"
           >
             {/* 3. Clean Frosted-Glass Mobile-First Lobby Over Unreal Engine 5.8 Stadium-Tunnel Backdrop */}
             <CoachStage3D
@@ -1447,6 +1463,7 @@ export function App() {
         )}
       </AnimatePresence>
     </div>
+    </MotionConfig>
   );
 }
 
