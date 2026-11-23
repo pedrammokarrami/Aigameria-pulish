@@ -504,6 +504,21 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
           {/* Unified deep map canvas */}
           <MapCanvas />
 
+          {/* WebGL unsupported hint (weak phone browsers) */}
+          <div
+            data-testid="webgl-unsupported-hint"
+            className="absolute inset-x-0 top-1/2 z-20 flex justify-center pointer-events-none"
+            style={{ display: 'none' }}
+            ref={(el) => {
+              const g3d = document.querySelector<HTMLElement>('[data-testid="live-grid-3d"]');
+              if (el) el.style.display = g3d?.dataset.webgl === 'unsupported' ? 'flex' : 'none';
+            }}
+          >
+            <span className="bg-amber-500/15 border border-amber-400/40 text-amber-200 text-xs px-3 py-2 rounded-xl backdrop-blur-sm">
+              ⚠️ مرورگرت WebGL رو پشتیبانی نمی‌کنه — نقشه ۳بعدی غیرفعاله. با Chrome/Edge باز کن.
+            </span>
+          </div>
+
           {/* ── GTA V 3D LIVE RADAR (WebGL, real OSM geometry) ── */}
           {liveGrid && (
             <LiveGrid3D

@@ -70,6 +70,7 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, wa
     try {
       renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     } catch {
+      container.dataset.webgl = 'unsupported'; // visible hint for weak/phone browsers
       return; // no WebGL — the 2D SVG grid remains as fallback
     }
     renderer.setSize(container.clientWidth, container.clientHeight);
