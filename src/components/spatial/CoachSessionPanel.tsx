@@ -234,7 +234,7 @@ export const CoachSessionPanel: React.FC<CoachSessionPanelProps> = ({
           {activeModule.stats.length > 0 && (
             <HudStatGauges
               dataTestId={`session-stats-${activeModule.id}`}
-              stats={activeModule.stats.map((st) => ({ label: st.labelFa, value: st.value, max: st.max }))}
+              stats={activeModule.stats.map((st) => ({ label: isFa ? st.labelFa : st.labelEn, value: st.value, max: st.max }))}
             />
           )}
 
