@@ -117,6 +117,91 @@ const GTA_DOMAIN: GameDomain = {
   ],
 };
 
+/** English mirror domains — full English suggestion coverage in English UI mode. */
+const EN_DOMAINS: Record<LobbyGameId, GameDomain> = {
+  fc27: {
+    subjects: [
+      '4-2-3-1 formation', '4-3-3 formation', '3-5-2 formation', '4-2-1-3 formation',
+      'finesse shot', 'long shot', 'free kick', 'header', 'set piece', 'double S', 'penalty', 'corner', 'through pass', 'short pass',
+      'dribbling', 'double skill', 'running forward', 'meta player', 'SBC', 'packs', 'transfer market',
+      'low block defense', 'high press', 'press', 'offside trap', 'goalkeeper', 'striker', 'winger',
+      'defensive midfielder', 'arena corner', 'pressing team', 'flair technique', 'championship', 'final four',
+    ],
+    contexts: ['vs a strong opponent', 'in the last round', 'with wind behind you', 'with player fatigue', 'in the rain', 'after the new patch', 'on cooldown', 'with a defensive team', 'with a young squad', 'with the captain'],
+    intents: [
+      'How do I improve {s}?', 'When is {s} better?', 'What are the best settings for {s}?', 'Where should I use {s}?',
+      'Why does {s} not work?', 'What is the best trick for {s}?', 'How do I practice {s}?', 'What is the best combo with {s}?',
+      'How do I progress with {s}?', 'What is the best {s}?', 'How do I use {s} in {c}?', 'What is the best {s} for {c}?',
+      'How is {s} used {m}?', 'For {m}, how do I set up {s}?',
+    ],
+    modifiers: ['for beginners', 'for high ranks', 'like a pro', 'fast', 'at the lowest cost'],
+    starters: [
+      'What is the best formation for high press?',
+      'When should I shoot so it lands?',
+      'What is the best way to complete SBCs?',
+      'Which players got updated after the patch?',
+      'Is depth 71 defense better or press 80?',
+      'How do I play precise through balls?',
+    ],
+  },
+  cs2: {
+    subjects: [
+      'crosshair placement', 'flash', 'Mirage smoke', 'Inferno smoke', 'Dust 2 smoke', 'Molotov',
+      'counter-strafe', 'peeking', 'retake', 'eco round economy', 'force buy', 'AWP', 'AK-47', 'M4A4',
+      'peek advantage', 'crossfire', 'defuse', 'A site', 'B site', 'mid', 'lift', 'B rush',
+      'slow round', 'aim trainer', 'knife round', 'hawk-eye', 'vintage position',
+    ],
+    contexts: ['on Mirage', 'on Inferno', 'on Nuke', 'on Dust 2', 'in an eco round', 'in a 1v2 clutch', 'on post-plant', 'with your team', 'after the patch'],
+    intents: [
+      'How do I improve {s}?', 'What is the best method for {s}?', 'Where do I place {s}?', 'When should I hit {s}?',
+      'Why does my {s} fail?', 'What is the best practice for {s}?', 'How do I execute {s}?', 'What is the best position for {s}?',
+      'How do I defend with {s}?', 'What is the best strategy for {s}?', 'How do I use {s} in {c}?', 'What is the best {s} for {c}?',
+    ],
+    modifiers: ['for beginners', 'for high ranks', 'like a pro', 'fast'],
+    starters: [
+      'Where should I place my crosshair for fast headshots?',
+      'What is the right economy rule?',
+      'How do I smoke mid correctly?',
+      'What exactly is counter-strafing?',
+      'How do I break the enemy press?',
+    ],
+  },
+  valorant: {
+    subjects: [
+      'Jett', 'Omen', 'Sova dart', 'Astra wall', 'Viper smoke', 'Recon bolt',
+      'crosshair placement', 'flick shot', 'recoil', 'smurf', 'entry fragging', 'ecology',
+    ],
+    contexts: ['on Ascent', 'on Bind', 'on Haven', 'in a save round', 'in a clutch'],
+    intents: [
+      'How do I improve {s}?', 'What is the best method for {s}?', 'Where do I place {s}?', 'When should I use {s}?',
+      'What is the best practice for {s}?', 'What is the best position for {s}?', 'How do I use {s} in {c}?',
+    ],
+    modifiers: ['for beginners', 'for high ranks', 'like a pro'],
+    starters: [
+      'Where should my crosshair be on Ascent mid?',
+      'How do I line up Recon bolts on Haven?',
+      'What is the right save-round buy?',
+    ],
+  },
+  gta: {
+    subjects: [
+      'Cayo Perico heist', 'Diamond Casino heist', 'Vault, and poker', 'Kosatka', 'Sparrow', 'Nightclub',
+      'MC business', 'bunker', 'cargo warehouse', 'VIP work', 'Oppressor Mk II',
+    ],
+    contexts: ['solo', 'with a full crew', 'on hard mode', 'in a public lobby', 'after the patch'],
+    intents: [
+      'How do I run the {s} {c}?', 'What is the best setup for the {s}?', 'How much does the {s} pay {c}?',
+      'What is the fastest method for the {s}?', 'How do I start the {s} {c}?',
+    ],
+    modifiers: ['for beginners', 'fast', 'like a pro'],
+    starters: [
+      'What is the fastest Cayo Perico approach solo?',
+      'Which heist pays best after the patch?',
+      'How do I buy the best nightclub location?',
+    ],
+  },
+};
+
 const DOMAINS: Record<LobbyGameId, GameDomain> = {
   fc27: FC_DOMAIN,
   cs2: CS_DOMAIN,
@@ -149,8 +234,7 @@ function tokenize(hay: string): string[] {
   return hay.split(' ').filter((t) => t.length >= 3);
 }
 
-function buildBank(gameId: LobbyGameId): { bank: IndexedQuestion[]; starters: string[] } {
-  const domain = DOMAINS[gameId];
+function buildBankFrom(domain: GameDomain): { bank: IndexedQuestion[]; starters: string[] } {
   const seen = new Set<string>();
   const bank: IndexedQuestion[] = [];
   const push = (q: string) => {
@@ -159,9 +243,7 @@ function buildBank(gameId: LobbyGameId): { bank: IndexedQuestion[]; starters: st
     seen.add(hay);
     bank.push({ q, hay, tokens: tokenize(hay) });
   };
-  // 1. curated starters first
   domain.starters.forEach(push);
-  // 2. combinatorial generation from grammatical templates (subject × intent × context × modifier)
   const fill = (tpl: string, subject: string, context: string, modifier: string): string =>
     tpl.replace(/\{s\}/g, subject).replace(/\{c\}/g, context).replace(/\{m\}/g, modifier);
   for (const subject of domain.subjects) {
@@ -184,24 +266,26 @@ function buildBank(gameId: LobbyGameId): { bank: IndexedQuestion[]; starters: st
   return { bank, starters: domain.starters };
 }
 
-function bankFor(gameId: LobbyGameId): { bank: IndexedQuestion[]; starters: string[] } {
-  if (!BANKS[gameId]) {
-    const built = buildBank(gameId);
-    BANKS[gameId] = built.bank;
-    STARTERS[gameId] = built.starters;
+function bankFor(gameId: LobbyGameId, lang: string = 'fa'): { bank: IndexedQuestion[]; starters: string[] } {
+  const key = `${gameId}::${lang.slice(0, 2)}`;
+  if (!BANKS[key]) {
+    const domain = lang.slice(0, 2) === 'fa' ? DOMAINS[gameId] : EN_DOMAINS[gameId];
+    const built = buildBankFrom(domain);
+    BANKS[key] = built.bank;
+    STARTERS[key] = built.starters;
   }
-  return { bank: BANKS[gameId], starters: STARTERS[gameId] };
+  return { bank: BANKS[key], starters: STARTERS[key] };
 }
 
 /** Live suggestions: direct word hits ranked; the game whose bank covers MOST of
  *  the typed tokens wins (typing «فرماسیون» inside shooter → football questions).
  *  Off-topic typing falls back to the current game's curated starters. */
-export function suggestCoachQuestions(query: string, gameId: LobbyGameId, limit = 8): string[] {
+export function suggestCoachQuestions(query: string, gameId: LobbyGameId, limit = 8, lang = 'fa'): string[] {
   const gameIds = Object.keys(DOMAINS) as LobbyGameId[];
   const normalizedQuery = normalize(query);
-  if (!normalizedQuery) return bankFor(gameId).starters.slice(0, limit);
+  if (!normalizedQuery) return bankFor(gameId, lang).starters.slice(0, limit);
   const tokens = tokenize(normalizedQuery);
-  if (tokens.length === 0) return bankFor(gameId).starters.slice(0, limit);
+  if (tokens.length === 0) return bankFor(gameId, lang).starters.slice(0, limit);
 
   const rankBank = (bank: IndexedQuestion[]) => {
     const scored: { q: string; score: number; coverage: number }[] = [];
@@ -225,7 +309,7 @@ export function suggestCoachQuestions(query: string, gameId: LobbyGameId, limit 
   // Pick the game bank with the best token coverage (current game wins ties).
   let best: { gameId: LobbyGameId; scored: ReturnType<typeof rankBank>; coverage: number } | null = null;
   for (const g of [gameId, ...gameIds.filter((x) => x !== gameId)]) {
-    const scored = rankBank(bankFor(g).bank);
+    const scored = rankBank(bankFor(g, lang).bank);
     const coverage = Math.max(0, ...scored.map((s) => s.coverage));
     if (coverage > (best?.coverage ?? 0)) best = { gameId: g, scored, coverage };
     if (g === gameId && coverage > 0 && (best?.gameId ?? g) === g && coverage === best?.coverage && coverage >= tokens.length) break; // full coverage locally — stop early

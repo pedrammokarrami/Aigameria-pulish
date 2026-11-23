@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { Sparkles } from 'lucide-react';
 import { suggestCoachQuestions } from '../../utils/coachQuestionBank';
 import type { LobbyGameId } from '../../utils/lobbySkillCatalog';
@@ -22,17 +23,19 @@ export const QuestionSuggestions: React.FC<QuestionSuggestionsProps> = ({
   onSelectQuestion,
   limit = 8,
 }) => {
-  const suggestions = suggestCoachQuestions(query, gameId, limit);
+  const { languageCode, isRtl } = useLanguage();
+  const lang = languageCode?.slice(0, 2) ?? 'fa';
+  const suggestions = suggestCoachQuestions(query, gameId, limit, lang);
   if (suggestions.length === 0) return null;
   return (
     <div
       data-testid="question-suggestions"
       className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1"
-      dir="rtl"
+      dir={isRtl ? 'rtl' : 'ltr'}
     >
       <span className="shrink-0 inline-flex items-center gap-1 text-[10.5px] font-black text-white/45">
         <Sparkles className="w-3 h-3" style={{ color: accentHex }} />
-        سوال‌های پیشنهادی:
+        {lang === 'fa' ? 'سوال‌های پیشنهادی:' : 'Suggested questions:'}
       </span>
       {suggestions.map((q) => (
         <button
