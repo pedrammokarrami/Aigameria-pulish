@@ -311,6 +311,9 @@ export function App() {
     const onRafFrozen = (event: Event) => {
       setIsRafFrozen(Boolean((event as CustomEvent).detail));
     };
+    // Sync-read: the shim can install between first render and this effect
+    // (its install timer can fire on a janked main thread first).
+    setIsRafFrozen(isRafShimmed());
     window.addEventListener(RAF_FROZEN_EVENT, onRafFrozen);
     return () => window.removeEventListener(RAF_FROZEN_EVENT, onRafFrozen);
   }, []);
