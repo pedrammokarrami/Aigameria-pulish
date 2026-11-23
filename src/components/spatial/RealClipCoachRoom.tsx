@@ -234,9 +234,11 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
     setPlayerNonce((n) => n + 1);
     // If the YouTube embed never fires load (blocked/offline), fall back to a
     // direct-link card instead of an empty black player.
+    // Starlink/phone networks can take >10s for the embed; 6s produced false
+    // "cannot play" cards even though the video would have loaded.
     window.setTimeout(() => {
       if (!iframeLoadedRef.current) setIframeFailed(true);
-    }, 6000);
+    }, 15000);
   };
 
   const handleSelectChapter = (chapter: ScrubberChapterDot) => {
@@ -267,7 +269,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
     activeClip?.chapters.find((c) => c.id === activePhase) ?? activeClip?.chapters[0] ?? null;
 
   const embedUrl = activeClip
-    ? `https://www.youtube.com/embed/${activeClip.youtubeId}?start=${activeStartSec}&autoplay=1&rel=0&playsinline=1&modestbranding=1`
+    ? `https://www.youtube-nocookie.com/embed/${activeClip.youtubeId}?start=${activeStartSec}&autoplay=1&rel=0&playsinline=1&modestbranding=1`
     : null;
 
   const cinematicCoverUrl =
