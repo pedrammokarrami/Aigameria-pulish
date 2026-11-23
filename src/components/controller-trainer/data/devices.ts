@@ -67,8 +67,8 @@ export const DEVICE_PLATFORMS: DevicePlatformMeta[] = [
   },
   {
     id: 'ipad',
-    brandName: 'iOS',
-    subtitle: 'iPad Pro Touch',
+    brandName: 'Tablet',
+    subtitle: 'Touch Control',
     accentHex: '#22d3ee',
     pedestalGlowHex: '#06b6d4',
   },

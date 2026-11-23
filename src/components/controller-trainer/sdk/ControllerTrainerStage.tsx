@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Loader2 } from 'lucide-react';
+import { useLanguage } from '../../../contexts/LanguageContext';
 import {
   DEFAULT_SEQUENCES,
   DEVICE_DEMO_PRESETS,
@@ -162,6 +164,10 @@ export function ControllerTrainerStage({
   const [loopEnabled, setLoopEnabled] = useState(true);
   const [isHudCollapsed, setIsHudCollapsed] = useState(false);
   const [isLoadingSequence, setIsLoadingSequence] = useState(false);
+
+  // Full asset loading gate: stays up until sequence data + device GLB + studio HDRI are all in
+  const [glbLoading, setGlbLoading] = useState(true);
+  const [hdriReady, setHdriReady] = useState(false);
 
   // Fresh refs to avoid recreating the WebGLRenderer when props/state change
   const activeDeviceRef = useRef(activeDevice);
@@ -373,22 +379,9 @@ export function ControllerTrainerStage({
   // Mount Three.js StudioSceneController ONCE inside dedicated isolated ref div
   useEffect(() => {
     const mountEl = canvasMountRef.current;
-    const trace = (s: string) =>
-      document.documentElement.setAttribute(
-        'data-trainer-trace',
-        `${s}:${((document.documentElement.getAttribute('data-trainer-trace') || '').split(':')[0] ? 'x' : '')}${Date.now() % 100000}`,
-      );
-    (window as unknown as Record<string, unknown>).__trainerTrace = [
-      ...(((window as unknown as Record<string, unknown>).__trainerTrace as string[]) || []),
-      `effect mountEl=${!!mountEl}`,
-    ];
     if (!mountEl) return;
 
     const startDevice = activeDeviceRef.current;
-    (window as unknown as Record<string, unknown>).__trainerTrace = [
-      ...(((window as unknown as Record<string, unknown>).__trainerTrace as string[]) || []),
-      'construct',
-    ];
     const controller = new StudioSceneController(
       mountEl,
       startDevice,
@@ -429,13 +422,15 @@ export function ControllerTrainerStage({
             resetPracticeSession();
           }
         },
+        onDeviceAssetsLoading: (loading) => {
+          setGlbLoading(loading);
+        },
+        onEnvironmentReady: () => {
+          setHdriReady(true);
+        },
       },
     );
 
-    (window as unknown as Record<string, unknown>).__trainerTrace = [
-      ...(((window as unknown as Record<string, unknown>).__trainerTrace as string[]) || []),
-      'constructed ' + !!mountEl.querySelector('canvas'),
-    ];
     controller.setMeshMapping(mappingsRef.current[startDevice]);
     controller.setSurfaceAnchors(anchorsRef.current[startDevice]);
     controllerRef.current = controller;
@@ -443,6 +438,14 @@ export function ControllerTrainerStage({
     if (autoPlayRef.current) {
       controller.setPlaying(true);
     }
+
+    // Backstop: never keep the asset gate up for more than 20s even if a
+    // server asset hangs without resolving (progressive reveal beats a
+    // permanently stuck overlay).
+    const gateBackstop = window.setTimeout(() => {
+      setGlbLoading(false);
+      setHdriReady(true);
+    }, 20000);
 
     void loadFromBackendIfConfigured(startDevice);
 
@@ -455,10 +458,7 @@ export function ControllerTrainerStage({
     }
 
     return () => {
-      (window as unknown as Record<string, unknown>).__trainerTrace = [
-        ...(((window as unknown as Record<string, unknown>).__trainerTrace as string[]) || []),
-        'cleanup',
-      ];
+      window.clearTimeout(gateBackstop);
       if (feedbackTimerRef.current !== null) {
         window.clearTimeout(feedbackTimerRef.current);
       }
@@ -904,6 +904,12 @@ export function ControllerTrainerStage({
   const currentSequence = sequences[activeDevice];
   const currentDemoPresets = presetsByDevice[activeDevice] ?? [];
 
+  const { languageCode } = useLanguage();
+  const isFa = languageCode.toLowerCase().startsWith('fa');
+  // Full gate: server sequence data + device GLB + studio HDRI must all be in
+  // before the loading overlay is removed.
+  const assetsPending = glbLoading || !hdriReady || isLoadingSequence;
+
   return (
     <main
       dir="ltr"
@@ -919,6 +925,19 @@ export function ControllerTrainerStage({
         data-testid="studio-canvas-mount"
         className="absolute inset-0 w-full h-full"
       />
+
+      {/* Full asset loading gate — stays until server data + GLB + HDRI are loaded */}
+      {assetsPending && (
+        <div
+          data-testid="trainer-asset-gate"
+          className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-[#c8cfd9]/95"
+        >
+          <Loader2 className="w-8 h-8 text-sky-700 animate-spin" aria-hidden="true" />
+          <p className="text-xs font-semibold text-slate-600 tracking-wide px-6 text-center">
+            {isFa ? 'در حال لود کامل استودیو سه‌بعدی...' : 'Loading full 3D studio…'}
+          </p>
+        </div>
+      )}
 
       {/* Top Glassmorphic Platform Switcher */}
       {!hideDeviceSwitcher && (

@@ -1,4 +1,5 @@
 import { Gamepad2, Keyboard, Mouse, Tablet } from 'lucide-react';
+import { useLanguage } from '../../../contexts/LanguageContext';
 import { DEVICE_PLATFORMS } from '../data/devices';
 import type { DeviceType } from '../types/trainer';
 
@@ -25,6 +26,13 @@ function DeviceIcon({ id }: { id: DeviceType }) {
 }
 
 export function DeviceSwitcher({ activeDevice, onSelect }: DeviceSwitcherProps) {
+  const { languageCode } = useLanguage();
+  const isFa = languageCode.toLowerCase().startsWith('fa');
+  const platformName = (id: DeviceType, fallback: string) =>
+    id === 'ipad' ? (isFa ? 'تبلت' : 'Tablet') : fallback;
+  const platformSubtitle = (id: DeviceType, fallback: string) =>
+    id === 'ipad' ? (isFa ? 'کنترل لمسی' : 'Touch Control') : fallback;
+
   return (
     <header className="absolute top-3 sm:top-4 inset-x-0 z-20 flex justify-center px-2 sm:px-3 pointer-events-none">
       <nav
@@ -40,7 +48,7 @@ export function DeviceSwitcher({ activeDevice, onSelect }: DeviceSwitcherProps) 
               type="button"
               role="tab"
               aria-selected={isActive}
-              aria-label={`Select ${platform.brandName} — ${platform.subtitle}`}
+              aria-label={`Select ${platformName(platform.id, platform.brandName)} — ${platformSubtitle(platform.id, platform.subtitle)}`}
               onClick={() => onSelect(platform.id)}
               className={`relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-[13px] font-medium transition-all duration-150 whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 ${
                 isActive
@@ -54,9 +62,9 @@ export function DeviceSwitcher({ activeDevice, onSelect }: DeviceSwitcherProps) 
               >
                 <DeviceIcon id={platform.id} />
               </span>
-              <span className="font-semibold tracking-tight">{platform.brandName}</span>
+              <span className="font-semibold tracking-tight">{platformName(platform.id, platform.brandName)}</span>
               <span className="hidden lg:inline text-[11px] text-slate-400 font-normal">
-                {platform.subtitle}
+                {platformSubtitle(platform.id, platform.subtitle)}
               </span>
             </button>
           );

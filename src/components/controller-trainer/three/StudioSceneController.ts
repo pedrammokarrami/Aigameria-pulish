@@ -77,6 +77,10 @@ export interface SceneControllerCallbacks {
   onTimeUpdate: (timeMs: number, activeEvents: SequenceEvent[]) => void;
   onPlayStateChange: (isPlaying: boolean) => void;
   onLoopRestart?: () => void;
+  /** Loading gate: fires true while configured server assets (device GLB etc.) load, false when done or failed. */
+  onDeviceAssetsLoading?: (loading: boolean, device: DeviceType) => void;
+  /** Fired once the studio HDRI environment finished loading (success or fallback). */
+  onEnvironmentReady?: () => void;
 }
 
 // Reusable scratch math objects (zero allocations inside render loop)
@@ -342,6 +346,7 @@ export class StudioSceneController {
         this.envRT = nextEnvRT;
         this.scene.environment = nextEnvRT.texture;
         this.requestRender();
+        this.callbacks.onEnvironmentReady?.();
       },
       undefined,
       () => {
@@ -355,6 +360,7 @@ export class StudioSceneController {
         this.envRT = fallbackRT;
         this.scene.environment = fallbackRT.texture;
         this.requestRender();
+        this.callbacks.onEnvironmentReady?.();
       },
     );
   }
@@ -461,6 +467,17 @@ export class StudioSceneController {
   }
 
   private async loadConfiguredAssetsForDevice(device: DeviceType): Promise<void> {
+    // Loading gate: the UI overlay stays up until every configured server asset
+    // (device GLB / background GLB) has finished loading or failed.
+    this.callbacks.onDeviceAssetsLoading?.(true, device);
+    try {
+      await this.loadConfiguredAssetsInner(device);
+    } finally {
+      this.callbacks.onDeviceAssetsLoading?.(false, device);
+    }
+  }
+
+  private async loadConfiguredAssetsInner(device: DeviceType): Promise<void> {
     const cfg = this.modelUrls[device];
     if (!cfg) return;
 
