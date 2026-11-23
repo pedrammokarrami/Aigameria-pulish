@@ -28,9 +28,10 @@ export const GameSwitcherBar: React.FC<GameSwitcherBarProps> = ({
   onOpenSocialClub,
   onOpenIdentityProfile,
 }) => {
-  const { copy, isRtl } = useLanguage();
+  const { copy, isRtl, languageCode } = useLanguage();
+  const isFaLang = languageCode?.startsWith('fa') ?? true;
+  const isRtlLang = isRtl;
   const activeStyle: GameStyle = GAME_STYLES.find((s) => s.id === activeStyleId) ?? gameStyleForGame(activeGameId);
-    const isRtlLang = true; // lobby is Persian-first; labels are bilingual already
 
   return (
     <header className="w-full shrink-0">
@@ -61,8 +62,14 @@ export const GameSwitcherBar: React.FC<GameSwitcherBarProps> = ({
               }`}
             >
               <span aria-hidden="true">{style.icon}</span>
-              <span dir={isRtlLang ? 'rtl' : 'ltr'}>{style.labelFa}</span>
-              <span dir="ltr" className="text-[10.5px] font-bold opacity-55">{style.labelEn}</span>
+              {isFaLang ? (
+                <>
+                  <span dir="rtl">{style.labelFa}</span>
+                  <span dir="ltr" className="text-[10.5px] font-bold opacity-55">{style.labelEn}</span>
+                </>
+              ) : (
+                <span dir="ltr">{style.labelEn}</span>
+              )}
             </button>
           );
         })}
