@@ -601,7 +601,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
                         key={ch.id}
                         type="button"
                         data-testid={`scrubber-dot-${idx}`}
-                        aria-label={`${ch.timeLabel} ${ch.shortLabelFa}`}
+                        aria-label={`${ch.timeLabel} ${isFa ? ch.shortLabelFa : (ch.shortLabelEn ?? ch.shortLabelFa)}`}
                         onClick={() => handleSelectChapter(ch)}
                         style={{
                           left: `${ch.progressPct}%`,
@@ -645,7 +645,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
                         <span dir="ltr" className="font-mono font-black tabular-nums">
                           {ch.timeLabel}
                         </span>
-                        <span>{ch.shortLabelFa}</span>
+                        <span>{isFa ? ch.shortLabelFa : (ch.shortLabelEn ?? ch.shortLabelFa)}</span>
                       </button>
                     );
                   })}

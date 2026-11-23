@@ -462,7 +462,9 @@ export function App() {
         }
         speakTimerRef.current = window.setTimeout(() => setIsSpeaking(false), 5500);
       };
-      const timeoutId = window.setTimeout(fallbackToLocal, 4000);
+      // First neural generation can take ~6-8s (cached afterwards = instant);
+      // the old 4s fallback raced it and produced the robotic browser voice.
+      const timeoutId = window.setTimeout(fallbackToLocal, 9000);
       fetch(
         `/api/tts?lang=${encodeURIComponent(appLang.slice(0, 2))}&text=${encodeURIComponent(text.slice(0, 900))}`
       )
@@ -476,12 +478,15 @@ export function App() {
           if (neuralAudioRef.current !== speechAudio) return; // superseded
           window.clearTimeout(timeoutId);
           started = true;
+          // Neural audio won — stop any robotic local TTS that already started.
+          try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
           speechAudio.src = url;
           speechAudio.onended = () => setIsSpeaking(false);
           speechAudio.onerror = () => setIsSpeaking(false);
           void speechAudio.play().catch(() => {
+            // Autoplay blocked (no user gesture yet, esp. iOS): stay silent
+            // instead of switching to the robotic voice mid-playback.
             setIsSpeaking(false);
-            fallbackToLocal();
           });
         })
         .catch(() => {

@@ -14,6 +14,7 @@ export interface ScrubberChapterDot {
   sec: number;
   timeLabel: string;
   shortLabelFa: string; // خطا | اصلاح | اجرا
+  shortLabelEn?: string;
   fullLabelFa: string;
   progressPct: number; // 12..88 position along scrubber track
   accentHex: string;
@@ -70,7 +71,7 @@ export function buildScrubberChaptersForClip(clip: RealCoachClip): {
       id: 'error',
       sec: sec0,
       timeLabel: formatSecondsToTime(sec0),
-      shortLabelFa: 'خطا',
+      shortLabelFa: 'خطا', shortLabelEn: 'Mistake',
       fullLabelFa: 'تشخیص خطا',
       progressPct: pct0,
       accentHex: '#F43F5E',
@@ -79,7 +80,7 @@ export function buildScrubberChaptersForClip(clip: RealCoachClip): {
       id: 'fix',
       sec: sec1,
       timeLabel: formatSecondsToTime(sec1),
-      shortLabelFa: 'اصلاح',
+      shortLabelFa: 'اصلاح', shortLabelEn: 'Fix',
       fullLabelFa: 'لحظه اصلاح',
       progressPct: pct1,
       accentHex: '#22C55E',
@@ -88,7 +89,7 @@ export function buildScrubberChaptersForClip(clip: RealCoachClip): {
       id: 'execute',
       sec: sec2,
       timeLabel: formatSecondsToTime(sec2),
-      shortLabelFa: 'اجرا',
+      shortLabelFa: 'اجرا', shortLabelEn: 'Execute',
       fullLabelFa: 'اجرای حرفه‌ای',
       progressPct: pct2,
       accentHex: '#38BDF8',
