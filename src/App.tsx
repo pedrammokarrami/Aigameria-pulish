@@ -8,6 +8,7 @@ import { GameNativeTournamentHub } from './components/spatial/GameNativeTourname
 import { GameSwitcherBar } from './components/spatial/GameSwitcherBar';
 import { QuestionSuggestions } from './components/spatial/QuestionSuggestions';
 import { loadLastStyleSelection, saveLastStyleSelection, defaultGameForStyle, gameStyleForGame } from './utils/gameStyles';
+import { speakWithPersona } from './utils/voicePersona';
 import { triageImageMedia, triageVideoMedia, type MediaTriageState } from './utils/mediaTriage';
 import { GlobalEarthLanguageButton } from './components/spatial/GlobalEarthLanguageButton';
 import { GtaSocialWorld } from './components/spatial/GtaSocialWorld';
@@ -260,6 +261,7 @@ export function App() {
   const realmTopics = REALM_CONSULTATION_TOPICS[activeRealm];
 
   // Global boot gate — nothing renders/executes until fonts + critical assets + probe settle
+  const { languageCode: appLang } = useLanguage();
   const { copy: bootCopy } = useLanguage();
   const criticalAssets = useMemo(
     () => (manifest.lobbyVideoUrl ? [manifest.lobbyVideoUrl] : []),
@@ -462,17 +464,28 @@ export function App() {
 
       let usedSpeech = false;
       try {
-        if ('speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined') {
-          const utterance = new SpeechSynthesisUtterance(text);
-          utterance.pitch = realmCfg.coachVoicePitch;
-          utterance.rate = realmCfg.coachVoiceRate;
-          utterance.onend = () => setIsSpeaking(false);
-          utterance.onerror = () => setIsSpeaking(false);
-          window.speechSynthesis.speak(utterance);
-          usedSpeech = true;
+        usedSpeech = speakWithPersona('tacticalCoach', text, appLang, activeMasterHub);
+        if (usedSpeech) {
+          // persona utterance end handled inside engine; reset the UI flag on a timer
+          speakTimerRef.current = window.setTimeout(() => setIsSpeaking(false), 9000);
         }
       } catch {
         usedSpeech = false;
+      }
+      if (!usedSpeech) {
+        try {
+          if ('speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined') {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.pitch = realmCfg.coachVoicePitch;
+            utterance.rate = realmCfg.coachVoiceRate;
+            utterance.onend = () => setIsSpeaking(false);
+            utterance.onerror = () => setIsSpeaking(false);
+            window.speechSynthesis.speak(utterance);
+            usedSpeech = true;
+          }
+        } catch {
+          usedSpeech = false;
+        }
       }
 
       speakTimerRef.current = window.setTimeout(
