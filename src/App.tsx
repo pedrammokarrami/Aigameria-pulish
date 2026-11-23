@@ -440,7 +440,7 @@ export function App() {
       // Robotic sine "voice" beep removed (user complaint 2026-11): speech only.
       let usedSpeech = false;
       try {
-        usedSpeech = speakWithPersona('tacticalCoach', text, appLang, activeMasterHub);
+        usedSpeech = speakWithPersona('tacticalCoach', text, appLang);
         if (usedSpeech) {
           // persona utterance end handled inside engine; reset the UI flag on a timer
           speakTimerRef.current = window.setTimeout(() => setIsSpeaking(false), 9000);

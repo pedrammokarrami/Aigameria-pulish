@@ -9,7 +9,7 @@ export interface HubMenuDescriptor {
 }
 
 let sharedAudioCtx: AudioContext | null = null;
-let ps5SoundMuted = false;
+let ps5SoundMuted = true; // menu interaction sounds disabled entirely (user request 2026-11-23)
 
 export function setHubMenuSoundMuted(muted: boolean): void {
   ps5SoundMuted = muted;

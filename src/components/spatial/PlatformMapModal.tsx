@@ -26,7 +26,6 @@ import {
 } from '../../utils/platformMapEngine';
 import type { MasterHubId } from './MasterHubSwitcher';
 import LiveGrid3D from './LiveGrid3D';
-import { speakWithPersona } from '../../utils/voicePersona';
 import {
   buildFallbackGrid,
   fetchLiveGrid,
@@ -319,18 +318,6 @@ export const PlatformMapModal: React.FC<PlatformMapModalProps> = ({
   };
   // GTA V minimap bars — deterministic per session (no fake randomness)
   const GTA_BARS = { health: 86, armor: 72, stamina: 64 };
-
-  // Map-guide persona: calm friendly female voice explains the map in app language
-  const mapVoiceRef = React.useRef(false);
-  React.useEffect(() => {
-    if (!open) { mapVoiceRef.current = false; return; }
-    if (mapVoiceRef.current) return;
-    mapVoiceRef.current = true;
-    const lang = (typeof languageCode === 'string' ? languageCode : 'fa');
-    speakWithPersona('mapGuide', isFa
-      ? 'نقشه سه‌بعدی محله آماده شد. لوکیشن واقعی خودت رو می‌تونی ببینی و مسیر بگیری.'
-      : 'The 3D neighborhood map is ready. You can see your real location and get routes.', lang);
-  }, [open]);
 
   // Auto-start: attempt real GPS on open, fall back to Tehran Azadi when blocked
   const autoStartedRef = React.useRef(false);

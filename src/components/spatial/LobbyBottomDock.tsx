@@ -2,7 +2,6 @@ import React, { useRef, useState } from 'react';
 import { Camera, Menu, Mic, X } from 'lucide-react';
 import { Ps5GameControlCenter } from './HubQuickMenuOverlays';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { speakWithPersona } from '../../utils/voicePersona';
 
 interface LobbyBottomDockProps {
   isListeningVoice: boolean;
@@ -35,15 +34,7 @@ export const LobbyBottomDock: React.FC<LobbyBottomDockProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const { languageCode: dockLang } = useLanguage();
-  const menuVoiceRef = React.useRef(false);
-  React.useEffect(() => {
-    if (!menuOpen || menuVoiceRef.current) return;
-    menuVoiceRef.current = true;
-    speakWithPersona('uiHelper', dockLang?.startsWith('fa')
-      ? 'این دکمه‌ها مال توئه: مربی تاکتیکی، تورنمنت، سوشال، پروفایل، نقشه و فروشگاه.'
-      : 'These buttons are yours: tactical coach, tournament, social, profile, map and store.', dockLang || 'fa');
-  }, [menuOpen]);
+
   const { copy, isRtl } = useLanguage();
 
   return (
