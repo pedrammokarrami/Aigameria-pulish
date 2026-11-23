@@ -437,31 +437,7 @@ export function App() {
       stopSpeaking();
       setIsSpeaking(true);
 
-      try {
-        const AudioCtx =
-          window.AudioContext ||
-          (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-        if (AudioCtx) {
-          const ctx = new AudioCtx();
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(
-            activeRealm === 'shooter' ? 320 : activeRealm === 'sports' ? 440 : 380,
-            ctx.currentTime
-          );
-          gain.gain.setValueAtTime(0.03, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start();
-          osc.stop(ctx.currentTime + 0.28);
-          setTimeout(() => ctx.close().catch(() => undefined), 350);
-        }
-      } catch {
-        // ignore
-      }
-
+      // Robotic sine "voice" beep removed (user complaint 2026-11): speech only.
       let usedSpeech = false;
       try {
         usedSpeech = speakWithPersona('tacticalCoach', text, appLang, activeMasterHub);

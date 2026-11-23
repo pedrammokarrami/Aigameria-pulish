@@ -21,9 +21,10 @@ interface PersonaProfile {
 }
 
 const PERSONAS: Record<VoicePersonaId, PersonaProfile> = {
-  tacticalCoach: { female: false, pitch: 0.95, rate: 1.12 }, // energetic, commanding
-  mapGuide: { female: true, pitch: 1.05, rate: 0.92 }, // calm, friendly
-  uiHelper: { female: false, pitch: 1.25, rate: 1.18 }, // young, playful
+  // Calibrated slow: robotic fast TTS was a user complaint — clarity first.
+  tacticalCoach: { female: false, pitch: 0.9, rate: 0.98 }, // energetic but intelligible
+  mapGuide: { female: true, pitch: 1.05, rate: 0.86 }, // calm, friendly
+  uiHelper: { female: false, pitch: 1.15, rate: 0.95 }, // young, playful
 };
 
 const FEMALE_HINTS = /(female|woman|zira|hala|salma|samantha|victoria|karen|moira|tessa|fiona|susan|farida|google\s*(us|uk)?\s*english|amira|laila|zeina|maria)/i;
@@ -36,11 +37,13 @@ function pickVoice(lang: string, female: boolean): SpeechSynthesisVoice | null {
   const langPrefix = lang.slice(0, 2).toLowerCase();
   const sameLang = voices.filter((v) => v.lang.toLowerCase().startsWith(langPrefix));
   const pool = sameLang.length ? sameLang : voices;
-  const genderMatch = pool.filter((v) =>
+  const natural = pool.filter((v) => /natural|neural|google|premium|enhanced/i.test(v.name));
+  const base = natural.length ? natural : pool;
+  const genderMatch = base.filter((v) =>
     female ? FEMALE_HINTS.test(v.name) : MALE_HINTS.test(v.name)
   );
   if (genderMatch.length) return genderMatch[0];
-  return pool[0] ?? null;
+  return base[0] ?? null;
 }
 
 /** Speak text with the given persona and app language. Fire-and-forget. */

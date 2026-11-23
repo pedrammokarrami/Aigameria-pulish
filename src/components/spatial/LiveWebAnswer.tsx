@@ -36,6 +36,7 @@ const GAME_REALM: Record<string, string> = {
 interface GameChoice {
   gameId: string;
   labelFa: string;
+  labelEn?: string;
   icon: string;
   reason: string;
 }
@@ -156,7 +157,7 @@ export const LiveWebAnswer: React.FC<LiveWebAnswerProps> = ({ gameId, searchQuer
                 onClick={() => { setChoicesDismissed(true); setForcedGameId(c.gameId); }}
                 className="px-2.5 py-1 rounded-full bg-sky-500/20 border border-sky-300/40 text-[12px] font-bold text-sky-100 hover:bg-sky-500/40 active:scale-95 transition"
               >
-                {c.icon} {c.labelFa}
+                {c.icon} {isFa ? c.labelFa : (c.labelEn || c.labelFa)}
               </button>
             ))}
           </div>

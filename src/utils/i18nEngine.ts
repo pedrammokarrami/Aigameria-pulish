@@ -784,6 +784,8 @@ const SKILL_EN: Record<string, { title: string; category: string }> = {
   'val-02': { title: 'Pop-Flash & Duelist Site Entry Dash', category: 'Team Utility' },
   'val-03': { title: 'Slicing the Pie & Anti-Operator Long Peek', category: 'Angle Clearing' },
   'val-04': { title: 'Coordinated Site Retake & Crossfire Hold', category: 'Site Defense' },
+  'fc27-05': { title: 'Best Formation & Squad Build', category: 'Formation' },
+  'fc27-06': { title: 'SBC Guide & Squad Building', category: 'SBC' },
 };
 
 const HUB_CARD_EN: Record<string, { title: string; category: string }> = {
@@ -902,6 +904,36 @@ const MENU_EN: Record<string, { title: string; subtitle: string; badge?: string 
     title: 'CINE-OS · Secure Social Terminal',
     subtitle: 'Encrypted agent chats, watch rooms & direct stream links',
     badge: 'Secure Mesh',
+  },
+  map: {
+    title: '3D Neighborhood Map',
+    subtitle: 'Live GTA radar with your real GPS location',
+    badge: 'Map',
+  },
+  store: {
+    title: 'AIPETROS Store',
+    subtitle: 'Gear, collections & gaming goods',
+    badge: 'Store',
+  },
+  'audio-map': {
+    title: '3D Neighborhood Map',
+    subtitle: 'Live GTA radar with your real GPS location',
+    badge: 'Map',
+  },
+  'audio-store': {
+    title: 'AIPETROS Store',
+    subtitle: 'Gear, collections & gaming goods',
+    badge: 'Store',
+  },
+  'cinema-map': {
+    title: '3D Neighborhood Map',
+    subtitle: 'Live GTA radar with your real GPS location',
+    badge: 'Map',
+  },
+  'cinema-store': {
+    title: 'AIPETROS Store',
+    subtitle: 'Gear, collections & gaming goods',
+    badge: 'Store',
   },
   dim: {
     title: 'Toggle Theater Lighting',

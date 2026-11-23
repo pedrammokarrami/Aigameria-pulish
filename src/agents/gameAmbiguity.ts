@@ -8,6 +8,7 @@
 interface GameAlias {
   gameId: string;
   labelFa: string;
+  labelEn?: string;
   icon: string;
   patterns: RegExp[];
   /** domains that imply this game even without an explicit alias */
@@ -15,15 +16,15 @@ interface GameAlias {
 }
 
 const GAME_ALIASES: GameAlias[] = [
-  { gameId: 'fc27', labelFa: 'FC 27', icon: '⚽', patterns: [/fc ?2[0-9]/i, /fifa/i, /\bفی\b/, /فیفا/], domains: [/هریک/, /فرماسیون/, /ترکیب/, /SBC|اس ?بی ?سی/i, /پنالتی/, /کرنر/, /فینس/, /اولتیمیت ?تیم/i] },
-  { gameId: 'efootball', labelFa: 'eFootball', icon: '⚽', patterns: [/e ?football/i, /pes/i, /ای ?فوتبال/], domains: [/فرماسیون/, /ترکیب/, /بارسا|رئال مادرید|لیورپول|یوونتوس|بایرن|پی ?اس ?جی/] },
-  { gameId: 'nba2k', labelFa: 'NBA 2K', icon: '🏀', patterns: [/nba ?2?k?\d?/i, /ان ?بی ?ای/], domains: [/دانک/, /سه ?امتیازی/, /پارک/] },
-  { gameId: 'mlb', labelFa: 'MLB The Show', icon: '⚾', patterns: [/mlb/i, /بیسبال/] },
-  { gameId: 'cs2', labelFa: 'CS2', icon: '🎯', patterns: [/cs ?2/i, /کانتر/i, /counter ?strike/i], domains: [/اسموک/, /ایم/, /کروس ?هیر/, /AK/i, /AWP/i, /اکونومی/, /لوداوت/] },
-  { gameId: 'valorant', labelFa: 'Valorant', icon: '🎯', patterns: [/valorant/i, /ولورانت/], domains: [/ویکچر/, /اسپایک/, /ایجنت/, /ایم/, /لوداوت/] },
-  { gameId: 'cod', labelFa: 'Call of Duty', icon: '🎯', patterns: [/call of duty/i, /\bcod\b/i, /کالاف|کال ?اوب ?دیوتی/, /warzone/i], domains: [/لوداوت/, /اتچمنت/] },
-  { gameId: 'f1-25', labelFa: 'F1 25', icon: '🏎️', patterns: [/f1 ?2?5?/i, /فرمول یک/i], domains: [/ستاپ/, /پیت/] },
-  { gameId: 'dota2', labelFa: 'Dota 2', icon: '🧠', patterns: [/dota ?2?/i, /دوتا/], domains: [/روشن/, /وارد/] },
+  { gameId: 'fc27', labelFa: 'FC 27', labelEn: 'FC 27', icon: '⚽', patterns: [/fc ?2[0-9]/i, /fifa/i, /\bفی\b/, /فیفا/], domains: [/هریک/, /فرماسیون/, /ترکیب/, /SBC|اس ?بی ?سی/i, /پنالتی/, /کرنر/, /فینس/, /اولتیمیت ?تیم/i] },
+  { gameId: 'efootball', labelFa: 'eFootball', labelEn: 'eFootball', icon: '⚽', patterns: [/e ?football/i, /pes/i, /ای ?فوتبال/], domains: [/فرماسیون/, /ترکیب/, /بارسا|رئال مادرید|لیورپول|یوونتوس|بایرن|پی ?اس ?جی/] },
+  { gameId: 'nba2k', labelFa: 'NBA 2K', labelEn: 'NBA 2K', icon: '🏀', patterns: [/nba ?2?k?\d?/i, /ان ?بی ?ای/], domains: [/دانک/, /سه ?امتیازی/, /پارک/] },
+  { gameId: 'mlb', labelFa: 'MLB The Show', labelEn: 'MLB The Show', icon: '⚾', patterns: [/mlb/i, /بیسبال/] },
+  { gameId: 'cs2', labelFa: 'CS2', labelEn: 'CS2', icon: '🎯', patterns: [/cs ?2/i, /کانتر/i, /counter ?strike/i], domains: [/اسموک/, /ایم/, /کروس ?هیر/, /AK/i, /AWP/i, /اکونومی/, /لوداوت/] },
+  { gameId: 'valorant', labelFa: 'Valorant', labelEn: 'Valorant', icon: '🎯', patterns: [/valorant/i, /ولورانت/], domains: [/ویکچر/, /اسپایک/, /ایجنت/, /ایم/, /لوداوت/] },
+  { gameId: 'cod', labelFa: 'Call of Duty', labelEn: 'Call of Duty', icon: '🎯', patterns: [/call of duty/i, /\bcod\b/i, /کالاف|کال ?اوب ?دیوتی/, /warzone/i], domains: [/لوداوت/, /اتچمنت/] },
+  { gameId: 'f1-25', labelFa: 'F1 25', labelEn: 'F1 25', icon: '🏎️', patterns: [/f1 ?2?5?/i, /فرمول یک/i], domains: [/ستاپ/, /پیت/] },
+  { gameId: 'dota2', labelFa: 'Dota 2', labelEn: 'Dota 2', icon: '🧠', patterns: [/dota ?2?/i, /دوتا/], domains: [/روشن/, /وارد/] },
   { gameId: 'elden-ring', labelFa: 'Elden Ring', icon: '⚔️', patterns: [/elden ?ring/i, /الدن ?رینگ/] },
   { gameId: 'gta', labelFa: 'GTA', icon: '🌆', patterns: [/gta/i, /جی ?تی ?ای/], domains: [/هیست/, /کاسینو/, /پنج ?ستاره/] },
   { gameId: 'roblox', labelFa: 'Roblox', icon: '🧱', patterns: [/roblox/i, /رابلاکس/], domains: [/obbie/, /بروکهاون/] },

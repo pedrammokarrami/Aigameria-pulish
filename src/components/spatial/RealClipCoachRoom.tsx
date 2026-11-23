@@ -30,6 +30,7 @@ import {
   REALM_LABELS_FA,
 } from '../../services/gameMediaCatalog';
 import { toPersianDigits } from '../../services/liveMetaSyncService';
+import { useLanguage } from '../../contexts/LanguageContext';
 import type { ClipSourceKind } from '../../services/realClipAgentService';
 import type { RealmId } from '../../types/spatial';
 import { CoachWorld3D } from './CoachWorld3D';
@@ -114,6 +115,8 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
   onOpenSocialWorld,
   onBackToMenu,
 }) => {
+  const { languageCode: rcLang } = useLanguage();
+  const isFa = rcLang?.startsWith('fa') ?? true;
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [activePhase, setActivePhase] = useState<ChapterPhaseId>('fix');
   const [activeStartSec, setActiveStartSec] = useState<number>(0);
@@ -351,7 +354,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
             <button
               type="button"
               data-testid="coach-meta-info-btn"
-              aria-label="اطلاعات پچ و متای بازی"
+              aria-label={isFa ? 'اطلاعات پچ و متای بازی' : 'Patch & game meta info'}
               onClick={() => setIsInfoOpen((v) => !v)}
               className="w-9 h-9 rounded-xl bg-[#070B14]/85 hover:bg-[#111827]/90 border border-white/15 flex items-center justify-center text-white/90 transition cursor-pointer"
             >
@@ -361,7 +364,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
             <button
               type="button"
               data-testid="coach-top-mic-btn"
-              aria-label="سوال صوتی از مربی"
+              aria-label={isFa ? 'سوال صوتی از مربی' : 'Ask the coach by voice'}
               onClick={onToggleVoiceQa}
               className={`w-9 h-9 rounded-xl border flex items-center justify-center transition cursor-pointer ${
                 isListeningVoice
@@ -499,7 +502,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
                             : 'text-emerald-300'
                         }`}
                       >
-                        {activeClip?.sourceKind === 'reddit_top' ? 'ردیت' : 'یوتیوب پرو'}
+                        {activeClip?.sourceKind === 'reddit_top' ? (isFa ? 'ردیت' : 'Reddit') : (isFa ? 'یوتیوب پرو' : 'YouTube Pro')}
                       </span>
                     </div>
 
@@ -508,7 +511,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
                         href={`https://www.youtube.com/watch?v=${activeClip.youtubeId}&t=${activeStartSec}s`}
                         target="_blank"
                         rel="noreferrer"
-                        aria-label="مشاهده در یوتیوب"
+                        aria-label={isFa ? 'مشاهده در یوتیوب' : 'View on YouTube'}
                         className="w-7 h-7 rounded-full bg-slate-950/65 border border-white/20 flex items-center justify-center text-white/80 hover:text-white transition shrink-0"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
@@ -529,7 +532,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
                       <button
                         type="button"
                         data-testid="pro-clip-play-btn"
-                        aria-label="پخش کلیپ حرفه‌ای"
+                        aria-label={isFa ? 'پخش کلیپ حرفه‌ای' : 'Play pro clip'}
                         onClick={handleStartVideoPlayback}
                         className="group w-14 h-14 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-md border border-white/35 shadow-[0_0_32px_rgba(16,185,129,0.35)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer"
                       >
@@ -561,8 +564,8 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
               <div className="px-3 py-2 flex items-center justify-between gap-2 border-t border-white/10">
                 <span className="text-[11px] font-bold text-emerald-300 truncate">
                   {isAnalyzingUpload
-                    ? 'در حال بررسی صحنه شما...'
-                    : `صحنه شما: ${uploadedMedia.fileName}`}
+                    ? (isFa ? 'در حال بررسی صحنه شما...' : 'Analyzing your scene...')
+                    : (isFa ? `صحنه شما: ${uploadedMedia.fileName}` : `Your scene: ${uploadedMedia.fileName}`)}
                 </span>
                 <button
                   type="button"
@@ -694,11 +697,11 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
             <div className="flex items-center gap-1.5">
               <ChevronUp className="w-4 h-4 text-emerald-300" />
               <span>
-                کلیپ‌های یوتیوب و ردیت ({toPersianDigits(String(allClips.length || 7))})
+                (isFa ? `کلیپ‌های یوتیوب و ردیت (${toPersianDigits(String(allClips.length || 7))})` : `YouTube & Reddit clips (${allClips.length || 7})`)
               </span>
             </div>
             <span className="text-[10px] font-bold text-white/55">
-              {isLoadingClips ? 'در حال بروزرسانی...' : 'مشاهده و جستجو'}
+              {isLoadingClips ? (isFa ? 'در حال بروزرسانی...' : 'Refreshing...') : (isFa ? 'مشاهده و جستجو' : 'Browse & search')}
             </span>
           </button>
 
@@ -711,7 +714,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
               className="flex-1 h-10 rounded-full border border-emerald-400/50 bg-slate-950/60 hover:bg-slate-900/75 hover:border-emerald-300/80 backdrop-blur-xl shadow-[0_0_20px_rgba(16,185,129,0.25)] font-black text-xs sm:text-sm text-emerald-100 flex items-center justify-center gap-2 transition cursor-pointer"
             >
               <Upload className="w-4 h-4 text-emerald-300 shrink-0" />
-              <span>{isAnalyzingUpload ? 'در حال آنالیز...' : 'ارسال کلیپ یا عکس من'}</span>
+              <span>{isAnalyzingUpload ? (isFa ? 'در حال آنالیز...' : 'Analyzing...') : (isFa ? 'ارسال کلیپ یا عکس من' : 'Send my clip or photo')}</span>
             </button>
 
             <button
@@ -783,7 +786,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
                 <div className="flex items-center gap-1">
                   {(
                     [
-                      { id: 'all', label: 'همه' },
+                      { id: 'all', label: (isFa ? 'همه' : 'All') },
                       { id: 'youtube_pro', label: 'یوتیوب پرو' },
                       { id: 'reddit_top', label: 'ردیت' },
                     ] as const
