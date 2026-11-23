@@ -15,7 +15,6 @@ import { GlobalEarthLanguageButton } from './components/spatial/GlobalEarthLangu
 import { GtaSocialWorld } from './components/spatial/GtaSocialWorld';
 import { LanguageSelectorModal } from './components/spatial/LanguageSelectorModal';
 import { LobbyBottomDock } from './components/spatial/LobbyBottomDock';
-import { ControllerTrainerStage } from './components/controller-trainer/sdk';
 import { MasterHubSwitcher, type MasterHubId } from './components/spatial/MasterHubSwitcher';
 import { PlatformMapModal } from './components/spatial/PlatformMapModal';
 import { PlatformStoreModal } from './components/spatial/PlatformStoreModal';
@@ -1462,13 +1461,6 @@ export function App() {
                 }}
                 onToggleBackdropMode={() => setUseVideoBackdrop((v) => !v)}
               />
-              {/* REAL 3D controller trainer stage (Petros-gamepad engine, verbatim) */}
-              <div
-                data-testid="controller-trainer-slot"
-                className="w-full h-[480px] sm:h-[580px] rounded-2xl overflow-hidden border border-white/10"
-              >
-                <ControllerTrainerStage initialDevice="ps5" apiBaseUrl="/api/v1/controller-sequences/{device}" />
-              </div>
             </div>
           </motion.div>
         )}

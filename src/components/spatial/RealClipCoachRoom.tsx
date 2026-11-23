@@ -37,8 +37,8 @@ import type { ClipSourceKind } from '../../services/realClipAgentService';
 import type { RealmId } from '../../types/spatial';
 import { CoachWorld3D } from './CoachWorld3D';
 import { MotionCoachCard } from './MotionCoachCard';
-import { GamepadTutorialDock } from './GamepadTutorialDock';
 import { formatCompactComboStrip } from '../../utils/controllerCoachTiming';
+import { ControllerTrainerStage } from '../controller-trainer/sdk';
 import { CoachAnswerBoard } from './CoachAnswerBoard';
 import { CoachSessionPanel } from './CoachSessionPanel';
 import type { CoachAnswerBlock } from '../../utils/coachSearchRules';
@@ -708,14 +708,13 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
             isSpeaking={isSpeaking}
             onToggleSpeak={() => onToggleSpeak(motionPayload.voiceExplanationEn)}
  />
-          {/* Bottom-of-page controller button tutorial (Petros-gamepad theme) */}
-          <GamepadTutorialDock
-            comboTokens={[
-              motionPayload.triggerBadge,
-              motionPayload.executionBadge,
-            ]}
-            accentHex={motionPayload.accentHex || accent}
-          />
+          {/* Bottom-of-coach-page REAL 3D controller trainer stage (Petros-gamepad engine, verbatim) */}
+          <div
+            data-testid="controller-trainer-slot"
+            className="w-full h-[480px] sm:h-[580px] rounded-2xl overflow-hidden border border-white/10"
+          >
+            <ControllerTrainerStage initialDevice="ps5" apiBaseUrl="/api/v1/controller-sequences/{device}" />
+          </div>
         </main>
 
         {/* ================= LAYER 4: COLLAPSED GLASS DRAWER + DARK-GLASS EMERALD CTA + MIC ================= */}
