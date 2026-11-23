@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { isIosLikeDevice } from '../../utils/iosPlayback';
 import {
   ArrowRight,
   ChevronDown,
@@ -279,8 +280,12 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
   const activeChapterObj =
     activeClip?.chapters.find((c) => c.id === activePhase) ?? activeClip?.chapters[0] ?? null;
 
+  // iOS Safari only honors a gesture made INSIDE the player; autoplay from a
+  // gesture on an outside button is silently blocked (the #1 "no video plays"
+  // report on iPhone). On iOS-like devices we load the embed WITHOUT autoplay
+  // so YouTube's own big ▶ button shows — one tap inside the iframe plays it.
   const embedUrl = activeClip
-    ? `https://www.youtube-nocookie.com/embed/${activeClip.youtubeId}?start=${activeStartSec}&autoplay=1&rel=0&playsinline=1&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`
+    ? `https://www.youtube-nocookie.com/embed/${activeClip.youtubeId}?start=${activeStartSec}${isIosLikeDevice() ? '' : '&autoplay=1'}&rel=0&playsinline=1&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`
     : null;
 
   const cinematicCoverUrl =
