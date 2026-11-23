@@ -191,7 +191,7 @@ export const CoachAnswerBoard: React.FC<CoachAnswerBoardProps> = ({ answerBlock,
         </button>
       </div>
       <h3 className="kinetic-title" style={{ fontSize: 16, margin: 0 }}>
-        {answerBlock.titleFa}
+        {boardLang?.startsWith('fa') ? answerBlock.titleFa : (answerBlock.titleEn || answerBlock.titleFa)}
       </h3>
 
       {/* Formation pitch */}

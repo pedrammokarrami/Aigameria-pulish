@@ -42,6 +42,7 @@ interface GameChoice {
 
 interface CoachTopic {
   titleFa: string;
+  titleEn?: string;
   coachAdviceFa: string;
   coachVoiceEn: string;
   answerBlock?: {
@@ -171,10 +172,10 @@ export const LiveWebAnswer: React.FC<LiveWebAnswerProps> = ({ gameId, searchQuer
 
       {!loading && topic && (
         <>
-          <h3 className="kinetic-title" style={{ fontSize: 15.5, margin: 0 }}>{topic.titleFa}</h3>
+          <h3 className="kinetic-title" style={{ fontSize: 15.5, margin: 0 }}>{isFa ? topic.titleFa : (topic.titleEn || topic.titleFa)}</h3>
           {topic.answerBlock && (
             <div className="rounded-xl border border-sky-400/25 bg-sky-950/40 p-2.5 flex flex-col gap-1.5">
-              <span className="text-[12px] font-black text-sky-200">{topic.answerBlock.titleFa}</span>
+              <span className="text-[12px] font-black text-sky-200">{isFa ? topic.answerBlock.titleFa : (topic.answerBlock.titleEn || topic.answerBlock.titleFa)}</span>
               {topic.answerBlock.options && topic.answerBlock.options.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   {topic.answerBlock.options.map((opt) => (
