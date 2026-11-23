@@ -314,8 +314,8 @@ export function suggestCoachQuestions(query: string, gameId: LobbyGameId, limit 
     if (coverage > (best?.coverage ?? 0)) best = { gameId: g, scored, coverage };
     if (g === gameId && coverage > 0 && (best?.gameId ?? g) === g && coverage === best?.coverage && coverage >= tokens.length) break; // full coverage locally — stop early
   }
-  if (!best || best.scored.length === 0) return bankFor(gameId).starters.slice(0, limit);
-  const { starters } = bankFor(best.gameId);
+  if (!best || best.scored.length === 0) return bankFor(gameId, lang).starters.slice(0, limit);
+  const { starters } = bankFor(best.gameId, lang);
   const result = best.scored.slice(0, limit).map((e) => e.q);
   for (const s of starters) {
     if (result.length >= limit) break;
