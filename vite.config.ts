@@ -3,9 +3,14 @@ import react from '@vitejs/plugin-react';
 import fs from 'fs';
 import path from 'path';
 import {defineConfig} from 'vite';
+import {execSync} from 'child_process';
+
+let buildId = 'dev';
+try { buildId = execSync('git rev-parse --short HEAD').toString().trim(); } catch { /* ignore */ }
 
 export default defineConfig(() => {
   return {
+    define: { __BUILD_ID__: JSON.stringify(buildId) },
     plugins: [
       react(),
       tailwindcss(),

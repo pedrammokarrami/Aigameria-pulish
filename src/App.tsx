@@ -1,3 +1,4 @@
+declare const __BUILD_ID__: string;
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { AudioHubView } from './components/audio/AudioHubView';
@@ -1449,3 +1450,5 @@ export function App() {
 }
 
 export default App;
+
+try { console.log('[AIPETROS] build', __BUILD_ID__); } catch { /* ignore */ }
