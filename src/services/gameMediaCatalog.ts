@@ -60,6 +60,13 @@ export const REALM_LABELS_FA: Record<RealmId, string> = {
   story: 'داستانی',
 };
 
+export const REALM_LABELS_EN: Record<RealmId, string> = {
+  sports: 'Sports',
+  shooter: 'Shooter',
+  strategy: 'Strategy',
+  story: 'Story',
+};
+
 export const COACH_REALM_ORDER: RealmId[] = ['sports', 'shooter', 'strategy', 'story'];
 
 export const PC_GAME_CATALOG: CatalogGameEntry[] = [

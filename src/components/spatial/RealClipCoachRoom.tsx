@@ -28,6 +28,7 @@ import {
   COACH_REALM_ORDER,
   PC_GAME_CATALOG,
   REALM_LABELS_FA,
+  REALM_LABELS_EN,
 } from '../../services/gameMediaCatalog';
 import { toPersianDigits } from '../../services/liveMetaSyncService';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -789,8 +790,8 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
                   {(
                     [
                       { id: 'all', label: (isFa ? 'همه' : 'All') },
-                      { id: 'youtube_pro', label: 'یوتیوب پرو' },
-                      { id: 'reddit_top', label: 'ردیت' },
+                      { id: 'youtube_pro', label: (isFa ? 'یوتیوب پرو' : 'YouTube Pro') },
+                      { id: 'reddit_top', label: (isFa ? 'ردیت' : 'Reddit') },
                     ] as const
                   ).map((tab) => (
                     <button
@@ -865,7 +866,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
                           ) : (
                             <Youtube className="w-2.5 h-2.5" />
                           )}
-                          <span>{clip.sourceKind === 'reddit_top' ? 'ردیت' : 'یوتیوب پرو'}</span>
+                          <span>{clip.sourceKind === 'reddit_top' ? (isFa ? 'ردیت' : 'Reddit') : (isFa ? 'یوتیوب پرو' : 'YouTube Pro')}</span>
                         </span>
                         <span dir="ltr" className="text-[10px] text-white/60 truncate">
                           {clip.channelName}
@@ -948,7 +949,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
                   data-testid="all-games-search-input"
                   value={libraryQuery}
                   onChange={(e) => setLibraryQuery(e.target.value)}
-                  placeholder="جستجوی هر بازی کامپیوتری (FC 27, CS2, Valorant, GTA, Elden Ring)..."
+                  placeholder={isFa ? 'جستجوی هر بازی کامپیوتری (FC 27, CS2, Valorant, GTA, Elden Ring)...' : 'Search any PC game (FC 27, CS2, Valorant, GTA, Elden Ring)...'}
                   className="w-full h-9 pr-9 pl-3 rounded-xl bg-white/[0.06] border border-white/15 text-xs text-white placeholder:text-white/45 focus:outline-none focus:border-emerald-400/70"
                 />
               </div>
@@ -1021,7 +1022,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
                           className="w-full h-full object-cover"
                         />
                         <span className="absolute top-1 right-1 px-1.5 py-0.5 rounded bg-slate-950/85 text-[9px] font-extrabold text-white">
-                          {REALM_LABELS_FA[game.realm]}
+                          {isFa ? REALM_LABELS_FA[game.realm] : REALM_LABELS_EN[game.realm]}
                         </span>
                       </div>
                       <div className="p-2">
