@@ -429,7 +429,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
                   className="w-full h-full flex flex-col items-center justify-center gap-2 px-4 text-center"
                   style={{ background: `linear-gradient(135deg, ${accent}22, #05070B)` }}
                 >
-                  <p className="text-[12.5px] font-black text-white">پخش تو‌صفحه ممکن نشد — مستقیم تو یوتیوب ببین</p>
+                  <p className="text-[12.5px] font-black text-white">{isFa ? 'پخش تو‌صفحه ممکن نشد — مستقیم تو یوتیوب ببین' : 'In-page playback failed — YouTube may be blocked on your network. Open it directly on YouTube'}</p>
                   <a
                     href={`https://www.youtube.com/watch?v=${activeClip.youtubeId}&t=${activeStartSec}s`}
                     target="_blank"
@@ -438,7 +438,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
                     className="px-3.5 py-1.5 rounded-full text-[12px] font-black cursor-pointer"
                     style={{ backgroundColor: accent, color: '#05070B' }}
                   >
-                    ▶ باز کردن کلیپ در یوتیوب
+                    {isFa ? '▶ باز کردن کلیپ در یوتیوب' : '▶ Open clip on YouTube'}
                   </a>
                 </div>
               ) : isPlaying && embedUrl && activeClip ? (

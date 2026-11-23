@@ -52,6 +52,7 @@ export const CoachSessionPanel: React.FC<CoachSessionPanelProps> = ({
   onSubmitQuestion,
 }) => {
   const { languageCode: sessionLang } = useLanguage();
+  const wantsFa = (sessionLang || 'fa').startsWith('fa');
   const [session, setSession] = useState<CoachSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeModuleId, setActiveModuleId] = useState('finishing');
@@ -88,7 +89,8 @@ export const CoachSessionPanel: React.FC<CoachSessionPanelProps> = ({
     () => session?.modules.find((m) => m.id === activeModuleId) ?? session?.modules[0],
     [session, activeModuleId]
   );
-  const isFa = session?.isFa ?? true;
+  // App language is the source of truth (session language can lag one render).
+  const isFa = wantsFa;
 
   return (
     <section
@@ -216,7 +218,7 @@ export const CoachSessionPanel: React.FC<CoachSessionPanelProps> = ({
                 borderColor: active ? accentHex : 'rgba(255,255,255,0.15)',
               }}
             >
-              {m.titleFa.split('—')[0].trim()}
+              {(isFa ? m.titleFa : m.titleEn).split('—')[0].trim()}
             </button>
           );
         })}
@@ -226,7 +228,7 @@ export const CoachSessionPanel: React.FC<CoachSessionPanelProps> = ({
       {activeModule && (
         <div data-testid={`session-module-${activeModule.id}`} className="flex flex-col gap-2">
           <p className="text-[12.5px] font-black" style={{ color: accentHex }}>
-            {activeModule.titleFa}
+            {isFa ? activeModule.titleFa : activeModule.titleEn}
           </p>
 
           {activeModule.stats.length > 0 && (
