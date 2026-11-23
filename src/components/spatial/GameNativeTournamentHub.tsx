@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useLanguage } from '../../contexts/LanguageContext';
 import {
   ArrowRight,
   Check,
@@ -15,6 +16,7 @@ import {
   type Hologram3DGameId,
   type TournamentGameId,
   getRosterCountDisplay,
+  getInviteCandidateName,
   toPersianNum,
 } from '../../data/gameTournamentThemes';
 import { TournamentHologramTable3D } from './TournamentHologramTable3D';
@@ -62,6 +64,36 @@ export const GameNativeTournamentHub: React.FC<GameNativeTournamentHubProps> = (
   const [isStandingsOpen, setIsStandingsOpen] = useState(false);
 
   const theme = GAME_THEMES[activeGameId];
+  const { languageCode: tourLang } = useLanguage();
+  const isFaTour = tourLang?.startsWith('fa') ?? true;
+  // English twins when the app UI is English; Persian otherwise
+  const t = {
+    fullTitle: isFaTour ? theme.fullTitleFa : theme.fullTitleEn,
+    subtitle: isFaTour ? theme.subtitleFa : theme.subtitleEn,
+    lobbyCount: isFaTour ? theme.lobbyCountFa : theme.lobbyCountEn,
+    hologramTitle: (isFaTour ? theme.hologramTitleFa : (theme.hologramTitleEn ?? theme.hologramTitleFa)),
+    hologramSubtitle: isFaTour ? theme.hologramSubtitleFa : theme.hologramSubtitleEn,
+    roomLabel: isFaTour ? theme.roomLabelFa : theme.roomLabelEn,
+    invite: getInviteCandidateName(theme, isFaTour),
+    primaryCta: isFaTour ? theme.primaryCtaFa : theme.primaryCtaEn,
+    readyCta: isFaTour ? theme.readyCtaFa : theme.readyCtaEn,
+    readyToast: isFaTour ? theme.readyToastFa : theme.readyToastEn,
+    fullTitlePlain: isFaTour ? theme.fullTitleFa : theme.fullTitleEn,
+    ruleBadge: (isFaTour ? theme.standingsHeaders.ruleBadgeFa : (theme.standingsHeaders.ruleBadgeEn ?? theme.standingsHeaders.ruleBadgeFa)),
+    teamCol: (isFaTour ? theme.standingsHeaders.teamColFa : (theme.standingsHeaders.teamColEn ?? theme.standingsHeaders.teamColFa)),
+    stat1Col: (isFaTour ? theme.standingsHeaders.stat1ColFa : (theme.standingsHeaders.stat1ColEn ?? theme.standingsHeaders.stat1ColFa)),
+    stat2Col: (isFaTour ? theme.standingsHeaders.stat2ColFa : (theme.standingsHeaders.stat2ColEn ?? theme.standingsHeaders.stat2ColFa)),
+    scoreCol: (isFaTour ? theme.standingsHeaders.scoreColFa : (theme.standingsHeaders.scoreColEn ?? theme.standingsHeaders.scoreColFa)),
+    rosterDone: (isFaTour ? 'ترکیب تکمیل شد' : 'Squad locked in') as string,
+    rosterInv: (isFaTour ? 'برای دعوت روی جایگاه خالی بزنید' : 'Tap an empty slot to invite') as string,
+    sheetTitle: isFaTour ? 'جدول کامل · ' : 'Full standings · ',
+    sheetOpen: isFaTour ? 'جدول کامل' : 'Full standings',
+    back: isFaTour ? 'بازگشت' : 'Back',
+    totalTeams: isFaTour
+      ? `تعداد کل شرکت‌کنندگان: ${toPersianNum(theme.standings.length)}+ تیم فعال`
+      : `Total participants: ${theme.standings.length}+ active teams`,
+    backToTable: (isFaTour ? 'بازگشت به میز ۳بعدی' : 'Back to the 3D table') as string,
+  };
   const isReady = readyByGame[activeGameId];
   const radiusClass = getCardRadiusClass(theme.shapeStyle);
 
@@ -172,7 +204,7 @@ export const GameNativeTournamentHub: React.FC<GameNativeTournamentHubProps> = (
               type="button"
               onClick={onBack}
               data-testid="tournament-back-btn"
-              aria-label="بازگشت به منوی اصلی"
+              aria-label={isFaTour ? 'بازگشت به منوی اصلی' : 'Back to the main menu'}
               className={`shrink-0 h-9 px-2.5 inline-flex items-center gap-1 text-[11.5px] font-bold transition cursor-pointer border ${radiusClass}`}
               style={{
                 backgroundColor: theme.colors.hudSurface,
@@ -181,11 +213,11 @@ export const GameNativeTournamentHub: React.FC<GameNativeTournamentHubProps> = (
               }}
             >
               <ArrowRight className="w-3.5 h-3.5 shrink-0" />
-              <span className="whitespace-nowrap">بازگشت</span>
+              <span className="whitespace-nowrap">{t.back}</span>
             </button>
 
             <nav
-              aria-label="انتخاب بازی تورنمنت"
+              aria-label={isFaTour ? 'انتخاب بازی تورنمنت' : 'Pick the tournament game'}
               data-testid="tournament-game-switcher"
               dir="ltr"
               className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5"
@@ -218,7 +250,7 @@ export const GameNativeTournamentHub: React.FC<GameNativeTournamentHubProps> = (
 
           {/* Row 2: Top Context Block (Zero Static Pill Clutter — Pure Game-Native Typography) */}
           <section
-            aria-label="اطلاعات تورنمنت فعال"
+            aria-label={isFaTour ? 'اطلاعات تورنمنت فعال' : 'Active tournament info'}
             data-testid="tournament-top-context"
             className="flex items-end justify-between gap-2 px-0.5"
           >
@@ -232,7 +264,7 @@ export const GameNativeTournamentHub: React.FC<GameNativeTournamentHubProps> = (
                 }}
                 className="text-[19px] leading-tight font-extrabold truncate"
               >
-                {theme.fullTitleFa}
+                {t.fullTitle}
               </h1>
               <div className="mt-0.5 flex items-center gap-1.5 text-[11.5px] font-medium text-white/80 truncate">
                 <span
@@ -240,12 +272,12 @@ export const GameNativeTournamentHub: React.FC<GameNativeTournamentHubProps> = (
                   style={{ color: readableAccent }}
                   className="font-bold truncate"
                 >
-                  {theme.subtitleFa}
+                  {t.subtitle}
                 </span>
                 <span aria-hidden="true" className="text-white/35">
                   ·
                 </span>
-                <span className="text-white/80 shrink-0">{theme.lobbyCountFa}</span>
+                <span className="text-white/80 shrink-0">{t.lobbyCount}</span>
               </div>
             </div>
 
@@ -262,14 +294,14 @@ export const GameNativeTournamentHub: React.FC<GameNativeTournamentHubProps> = (
                 {theme.shortLabel}
               </span>
               <span className="block mt-0.5 text-[10px] text-white/55 whitespace-nowrap">
-                {theme.roomLabelFa}
+                {t.roomLabel}
               </span>
             </div>
           </section>
 
           {/* Row 3: Squad / Club / Crew / Posse Lineup with Interactive Empty Slot */}
           <section
-            aria-label="ترکیب تیم شما"
+            aria-label={isFaTour ? 'ترکیب تیم شما' : 'Your squad lineup'}
             data-testid="tournament-roster-strip"
             style={{
               backgroundColor: theme.colors.hudSurface,
@@ -285,12 +317,12 @@ export const GameNativeTournamentHub: React.FC<GameNativeTournamentHubProps> = (
                 data-testid="tournament-roster-header"
                 className="text-[12px] font-extrabold text-white"
               >
-                {rosterSummary.headerTextFa}
+                {isFaTour ? rosterSummary.headerTextFa : rosterSummary.headerTextEn}
               </span>
               <span className="text-[10.5px] font-semibold" style={{ color: theme.colors.secondary }}>
                 {rosterSummary.filled === rosterSummary.total
-                  ? 'ترکیب تکمیل شد'
-                  : 'برای دعوت روی جایگاه خالی بزنید'}
+                  ? t.rosterDone
+                  : t.rosterInv}
               </span>
             </div>
 
@@ -315,7 +347,7 @@ export const GameNativeTournamentHub: React.FC<GameNativeTournamentHubProps> = (
                     >
                       <UserPlus className="w-3 h-3 shrink-0 mb-0.5" />
                       <span className="text-[9.5px] leading-tight font-extrabold truncate max-w-full">
-                        {slot.emptyLabel}
+                        {(isFaTour ? slot.emptyLabel : (slot.emptyLabelEn ?? slot.emptyLabel))}
                       </span>
                     </button>
                   );
@@ -357,7 +389,7 @@ export const GameNativeTournamentHub: React.FC<GameNativeTournamentHubProps> = (
                       }}
                       className="text-[10.5px] leading-none font-bold tracking-wide truncate max-w-full"
                     >
-                      {slot.roleLabel}
+                      {(isFaTour ? slot.roleLabel : (slot.roleLabelEn ?? slot.roleLabel))}
                     </span>
                     <span
                       dir="ltr"
@@ -383,12 +415,12 @@ export const GameNativeTournamentHub: React.FC<GameNativeTournamentHubProps> = (
             className="px-3 py-1 rounded-full border inline-flex items-center gap-2 text-[10.5px] font-semibold text-white/85"
           >
             <Rotate3d className="w-3.5 h-3.5 shrink-0" style={{ color: readableAccent }} />
-            <span>{theme.hologramTitleFa}</span>
+            <span>{t.hologramTitle}</span>
             <span aria-hidden="true" className="text-white/35">
               ·
             </span>
             <span style={{ color: readableAccent }} className="font-bold">
-              {theme.hologramSubtitleFa}
+              {t.hologramSubtitle}
             </span>
           </div>
         </div>
@@ -409,17 +441,17 @@ export const GameNativeTournamentHub: React.FC<GameNativeTournamentHubProps> = (
             >
               <span className="inline-flex items-center gap-1.5 truncate">
                 <ShieldCheck className="w-3.5 h-3.5 shrink-0" style={{ color: theme.colors.primary }} />
-                <span className="truncate">{theme.readyToastFa}</span>
+                <span className="truncate">{t.readyToast}</span>
               </span>
               <span className="text-[10px] shrink-0" style={{ color: theme.colors.primary }}>
-                تایید شد
+                
               </span>
             </div>
           )}
 
           {/* 3 Labeled Spatial Metrics Strip (Clean Hairline Dividers, Zero Spreadsheet Clutter) */}
           <section
-            aria-label="آمار کلیدی تورنمنت"
+            aria-label={isFaTour ? 'آمار کلیدی تورنمنت' : 'Tournament key stats'}
             data-testid="tournament-metrics-strip"
             style={{
               backgroundColor: theme.colors.hudSurface,
@@ -435,7 +467,7 @@ export const GameNativeTournamentHub: React.FC<GameNativeTournamentHubProps> = (
                 className="px-2 flex flex-col items-center justify-center text-center min-w-0"
               >
                 <span className="text-[10px] leading-tight font-semibold text-white/65 truncate max-w-full">
-                  {m.labelFa}
+                  {(isFaTour ? m.labelFa : (m.labelEn ?? m.labelFa))}
                 </span>
                 <span
                   dir={m.isLtrValue ? 'ltr' : 'rtl'}
@@ -472,7 +504,7 @@ export const GameNativeTournamentHub: React.FC<GameNativeTournamentHubProps> = (
               className={`flex-1 min-h-[46px] px-4 border text-[13.5px] font-extrabold transition-all active:scale-[0.99] inline-flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap ${radiusClass}`}
             >
               {isReady && <Check className="w-4 h-4 shrink-0" />}
-              <span className="truncate">{isReady ? theme.readyCtaFa : theme.primaryCtaFa}</span>
+              <span className="truncate">{isReady ? t.readyCta : t.primaryCta}</span>
             </button>
 
             <button
@@ -487,7 +519,7 @@ export const GameNativeTournamentHub: React.FC<GameNativeTournamentHubProps> = (
               className={`shrink-0 min-h-[46px] px-3.5 border text-[12px] font-bold hover:brightness-115 transition inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${radiusClass}`}
             >
               <ListOrdered className="w-4 h-4 shrink-0" style={{ color: theme.colors.primary }} />
-              <span>جدول کامل</span>
+              <span>{t.sheetOpen}</span>
             </button>
           </footer>
         </div>
@@ -498,7 +530,7 @@ export const GameNativeTournamentHub: React.FC<GameNativeTournamentHubProps> = (
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={`جدول کامل ${theme.fullTitleFa}`}
+          aria-label={`${t.sheetOpen} · ${t.fullTitle}`}
           data-testid="tournament-standings-sheet"
           className="absolute inset-0 z-30 flex flex-col justify-end"
           style={{ backgroundColor: 'rgba(3, 6, 11, 0.72)' }}
@@ -525,17 +557,17 @@ export const GameNativeTournamentHub: React.FC<GameNativeTournamentHubProps> = (
                     }}
                     className="text-[16px] font-extrabold truncate"
                   >
-                    جدول کامل · {theme.fullTitleFa}
+                    {t.sheetTitle}{t.fullTitle}
                   </h2>
                   <p className="mt-0.5 text-[11px] font-medium text-white/65 truncate">
-                    {theme.standingsHeaders.ruleBadgeFa}
+                    {t.ruleBadge}
                   </p>
                 </div>
 
                 <button
                   type="button"
                   data-testid="close-standings-sheet-btn"
-                  aria-label="بستن جدول کامل"
+                  aria-label={isFaTour ? 'بستن جدول کامل' : 'Close full standings'}
                   onClick={() => setIsStandingsOpen(false)}
                   className="w-9 h-9 rounded-full bg-white/8 border border-white/15 flex items-center justify-center text-white/85 hover:bg-white/15 cursor-pointer shrink-0"
                 >
@@ -547,10 +579,10 @@ export const GameNativeTournamentHub: React.FC<GameNativeTournamentHubProps> = (
             {/* Clean Column Header */}
             <div className="px-4 py-2 grid grid-cols-12 gap-1 text-[10.5px] font-bold text-white/55 border-b border-white/8 shrink-0">
               <span className="col-span-1 text-center">#</span>
-              <span className="col-span-5">{theme.standingsHeaders.teamColFa}</span>
-              <span className="col-span-2 text-center">{theme.standingsHeaders.stat1ColFa}</span>
-              <span className="col-span-2 text-center">{theme.standingsHeaders.stat2ColFa}</span>
-              <span className="col-span-2 text-left">{theme.standingsHeaders.scoreColFa}</span>
+              <span className="col-span-5">{t.teamCol}</span>
+              <span className="col-span-2 text-center">{t.stat1Col}</span>
+              <span className="col-span-2 text-center">{t.stat2Col}</span>
+              <span className="col-span-2 text-left">{t.scoreCol}</span>
             </div>
 
             {/* Standings Rows */}
@@ -588,7 +620,7 @@ export const GameNativeTournamentHub: React.FC<GameNativeTournamentHubProps> = (
                   </span>
 
                   <div className="col-span-5 min-w-0 flex items-center gap-1.5">
-                    <span className="font-bold text-white truncate">{row.nameFa}</span>
+                    <span className="font-bold text-white truncate">{isFaTour ? row.nameFa : (row.nameEn ?? row.nameFa)}</span>
                     <span
                       dir="ltr"
                       style={{ fontFamily: theme.fonts.display }}
@@ -629,14 +661,14 @@ export const GameNativeTournamentHub: React.FC<GameNativeTournamentHubProps> = (
             </div>
 
             <div className="px-4 py-2.5 border-t border-white/10 flex items-center justify-between text-[11px] text-white/60 shrink-0">
-              <span>تعداد کل شرکت‌کنندگان: {toPersianNum(theme.standings.length)}+ تیم فعال</span>
+              <span>{t.totalTeams}</span>
               <button
                 type="button"
                 onClick={() => setIsStandingsOpen(false)}
                 style={{ color: theme.colors.primary }}
                 className="font-extrabold cursor-pointer"
               >
-                بازگشت به میز ۳بعدی
+                {t.backToTable}
               </button>
             </div>
           </div>

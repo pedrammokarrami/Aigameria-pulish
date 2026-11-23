@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useLanguage } from '../../contexts/LanguageContext';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -29,6 +30,8 @@ const _targetTrim = new THREE.Color();
 export const TournamentHologramTable3D: React.FC<TournamentHologramTable3DProps> = ({
   gameId,
 }) => {
+  const { languageCode: lang3dCode } = useLanguage();
+  const lang3dFa = (lang3dCode || 'fa').startsWith('fa');
   const mountRef = useRef<HTMLDivElement | null>(null);
   const activeGameRef = useRef<Hologram3DGameId>(gameId);
   const transitionScaleRef = useRef<number>(0.84);
@@ -328,7 +331,7 @@ export const TournamentHologramTable3D: React.FC<TournamentHologramTable3DProps>
       ref={mountRef}
       data-testid="tournament-hologram-canvas"
       data-hologram-game={gameId}
-      aria-label={`میز هولوگرام سه‌بعدی ${GAME_THEMES[gameId].shortLabel}`}
+      aria-label={`${lang3dFa ? `میز هولوگرام سه‌بعدی ${GAME_THEMES[gameId].shortLabel}` : `3D hologram table ${GAME_THEMES[gameId].shortLabel}`}`}
       className="absolute inset-0 z-0 cursor-grab active:cursor-grabbing"
     />
   );
