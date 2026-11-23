@@ -32,7 +32,7 @@ interface LiveGrid3DProps {
   onPickBlip: (id: string) => void;
 }
 
-const FOG_COLOR = 0x080b10;
+const FOG_COLOR = 0x05070d;
 
 /** Convert lat/lng inside the grid to local meters relative to the center. */
 function toLocalMeters(center: GridCoord, radiusM: number, lat: number, lng: number): { x: number; z: number } {
@@ -77,7 +77,7 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, wa
     scene.fog = new THREE.FogExp2(FOG_COLOR, 0.00145);
 
     const camera = new THREE.PerspectiveCamera(48, container.clientWidth / Math.max(1, container.clientHeight), 1, 2500);
-    camera.position.set(0, 290, 270);
+    camera.position.set(0, 260, 300); // ~40° oblique isometric, not top-down
 
     let renderer: THREE.WebGLRenderer;
     try {
@@ -112,7 +112,7 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, wa
     // Ground plane + subtle tactical cyber grid (GTA radar floor)
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(2400, 2400),
-      new THREE.MeshStandardMaterial({ color: 0x0b0f17, roughness: 0.92, metalness: 0.1 })
+      new THREE.MeshStandardMaterial({ color: 0x070a12, roughness: 0.95, metalness: 0.05 })
     );
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -0.5;
@@ -130,11 +130,47 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, wa
 
     const gridRef = grid;
     if (gridRef) {
+      // ── Carto Dark Matter basemap tiles (keyless, fully dark) laid on the ground ──
+      const loader = new THREE.TextureLoader();
+      loader.setCrossOrigin('anonymous');
+      const z = 16;
+      const n = 2 ** z;
+      const tileX = Math.floor((((gridRef.center.lng + 180) / 360) * n));
+      const tileY = Math.floor(((1 - Math.log(Math.tan((gridRef.center.lat * Math.PI) / 180) + 1 / Math.cos((gridRef.center.lat * Math.PI) / 180)) / Math.PI) / 2) * n);
+      const metersPerTile = (40075016.686 / n) * Math.cos((gridRef.center.lat * Math.PI) / 180);
+      const tileMeters = (pt: { lat: number; lng: number }) => toLocalMeters(gridRef.center, gridRef.radiusM, pt.lat, pt.lng);
+      const proj = (x: number, y: number) => {
+        const lng = (x / n) * 360 - 180;
+        const latRad = Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n)));
+        return tileMeters({ lat: (latRad * 180) / Math.PI, lng });
+      };
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          const tx = tileX + dx;
+          const ty = tileY + dy;
+          const nw = proj(tx, ty);
+          const se = proj(tx + 1, ty + 1);
+          const w = Math.abs(se.x - nw.x);
+          const h = Math.abs(se.z - nw.z);
+          const cx = (nw.x + se.x) / 2;
+          const cz = (nw.z + se.z) / 2;
+          const tex = loader.load(`https://basemaps.cartocdn.com/dark_all/${z}/${tx}/${ty}.png`, undefined, undefined, undefined); // silent fail → dark ground stays
+          tex.colorSpace = THREE.SRGBColorSpace;
+          const tile = new THREE.Mesh(
+            new THREE.PlaneGeometry(w, h),
+            new THREE.MeshBasicMaterial({ map: tex, depthWrite: false })
+          );
+          tile.rotation.x = -Math.PI / 2; // texture top (+Y) → -Z (north)
+          tile.position.set(cx, -0.35, cz);
+          scene.add(tile);
+        }
+      }
+
       // ── Real buildings: extruded footprints, GTA dark tactile material ──
-      const wallMat = new THREE.MeshStandardMaterial({ color: 0x151b26, roughness: 0.75, metalness: 0.25 });
-      const roofMat = new THREE.MeshStandardMaterial({ color: 0x1c2433, roughness: 0.8, metalness: 0.2 });
-      const edgeMat = new THREE.LineBasicMaterial({ color: 0x475569, transparent: true, opacity: 0.75 });
-      const highlightEdgeMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.55 });
+      const wallMat = new THREE.MeshStandardMaterial({ color: 0x0d1322, roughness: 0.6, metalness: 0.35 });
+      const roofMat = new THREE.MeshStandardMaterial({ color: 0x111a2c, roughness: 0.7, metalness: 0.3 });
+      const edgeMat = new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.8 }); // neon cyan
+      const highlightEdgeMat = new THREE.LineBasicMaterial({ color: 0x34d399, transparent: true, opacity: 0.85 }); // neon emerald (tall)
       const BLD_CAP = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? 60 : 140;
       gridRef.buildings.slice(0, BLD_CAP).forEach((b) => {
         const pts = b.points;
@@ -172,8 +208,9 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, wa
       // ── Real roads: crisp ribbons (footways skipped, main roads wider/lighter) ──
       const FOOTWAY_CLASSES = new Set(['footway', 'steps', 'path', 'cycleway']);
       const MAIN_CLASSES = new Set(['primary', 'secondary', 'trunk', 'motorway', 'tertiary']);
-      const roadMat = new THREE.MeshLambertMaterial({ color: 0x334155 });
-      const primaryMat = new THREE.MeshLambertMaterial({ color: 0x64748b });
+      const roadMat = new THREE.MeshLambertMaterial({ color: 0x1a2233 });
+      const primaryMat = new THREE.MeshLambertMaterial({ color: 0x232d3f });
+      const neonRoadMat = new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.5 });
       const RDS_CAP = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? 50 : 110;
       gridRef.roads.slice(0, RDS_CAP).forEach((r) => {
         if (r.points.length < 4) return;
@@ -189,6 +226,10 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, wa
         const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 14, width / 2, 4, false), isMain ? primaryMat : roadMat);
         tube.scale.y = 0.16; // flatten to a ribbon
         roadsGroup.add(tube);
+        // neon border along the street
+        const neon = new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(24)), neonRoadMat);
+        neon.position.y = 0.9;
+        roadsGroup.add(neon);
       });
 
       // ── Traffic: GTA headlight/taillight dots gliding on real roads ──
