@@ -152,7 +152,8 @@ export const CoachAnswerBoard: React.FC<CoachAnswerBoardProps> = ({ answerBlock,
   const isFaLines = answerBlock.linesFa?.length > 0;
   const { languageCode: boardLang } = useLanguage();
   const wantsFa = boardLang === 'fa' || boardLang.startsWith('fa');
-  const lines = isFaLines ? answerBlock.linesFa : answerBlock.linesEn;
+  // Always follow the APP language — never auto-pick Persian (user bug report).
+  const lines = wantsFa ? answerBlock.linesFa : (answerBlock.linesEn?.length ? answerBlock.linesEn : answerBlock.linesFa);
 
   const formationState =
     answerBlock.intent === 'formation'

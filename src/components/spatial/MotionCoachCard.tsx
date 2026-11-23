@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { AlertTriangle, Volume2 } from 'lucide-react';
 import type { MotionCoachPayload } from '../../agents/motionCoachAgent';
 import type { ChapterPhaseId } from '../../agents/proClipAnalyzerAgent';
@@ -18,6 +19,8 @@ export const MotionCoachCard: React.FC<MotionCoachCardProps> = ({
   isSpeaking,
   onToggleSpeak,
 }) => {
+  const { languageCode: mccLang } = useLanguage();
+  const mccFa = (mccLang || 'fa').startsWith('fa');
   const [syncHud, setSyncHud] = useState<{
     progressPct: number;
     inSweetSpot: boolean;
@@ -112,7 +115,7 @@ export const MotionCoachCard: React.FC<MotionCoachCardProps> = ({
           }`}
         >
           <Volume2 className="w-3.5 h-3.5 shrink-0" />
-          <span>{isSpeaking ? 'در حال پخش' : 'توضیح صوتی'}</span>
+          <span>{mccFa ? (isSpeaking ? 'در حال پخش' : 'توضیح صوتی') : (isSpeaking ? 'Playing voice' : 'Voice explain')}</span>
         </button>
 
         <div
