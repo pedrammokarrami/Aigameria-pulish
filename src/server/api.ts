@@ -452,6 +452,129 @@ apiV1.get('/users/me/security-log', requireAuth, (req, res) => {
 });
 
 /* ------------------------------------------------------------------ */
+/* Controller trainer — 3D stage sequences (Petros-gamepad contract)   */
+/* GET /api/v1/controller-sequences/:device?gameId=&realm=             */
+/* Returns the INTEGRATION.md envelope: {sequence, presets, ...}       */
+/* ------------------------------------------------------------------ */
+
+/** Motion-coach badge text (e.g. "L1", "Counter-Strafe + Burst") → trainer mesh ids. */
+function resolveTrainerMeshes(text: string, device: 'ps5' | 'xbox' | 'pc' | 'ipad'): string[] {
+  const up = text.toUpperCase();
+  const table: Array<[RegExp, string]> = [
+    [/\bL1\b|LB\b|بامپر چپ/, device === 'xbox' ? 'BTN_LB' : 'BTN_L1'],
+    [/\bR1\b|RB\b|بامپر راست/, device === 'xbox' ? 'BTN_RB' : 'BTN_R1'],
+    [/\bL2\b|LT\b|ماشه چپ/, device === 'xbox' ? 'BTN_LT' : 'BTN_L2'],
+    [/\bR2\b|RT\b|ماشه راست|شلیک/, device === 'xbox' ? 'BTN_RT' : 'BTN_R2'],
+    [/TRIANGLE|△/, 'BTN_TRIANGLE'],
+    [/CIRCLE|◯/, 'BTN_CIRCLE'],
+    [/CROSS|✕/, 'BTN_CROSS'],
+    [/SQUARE|▢/, 'BTN_SQUARE'],
+    [/\bCTRL\b|نشستن/, 'KEY_CTRL'],
+    [/\bSHIFT\b|دویدن|اسپرینت|ESTRIFE/, 'KEY_SHIFT'],
+    [/\bSPACE\b|پرش|JUMP/, 'KEY_SPACE'],
+    [/\bW\b|جلو|FORWARD/, 'KEY_W'],
+    [/\bA\b|چپ\b.*STRIFE|STRIFE.*چپ/, 'KEY_A'],
+    [/\bD\b|راست\b.*STRIFE|STRIFE.*راست/, 'KEY_D'],
+    [/\bLMB\b|شلیک|FIRE|Burst/, device === 'pc' ? 'BTN_LMB' : 'BTN_R2'],
+    [/\bRMB\b|نشانه|AIM/, device === 'pc' ? 'BTN_RMB' : 'BTN_L2'],
+    [/\bR\b|خشاب|RELOAD/, 'KEY_R'],
+    [/\bE\b|تعامل/, 'KEY_E'],
+    [/\bQ\b|توانایی/, 'KEY_Q'],
+    [/\bF\b|ضربه نزدیک|MELEE/, 'KEY_F'],
+  ];
+  const ids: string[] = [];
+  for (const [re, id] of table) {
+    if (re.test(up) && !ids.includes(id)) ids.push(id);
+  }
+  return ids.length ? ids : [device === 'xbox' ? 'BTN_RT' : device === 'pc' ? 'KEY_SHIFT' : 'BTN_R2'];
+}
+
+function motionPayloadToTrainerEnvelope(
+  payload: {
+    gameShortLabel: string;
+    archetype: string;
+    cycleDurationMs: number;
+    sweetSpotStartPct: number;
+    sweetSpotEndPct: number;
+    timingWindowMs: number;
+    triggerBadge: string;
+    executionBadge: string;
+  },
+  device: 'ps5' | 'xbox' | 'pc' | 'ipad'
+) {
+  const duration = Math.max(1600, Math.round(payload.cycleDurationMs) || 3800);
+  const sweetStart = Math.round((payload.sweetSpotStartPct / 100) * duration);
+  const sweetEnd = Math.round((payload.sweetSpotEndPct / 100) * duration);
+  const triggerMeshes = resolveTrainerMeshes(payload.triggerBadge, device);
+  const execMeshes = resolveTrainerMeshes(payload.executionBadge, device);
+  const events = [
+    {
+      id: 'trig-1',
+      target_mesh: triggerMeshes[0],
+      label: payload.triggerBadge,
+      description: payload.triggerBadge,
+      start_ms: Math.max(0, sweetStart - Math.round(payload.timingWindowMs || 400)),
+      end_ms: sweetStart,
+      color: '#38bdf8',
+    },
+    {
+      id: 'sweet-1',
+      target_mesh: triggerMeshes[triggerMeshes.length - 1],
+      label: 'Sweet spot',
+      description: 'Sweet-spot hold window',
+      start_ms: sweetStart,
+      end_ms: sweetEnd,
+      color: '#34d399',
+    },
+    ...execMeshes.slice(0, 2).map((mesh, i) => ({
+      id: `exec-${i + 1}`,
+      target_mesh: mesh,
+      label: payload.executionBadge,
+      description: payload.executionBadge,
+      start_ms: sweetEnd,
+      end_ms: Math.min(duration, sweetEnd + Math.round((duration - sweetEnd) / (execMeshes.length || 1))),
+      color: '#f472b6',
+    })),
+  ];
+  return {
+    sequence: {
+      title: `${payload.gameShortLabel} — ${payload.archetype}`,
+      duration_ms: duration,
+      events,
+    },
+    presets: [
+      {
+        id: 'active-combo',
+        shortLabel: '1. Active combo',
+        sequence: { title: `${payload.gameShortLabel} — ${payload.archetype}`, duration_ms: duration, events },
+      },
+    ],
+    activePresetId: 'active-combo',
+  };
+}
+
+apiV1.get('/controller-sequences/:device', async (req, res, next) => {
+  try {
+    const device = String(req.params.device ?? '').toLowerCase();
+    if (!['ps5', 'xbox', 'pc', 'ipad'].includes(device)) {
+      return notFound(res, `Unknown device ${device}.`);
+    }
+    const { runMotionCoachAgent } = await import('../agents/motionCoachAgent.ts');
+    const { normalizeCoachGameId } = await import('../services/liveMetaSyncService.ts');
+    const rawRealm = String(req.query.realm ?? '');
+    const realm = (['sports', 'shooter', 'strategy', 'story'] as const).find((r) => r === rawRealm);
+    const payload = await runMotionCoachAgent({
+      gameId: normalizeCoachGameId(req.query.gameId),
+      gameName: typeof req.query.name === 'string' ? req.query.name.trim() : undefined,
+      realm,
+    }, { force: false });
+    res.json(motionPayloadToTrainerEnvelope(payload, device as 'ps5' | 'xbox' | 'pc' | 'ipad'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* ------------------------------------------------------------------ */
 /* Unknown v1 routes → structured 404 (never falls through to SPA)     */
 /* ------------------------------------------------------------------ */
 
