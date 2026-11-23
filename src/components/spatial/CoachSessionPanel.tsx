@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { GraduationCap, Play, RefreshCw, Send, Search } from 'lucide-react';
 import { toPersianDigits } from '../../services/liveMetaSyncService';
 import { QuestionSuggestions } from './QuestionSuggestions';
@@ -50,6 +51,7 @@ export const CoachSessionPanel: React.FC<CoachSessionPanelProps> = ({
   accentHex,
   onSubmitQuestion,
 }) => {
+  const { languageCode: sessionLang } = useLanguage();
   const [session, setSession] = useState<CoachSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeModuleId, setActiveModuleId] = useState('finishing');
@@ -63,6 +65,8 @@ export const CoachSessionPanel: React.FC<CoachSessionPanelProps> = ({
     setLoading(true);
     setPlayingClipId(null);
     const params = new URLSearchParams({ gameId, realm, name: gameName, q: problemQuery });
+    // Coach session language follows the app UI language (English UI → English coach page)
+    if (sessionLang) params.set('lang', sessionLang.slice(0, 2));
     fetch(`/api/ai/coach-session?${params.toString()}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('bad status'))))
       .then((body: SessionData) => {

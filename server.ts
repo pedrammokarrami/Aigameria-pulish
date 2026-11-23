@@ -1399,9 +1399,11 @@ document.getElementById('r').innerHTML=rows.join('');
           ? rawRealm
           : 'sports';
       const force = req.query.force === '1' || req.query.force === 'true';
+      const langParam = String(req.query.lang ?? '').toLowerCase().slice(0, 2);
+      const forceLang = langParam === 'fa' || langParam === 'en' ? (langParam as 'fa' | 'en') : undefined;
       const session = await buildCoachSession(
         { gameId, gameName, realm, query: userQuery },
-        { state: getEcosystemState(), force }
+        { state: getEcosystemState(), force, forceLang }
       );
       res.json({ session });
     } catch (err) {

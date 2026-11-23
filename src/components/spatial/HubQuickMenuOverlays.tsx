@@ -277,7 +277,7 @@ export const Ps5GameControlCenter: React.FC<Ps5GameControlCenterProps> = ({
                 type="button"
                 data-testid="ps5-close-btn"
                 onClick={handleClose}
-                aria-label="بستن منوی کنترل سنتر"
+                aria-label={languageCode?.startsWith('fa') ? 'بستن منوی کنترل سنتر' : 'Close the control center menu'}
                 className="w-10 h-10 rounded-full bg-white/[0.08] hover:bg-white/20 border border-white/20 flex items-center justify-center text-white cursor-pointer transition"
               >
                 <X className="w-4 h-4" />
@@ -546,7 +546,7 @@ export const SpotifyAudioMenuSheet: React.FC<SpotifyAudioMenuSheetProps> = ({
                 type="button"
                 data-testid="spotify-close-btn"
                 onClick={onClose}
-                aria-label="بستن منوی موزیک"
+                aria-label={languageCode?.startsWith('fa') ? 'بستن منوی موزیک' : 'Close the music menu'}
                 className="w-9 h-9 rounded-full bg-[#242424] hover:bg-[#333333] flex items-center justify-center text-white cursor-pointer transition shrink-0"
               >
                 <X className="w-4 h-4" />

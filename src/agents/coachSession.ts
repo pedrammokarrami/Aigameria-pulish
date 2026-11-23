@@ -244,17 +244,20 @@ export async function buildCoachSession(
     realm: RealmId;
     query?: string;
   },
-  options: { state: EcosystemState; fetcher?: typeof fetch; force?: boolean }
+  options: { state: EcosystemState; fetcher?: typeof fetch; force?: boolean; forceLang?: 'fa' | 'en' }
 ): Promise<CoachSession> {
   const realm = input.realm;
   const gameId = input.gameId;
   const gameName = input.gameName ?? gameId.toUpperCase();
   const query = (input.query ?? '').trim();
-  const isFa = query ? isFaQuery(query) : true;
+  // Language follows the app UI when forced (user mandate: English UI → English coach).
+  const isFa = options.forceLang
+    ? options.forceLang === 'fa'
+    : query ? isFaQuery(query) : true;
   const state = options.state;
   const started = Date.now();
 
-  const cacheKey = `${gameId}:${realm}:${query.toLowerCase()}`;
+  const cacheKey = `${gameId}:${realm}:${query.toLowerCase()}:${isFa ? 'fa' : 'en'}`;
   const cached = sessionCache.get(cacheKey);
   if (!options.force && cached && Date.now() - cached.at < CLIP_CACHE_TTL_MS) {
     return cached.session;

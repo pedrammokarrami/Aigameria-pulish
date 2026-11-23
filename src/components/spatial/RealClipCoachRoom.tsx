@@ -896,11 +896,11 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
             <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <Gamepad2 className="w-4 h-4" style={{ color: accent }} />
-                <span className="text-xs font-black text-white">انتخاب بازی (تمام بازی‌های PC)</span>
+                <span className="text-xs font-black text-white">{isFa ? 'انتخاب بازی (تمام بازی‌های PC)' : 'Pick a game (all PC games)'}</span>
               </div>
               <button
                 type="button"
-                aria-label="بستن انتخاب بازی"
+                aria-label={isFa ? 'بستن انتخاب بازی' : 'Close game picker'}
                 onClick={() => setIsGameDropdownOpen(false)}
                 className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center cursor-pointer"
               >
