@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 
 /**
@@ -96,4 +97,15 @@ test('strict: skill category chips resolve via getCategoryLabel in English', () 
     const label = getCategoryLabel(id, 'دسته فارسی', EN);
     assert.ok(!FA_RE.test(label), `chip ${id} falls back to Persian`);
   }
+});
+
+test('strict: coach session panel module titles/stats and clip fallback are language-gated', () => {
+  const src = readFileSync('src/components/spatial/CoachSessionPanel.tsx', 'utf8');
+  // module tab + title + stats must branch on the language flag
+  assert.ok(/isFa \? m\.titleFa : m\.titleEn/.test(src), 'module tab label not language-gated');
+  assert.ok(/isFa \? activeModule\.titleFa : activeModule\.titleEn/.test(src), 'module title not language-gated');
+  assert.ok(/isFa \? st\.labelFa : st\.labelEn/.test(src), 'stat label not language-gated');
+  const clip = readFileSync('src/components/spatial/RealClipCoachRoom.tsx', 'utf8');
+  assert.ok(clip.includes('In-page playback failed'), 'English fallback card missing');
+  assert.ok(clip.includes('Open clip on YouTube'), 'English fallback button missing');
 });
