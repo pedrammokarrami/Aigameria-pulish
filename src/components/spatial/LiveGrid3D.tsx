@@ -59,6 +59,19 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, wa
     if (!container) return;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    // Weak-phone guard: heavy WebGL radar (140 extruded buildings + fog + DPR2)
+    // freezes low-end phone GPUs. Phones get the crisp 2D SVG grid + all HUD
+    // features instead; desktops keep the full 3D radar.
+    const ua = navigator.userAgent;
+    const isPhone = /Android|iPhone|iPad|iPod/i.test(ua);
+    const weakCores = (navigator.hardwareConcurrency ?? 8) <= 4;
+    const devMem = (navigator as unknown as { deviceMemory?: number }).deviceMemory;
+    const lowMemory = devMem !== undefined && devMem <= 4;
+    if (isPhone && (weakCores || lowMemory || !('requestAnimationFrame' in window))) {
+      container.dataset.webgl = 'skipped-lowpower';
+      return;
+    }
+
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(FOG_COLOR);
     scene.fog = new THREE.FogExp2(FOG_COLOR, 0.00145);
@@ -68,13 +81,15 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, wa
 
     let renderer: THREE.WebGLRenderer;
     try {
-      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+      const onPhone = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      renderer = new THREE.WebGLRenderer({ antialias: !onPhone, powerPreference: 'high-performance' });
     } catch {
       container.dataset.webgl = 'unsupported'; // visible hint for weak/phone browsers
       return; // no WebGL — the 2D SVG grid remains as fallback
     }
     renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const onPhoneInit = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    renderer.setPixelRatio(onPhoneInit ? 1 : Math.min(window.devicePixelRatio, 2));
     container.appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -120,7 +135,8 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, wa
       const roofMat = new THREE.MeshStandardMaterial({ color: 0x1c2433, roughness: 0.8, metalness: 0.2 });
       const edgeMat = new THREE.LineBasicMaterial({ color: 0x475569, transparent: true, opacity: 0.75 });
       const highlightEdgeMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.55 });
-      gridRef.buildings.slice(0, 140).forEach((b) => {
+      const BLD_CAP = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? 60 : 140;
+      gridRef.buildings.slice(0, BLD_CAP).forEach((b) => {
         const pts = b.points;
         if (pts.length < 8) return;
         const toLocal = toLocalMeters(gridRef.center, gridRef.radiusM, pts[0], pts[1]);
@@ -158,7 +174,8 @@ const LiveGrid3D: React.FC<LiveGrid3DProps> = ({ grid, blips, selectedBlipId, wa
       const MAIN_CLASSES = new Set(['primary', 'secondary', 'trunk', 'motorway', 'tertiary']);
       const roadMat = new THREE.MeshLambertMaterial({ color: 0x334155 });
       const primaryMat = new THREE.MeshLambertMaterial({ color: 0x64748b });
-      gridRef.roads.slice(0, 110).forEach((r) => {
+      const RDS_CAP = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? 50 : 110;
+      gridRef.roads.slice(0, RDS_CAP).forEach((r) => {
         if (r.points.length < 4) return;
         if (r.roadClass && FOOTWAY_CLASSES.has(r.roadClass)) return;
         const isMain = !!r.roadClass && MAIN_CLASSES.has(r.roadClass);
