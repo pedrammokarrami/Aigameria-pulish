@@ -1092,6 +1092,7 @@ export function App() {
   return (
     <div
       data-realm={activeRealm}
+      data-build={__BUILD_ID__}
       data-testid="aipetros-spatial-root"
       aria-busy={!boot.ready}
       className="relative w-full h-dvh min-h-dvh overflow-hidden select-none"
