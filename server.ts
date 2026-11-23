@@ -1,5 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
+import { spawn } from 'child_process';
+import os from 'os';
 import { triLayerQuery } from './src/agents/triLayerQuery';
 import { detectGameAmbiguity } from './src/agents/gameAmbiguity';
 import type { LobbyGameId } from './src/utils/lobbySkillCatalog';
@@ -134,6 +136,41 @@ async function startServer() {
       database: db,
       wsPresence: chatPresenceCount(),
     });
+  });
+
+  // Neural TTS proxy — rany2/edge-tts (Microsoft Edge neural voices, free &
+  // keyless). Persists MP3s to a temp dir so each text plays instantly after
+  // the first request. Only the coach uses this.
+  const ttsCacheDir = path.join(os.tmpdir(), 'aipetros-tts');
+  if (!fs.existsSync(ttsCacheDir)) fs.mkdirSync(ttsCacheDir, { recursive: true });
+  app.get('/api/tts', async (req, res) => {
+    try {
+      const text = String(req.query.text ?? '').slice(0, 900).trim();
+      const lang = String(req.query.lang ?? 'en').toLowerCase().slice(0, 2);
+      if (!text || text.length < 2) return res.status(400).json({ error: 'text required' });
+      // Persona voices: Ferguson-style deep male for the sports coach.
+      const voice = String(req.query.voice ?? '') || (lang === 'fa'
+        ? 'fa-IR-FaridNeural'
+        : 'en-US-ChristopherNeural');
+      const crypto = await import('crypto');
+      const hash = crypto.createHash('sha1').update(`${voice}:${text}`).digest('hex');
+      const file = path.join(ttsCacheDir, `${hash}.mp3`);
+      if (!fs.existsSync(file)) {
+        await new Promise<void>((resolve, reject) => {
+          const proc = spawn('edge-tts', ['--voice', voice, '--text', text, '--write-media', file]);
+          let stderr = '';
+          proc.stderr?.on('data', (d) => { stderr += String(d); });
+          proc.on('error', (err) => reject(err));
+          proc.on('close', (code) => (code === 0 && fs.existsSync(file)) ? resolve() : reject(new Error(`edge-tts exited ${code}: ${stderr.slice(0, 200)}`)));
+          setTimeout(() => reject(new Error('edge-tts timeout')), 20000).unref?.();
+        });
+      }
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      fs.createReadStream(file).pipe(res);
+    } catch (err) {
+      res.status(502).json({ error: err instanceof Error ? err.message : 'tts failed' });
+    }
   });
 
   // Fast health probe route (legacy path kept for UI compatibility)

@@ -255,6 +255,7 @@ export function App() {
   const [isListeningVoice, setIsListeningVoice] = useState<boolean>(false);
 
   const speakTimerRef = useRef<number | null>(null);
+  const neuralAudioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
 
   const realmCfg = REALM_CONFIGS[activeRealm];
@@ -429,6 +430,15 @@ export function App() {
     } catch {
       // ignore
     }
+    try {
+      if (neuralAudioRef.current) {
+        neuralAudioRef.current.pause();
+        neuralAudioRef.current.onended = null;
+        neuralAudioRef.current = null;
+      }
+    } catch {
+      // ignore
+    }
     setIsSpeaking(false);
   }, []);
 
@@ -437,39 +447,49 @@ export function App() {
       stopSpeaking();
       setIsSpeaking(true);
 
-      // Robotic sine "voice" beep removed (user complaint 2026-11): speech only.
-      let usedSpeech = false;
-      try {
-        usedSpeech = speakWithPersona('tacticalCoach', text, appLang);
-        if (usedSpeech) {
-          // persona utterance end handled inside engine; reset the UI flag on a timer
-          speakTimerRef.current = window.setTimeout(() => setIsSpeaking(false), 9000);
-        }
-      } catch {
-        usedSpeech = false;
-      }
-      if (!usedSpeech) {
+      // PRIMARY voice: rany2/edge-tts neural audio via our own server proxy
+      // (free & keyless, Microsoft Edge neural voices — Ferguson-style quality).
+      const speechAudio = new Audio();
+      neuralAudioRef.current = speechAudio;
+      let started = false;
+      const fallbackToLocal = () => {
+        if (started) return;
+        started = true;
         try {
-          if ('speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined') {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.pitch = realmCfg.coachVoicePitch;
-            utterance.rate = realmCfg.coachVoiceRate;
-            utterance.onend = () => setIsSpeaking(false);
-            utterance.onerror = () => setIsSpeaking(false);
-            window.speechSynthesis.speak(utterance);
-            usedSpeech = true;
-          }
+          speakWithPersona('tacticalCoach', text, appLang);
         } catch {
-          usedSpeech = false;
+          // ignore
         }
-      }
-
-      speakTimerRef.current = window.setTimeout(
-        () => setIsSpeaking(false),
-        usedSpeech ? 5500 : 3400
-      );
+        speakTimerRef.current = window.setTimeout(() => setIsSpeaking(false), 5500);
+      };
+      const timeoutId = window.setTimeout(fallbackToLocal, 4000);
+      fetch(
+        `/api/tts?lang=${encodeURIComponent(appLang.slice(0, 2))}&text=${encodeURIComponent(text.slice(0, 900))}`
+      )
+        .then(async (r) => {
+          if (!r.ok) throw new Error('tts-bad-status');
+          const blob = await r.blob();
+          if (!blob || blob.size < 512) throw new Error('tts-empty-audio');
+          return URL.createObjectURL(blob);
+        })
+        .then((url) => {
+          if (neuralAudioRef.current !== speechAudio) return; // superseded
+          window.clearTimeout(timeoutId);
+          started = true;
+          speechAudio.src = url;
+          speechAudio.onended = () => setIsSpeaking(false);
+          speechAudio.onerror = () => setIsSpeaking(false);
+          void speechAudio.play().catch(() => {
+            setIsSpeaking(false);
+            fallbackToLocal();
+          });
+        })
+        .catch(() => {
+          window.clearTimeout(timeoutId);
+          fallbackToLocal();
+        });
     },
-    [activeRealm, realmCfg.coachVoicePitch, realmCfg.coachVoiceRate, stopSpeaking]
+    [appLang, stopSpeaking]
   );
 
   useEffect(() => {
