@@ -40,6 +40,20 @@ def add_to_blocklist(user_id) -> None:
     BLOCKLIST_FILE.parent.mkdir(exist_ok=True)
     BLOCKLIST_FILE.write_text(json.dumps(sorted(bl)), encoding='utf-8')
     print(f'blocked user {user_id} added to blocklist')
+# Sender allowlist (user mandate 2026-11-24): the bridge reads ONLY messages
+# from pedram's own chat. Every other DM/group/channel is ignored entirely —
+# not enqueued, not answered, not forwarded to the agent webhook.
+# Override/extend with env BRIDGE_ALLOWED_CHATS="id1,id2".
+OWNER_CHAT_ID = 86871707
+ALLOWED_CHATS: set[int] = {OWNER_CHAT_ID}
+try:
+    for _cid in (os.environ.get('BRIDGE_ALLOWED_CHATS') or '').split(','):
+        _cid = _cid.strip()
+        if _cid:
+            ALLOWED_CHATS.add(int(_cid))
+except Exception:
+    pass
+
 INBOX = QUEUE / 'inbox.jsonl'
 WEBHOOK_FILE = BRIDGE / 'webhook_url.txt'
 SESSION_FILE = BRIDGE / 'session_new.txt'
@@ -161,7 +175,10 @@ def is_prompt_chat(chat_id) -> bool:
     # Telegram supergroup/channel ids start with -100; DMs are positive.
     if cid <= 0:
         return False
-    return str(cid) not in load_blocklist()
+    if str(cid) in load_blocklist():
+        return False
+    # Strict sender allowlist: only pedram's chat is ever a prompt.
+    return cid in ALLOWED_CHATS
 
 
 def load_webhook() -> str:
@@ -224,10 +241,11 @@ async def on_saved(event):
     if not text or text.startswith('\U0001F916'):
         return
     last_chat_id = event.chat_id
-    enqueue(text, event.chat_id)
     if not is_prompt_chat(event.chat_id):
-        print(f'group chat ignored (no auto-reply): {event.chat_id}')
+        # Not pedram's chat -> ignore completely (no enqueue, no reply).
+        print(f'non-allowed chat ignored: {event.chat_id}')
         return
+    enqueue(text, event.chat_id)
     accepted = await push_to_webhook(text, event.chat_id)
     if accepted:
         # Instant ack so the user knows the request reached the agent.
@@ -247,10 +265,11 @@ async def on_any_message(event):
     if not text or text.startswith('\U0001F916'):
         return
     last_chat_id = event.chat_id
-    enqueue(text, event.chat_id)
     if not is_prompt_chat(event.chat_id):
-        print(f'group chat ignored (no auto-reply): {event.chat_id}')
+        # Not pedram's chat -> ignore completely (no enqueue, no reply).
+        print(f'non-allowed chat ignored: {event.chat_id}')
         return
+    enqueue(text, event.chat_id)
     accepted = await push_to_webhook(text, event.chat_id)
     if accepted:
         await deliver('در حال بررسی…', event.chat_id)
