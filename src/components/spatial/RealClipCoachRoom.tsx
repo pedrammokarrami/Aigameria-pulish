@@ -227,9 +227,19 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
 
   const [iframeFailed, setIframeFailed] = useState<boolean>(false);
   const iframeLoadedRef = useRef<boolean>(false);
+  const ytHandshakeRef = useRef<HTMLIFrameElement | null>(null);
+  useEffect(() => {
+    const onMsg = (ev: MessageEvent) => {
+      if (!/youtube|youtube-nocookie/.test(ev.origin)) return;
+      iframeLoadedRef.current = true; // any YouTube API message proves the player is alive
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
   const handleStartVideoPlayback = () => {
     onClearUploadedMedia();
     iframeLoadedRef.current = false;
+    ytHandshakeRef.current = null;
     setIframeFailed(false);
     setIsPlaying(true);
     setPlayerNonce((n) => n + 1);
@@ -270,7 +280,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
     activeClip?.chapters.find((c) => c.id === activePhase) ?? activeClip?.chapters[0] ?? null;
 
   const embedUrl = activeClip
-    ? `https://www.youtube-nocookie.com/embed/${activeClip.youtubeId}?start=${activeStartSec}&autoplay=1&rel=0&playsinline=1&modestbranding=1`
+    ? `https://www.youtube-nocookie.com/embed/${activeClip.youtubeId}?start=${activeStartSec}&autoplay=1&rel=0&playsinline=1&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`
     : null;
 
   const cinematicCoverUrl =
@@ -421,6 +431,12 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
                   allowFullScreen
                   onLoad={() => {
                     iframeLoadedRef.current = true;
+                  }}
+                  ref={(el) => {
+                    if (el && !ytHandshakeRef.current) {
+                      ytHandshakeRef.current = el;
+                      try { el.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'aipetros' }), '*'); } catch { /* ignore */ }
+                    }
                   }}
                 />
               ) : isPlaying && activeClip && iframeFailed ? (
