@@ -1757,8 +1757,15 @@ export class ErrorOverlay {
         res.end(gz);
       });
     });
-    app.use(express.static(distDir));
+    app.use(express.static(distDir, {
+      setHeaders: (res, filePath) => {
+        // iOS Safari heuristically caches HTML that has no Cache-Control —
+        // that is how phones end up on an old bundle forever.
+        if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-store');
+      },
+    }));
     app.get('*', (_req, res) => {
+      res.setHeader('Cache-Control', 'no-store');
       res.sendFile(path.join(distDir, 'index.html'));
     });
   }
