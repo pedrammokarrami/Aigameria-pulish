@@ -137,6 +137,53 @@ async function startServer() {
   });
 
   // Fast health probe route (legacy path kept for UI compatibility)
+  // Free keyless translation proxy (Google gtx endpoint) for coach tips.
+  // Persian-first UI: any English coach tip is translated on demand and cached
+  // in memory so the same tip never hits the network twice.
+  const translateCache = new Map<string, string>();
+  app.get('/api/translate', async (req, res) => {
+    const q = String(req.query.q ?? '').slice(0, 600);
+    const to = String(req.query.to ?? 'fa') === 'en' ? 'en' : 'fa';
+    if (!q.trim()) { res.json({ ok: false }); return; }
+    const cacheKey = to + ':' + q;
+    const cached = translateCache.get(cacheKey);
+    if (cached) { res.json({ ok: true, text: cached }); return; }
+    let translated = '';
+    try {
+      // primary: MyMemory (free, keyless)
+      const mm = await fetch(
+        'https://api.mymemory.translated.net/get?langpair=en|' + to + '&q=' + encodeURIComponent(q),
+        { headers: { 'User-Agent': 'AIPETROS-Translate/1.0' }, signal: AbortSignal.timeout(6000) }
+      );
+      if (!mm.ok) throw new Error('mymemory ' + mm.status);
+      const mmData = (await mm.json()) as { responseData?: { translatedText?: string } };
+      const mmText = mmData.responseData?.translatedText ?? '';
+      if (mmText.trim() && !/MYMEMORY WARNING/i.test(mmText)) translated = mmText;
+    } catch {
+      // fall through
+    }
+    if (!translated) {
+      try {
+        // secondary: Google gtx (free, keyless; works from many networks)
+        const g = await fetch(
+          'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=' + to + '&dt=t&q=' + encodeURIComponent(q),
+          { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0' }, signal: AbortSignal.timeout(6000) }
+        );
+        if (!g.ok) throw new Error('gtx ' + g.status);
+        const gData = (await g.json()) as [Array<[string, string, ...unknown[]]>, ...unknown[]];
+        const gText = (gData[0] ?? []).map((part) => (part && part[0]) || '').join('');
+        if (gText.trim()) translated = gText;
+      } catch {
+        // fall through
+      }
+    }
+    if (!translated.trim()) { res.status(502).json({ ok: false }); return; }
+    translateCache.set(cacheKey, translated);
+    if (translateCache.size > 500) translateCache.clear();
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({ ok: true, text: translated });
+  });
+
   app.get('/api/health', (_req, res) => {
     res.json({ ok: true, database: dbHealth().ok });
   });

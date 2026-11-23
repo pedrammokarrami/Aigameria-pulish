@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useAutoTranslateFa, isMostlyEnglish } from '../../utils/autoTranslate';
 import { Globe, ExternalLink, Loader2 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import type { LobbyGameId } from '../../utils/lobbySkillCatalog';
@@ -64,6 +65,8 @@ export const LiveWebAnswer: React.FC<LiveWebAnswerProps> = ({ gameId, searchQuer
   const { languageCode, isRtl } = useLanguage();
   const isFa = languageCode === 'fa' || languageCode.startsWith('fa') || languageCode === 'prs';
   const [topic, setTopic] = useState<CoachTopic | null>(null);
+  const coachNoteRaw = topic ? (isFa ? topic.coachAdviceFa : topic.coachVoiceEn || topic.coachAdviceFa) : '';
+  const coachNoteText = useAutoTranslateFa(coachNoteRaw, isFa && isMostlyEnglish(coachNoteRaw));
   const [gameChoices, setGameChoices] = useState<GameChoice[] | null>(null);
   const [forcedGameId, setForcedGameId] = useState<string | null>(null);
   const [choicesDismissed, setChoicesDismissed] = useState(false);
@@ -196,7 +199,7 @@ export const LiveWebAnswer: React.FC<LiveWebAnswerProps> = ({ gameId, searchQuer
                 {isFa ? 'نکته مربی' : 'Coach note'}
               </div>
               <p className="tip-desc whitespace-pre-line">
-                {isFa ? topic.coachAdviceFa : topic.coachVoiceEn || topic.coachAdviceFa}
+                {coachNoteText}
               </p>
             </div>
           </div>

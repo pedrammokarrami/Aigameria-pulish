@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { useAutoTranslateFa, isMostlyEnglish } from '../../utils/autoTranslate';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { Crosshair, Package, MapPin, Coins, ListChecks, Users } from 'lucide-react';
 import type { CoachAnswerBlock, PlayerAssignment } from '../../utils/coachSearchRules';
 
@@ -148,6 +150,8 @@ export const CoachAnswerBoard: React.FC<CoachAnswerBoardProps> = ({ answerBlock,
   const boardRef = React.useRef<HTMLDivElement | null>(null);
   const Icon = INTENT_ICON[answerBlock.intent] ?? ListChecks;
   const isFaLines = answerBlock.linesFa?.length > 0;
+  const { languageCode: boardLang } = useLanguage();
+  const wantsFa = boardLang === 'fa' || boardLang.startsWith('fa');
   const lines = isFaLines ? answerBlock.linesFa : answerBlock.linesEn;
 
   const formationState =
@@ -308,13 +312,7 @@ export const CoachAnswerBoard: React.FC<CoachAnswerBoardProps> = ({ answerBlock,
       {answerBlock.intent === 'loadout' && (
         <div data-testid="answer-loadout-board" className="tips-stack">
           {lines.map((line, i) => (
-            <div key={i} className="tip-module" style={{ cursor: 'default' }}>
-              <div className="tip-title">
-                <span className="tip-dot" aria-hidden="true" />
-                <span dir="ltr" className="font-mono-tabular">{i + 1}</span>
-              </div>
-              <p className="tip-desc">{line}</p>
-            </div>
+            <AutoTipLine key={i} index={i} line={line} wantsFa={wantsFa} labelFa="" labelEn="" numbered />
           ))}
         </div>
       )}
@@ -323,16 +321,35 @@ export const CoachAnswerBoard: React.FC<CoachAnswerBoardProps> = ({ answerBlock,
       {answerBlock.intent !== 'formation' && answerBlock.intent !== 'map' && answerBlock.intent !== 'loadout' && (
         <div className="tips-stack">
           {lines.map((line, i) => (
-            <div key={i} className="tip-module" style={{ cursor: 'default' }}>
-              <div className="tip-title">
-                <span className="tip-dot" aria-hidden="true" />
-                {isFaLines ? `نکته ${i + 1}` : `Tip ${i + 1}`}
-              </div>
-              <p className="tip-desc">{line}</p>
-            </div>
+            <AutoTipLine key={i} index={i} line={line} wantsFa={wantsFa} labelFa={`نکته ${i + 1}`} labelEn={`Tip ${i + 1}`} />
           ))}
         </div>
       )}
+    </div>
+  );
+};
+
+
+const AutoTipLine: React.FC<{
+  index: number;
+  line: string;
+  wantsFa: boolean;
+  labelFa: string;
+  labelEn: string;
+  numbered?: boolean;
+}> = ({ index, line, wantsFa, labelFa, labelEn, numbered }) => {
+  const translated = useAutoTranslateFa(line, wantsFa && isMostlyEnglish(line));
+  return (
+    <div className="tip-module" style={{ cursor: 'default' }}>
+      <div className="tip-title">
+        <span className="tip-dot" aria-hidden="true" />
+        {numbered ? (
+          <span dir="ltr" className="font-mono-tabular">{index + 1}</span>
+        ) : (
+          <span>{wantsFa ? labelFa : labelEn}</span>
+        )}
+      </div>
+      <p className="tip-desc">{translated}</p>
     </div>
   );
 };
