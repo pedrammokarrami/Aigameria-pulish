@@ -1,5 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
+import { sanitizeText } from './security';
+import { broadcastChatMessage } from './chatWs';
 import {
   asyncRoute,
   badRequest,
@@ -369,6 +371,35 @@ apiV1.post('/chat/rooms', requireAuth, (req, res) => {
   db.prepare('INSERT INTO chat_members (room_id, user_id, role, joined_at) VALUES (?, ?, ?, ?)').run(id, req.user!.id, 'owner', nowIso());
   logSecurityEvent('chat.room_created', { userId: req.user!.id, ip: clientIp(req), detail: parsed.data.name });
   res.status(201).json(successEnvelope(res.locals.requestId, { room: { id, name: parsed.data.name, isPrivate: parsed.data.isPrivate } }));
+});
+
+apiV1.post('/chat/rooms/:id/messages', requireAuth, (req, res) => {
+  const db = getDb();
+  const room = db.prepare('SELECT id FROM chat_rooms WHERE id = ?').get(req.params.id) as { id: string } | undefined;
+  if (!room) return notFound(res, 'Room not found.');
+  if (!db.prepare('SELECT 1 AS ok FROM chat_members WHERE room_id = ? AND user_id = ?').get(req.params.id, req.user!.id)) {
+    return notFound(res, 'Room not found or you are not a member.');
+  }
+  const schema = z.object({ body: z.string().trim().min(1).max(1000) });
+  const parsed = schema.safeParse(req.body ?? {});
+  if (!parsed.success) return badInput(res, parsed.error);
+  const body = sanitizeText(parsed.data.body, 1000);
+  if (!body) {
+    return badRequest(res, 'VALIDATION_ERROR', 'body: message body is required.');
+  }
+  const id = uuid('msg');
+  const createdAt = nowIso();
+  db.prepare('INSERT INTO chat_messages (id, room_id, user_id, body, created_at) VALUES (?, ?, ?, ?, ?)').run(
+    id,
+    req.params.id,
+    req.user!.id,
+    body,
+    createdAt
+  );
+  const displayName = (db.prepare('SELECT display_name FROM users WHERE id = ?').get(req.user!.id) as { display_name: string } | undefined)?.display_name ?? 'User';
+  broadcastChatMessage({ id, roomId: req.params.id, userId: req.user!.id, displayName, body, createdAt });
+  logSecurityEvent('chat.message_sent', { userId: req.user!.id, ip: clientIp(req), detail: req.params.id });
+  res.status(201).json(successEnvelope(res.locals.requestId, { id, roomId: req.params.id, body, createdAt }));
 });
 
 apiV1.post('/chat/rooms/:id/join', requireAuth, (req, res) => {

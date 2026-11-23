@@ -87,6 +87,10 @@ async function api(method, urlPath, { token, body, timeoutMs = 20000 } = {}) {
     let json = null;
     try { json = await resp.json(); } catch { /* ignore */ }
     return { status: resp.status, json };
+  } catch (e) {
+    // Aborted/failed fetch (server hiccup, timeout) — report as a failed
+    // request instead of throwing, so no loop can die from an AbortError.
+    return { status: 0, json: null, error: String(e?.message ?? e).slice(0, 120) };
   } finally {
     clearTimeout(timer);
   }
@@ -343,7 +347,7 @@ async function main() {
   console.log(`[overnight] start ${DURATION_H}h / ${TOTAL_USERS} users → ${LOG_DIR}`);
   fs.writeFileSync(CHECKPOINT, JSON.stringify({ started: true, startedAt: now(), pid: process.pid }));
   const ticker = summaryTicker();
-  await registrationPhase();
+  try { await registrationPhase(); } catch (e) { console.error('[overnight] registration phase error:', e); }
   // Activity: spawn loops for up to 200 concurrent active users at a time
   const batch = USERS.slice(0, 200);
   batch.forEach((u) => { userLoop(u).catch(() => {}); });
@@ -353,10 +357,12 @@ async function main() {
       await sleep(30 * 60_000);
       for (const u of batch) {
         if (stopFlag) break;
-        await relogin(u);
+        try { await relogin(u); } catch (e) {
+          logEvent({ section: 'relogin', ok: false, status: 'exception', ts: now(), user: u.index, error: String(e?.message ?? e).slice(0, 120) });
+        }
       }
     }
-  })();
+  })().catch((e) => console.error('[overnight] refresher stopped:', e));
   while (Date.now() < END_AT && !stopFlag) await sleep(30_000);
   await finalReport();
   await ticker;

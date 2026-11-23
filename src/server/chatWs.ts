@@ -71,6 +71,21 @@ function broadcast(roomId: string, payload: unknown, exceptUserId?: string): voi
   }
 }
 
+/**
+ * Broadcast a chat message to all sockets in a room — used by the REST send
+ * endpoint so HTTP-sent messages reach WebSocket listeners too.
+ */
+export function broadcastChatMessage(message: {
+  id: string;
+  roomId: string;
+  userId: string;
+  displayName: string;
+  body: string;
+  createdAt: string;
+}): void {
+  broadcast(message.roomId, { type: 'message', data: message });
+}
+
 export function setupChatWebSocket(server: import('node:http').Server): WebSocketServer {
   const wss = new WebSocketServer({ noServer: true });
 
