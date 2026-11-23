@@ -31,8 +31,8 @@ export interface LiveGrid {
 }
 
 const OVERPASS_ENDPOINTS = [
-  'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass-api.de/api/interpreter',
   'https://overpass.private.coffee/api/interpreter',
 ];
 
@@ -88,7 +88,9 @@ export async function fetchLiveGrid(
 ): Promise<LiveGrid> {
   const query = buildQuery(center.lat, center.lng, radiusM);
   let lastErr: unknown = null;
-  for (const endpoint of OVERPASS_ENDPOINTS) {
+  // fast failover: at most 2 endpoints × 14s so the radar never hangs ~2 minutes
+  const endpoints = OVERPASS_ENDPOINTS.slice(0, 2);
+  for (const endpoint of endpoints) {
     try {
       const resp = await fetch(endpoint, {
         method: 'POST',
@@ -98,7 +100,7 @@ export async function fetchLiveGrid(
           Accept: 'application/json',
         },
         body: `data=${encodeURIComponent(query)}`,
-        signal: AbortSignal.timeout(45000),
+        signal: AbortSignal.timeout(14000),
       });
       if (!resp.ok) throw new Error(`overpass ${resp.status}`);
       const body = (await resp.json()) as { elements?: OverpassElement[] };
