@@ -228,6 +228,66 @@ function kbLines(topics: CoachKnowledgeTopic[], isFa: boolean): { linesFa: strin
   return { linesFa, linesEn };
 }
 
+interface KnowledgeCardRow {
+  kind: string;
+  title: string;
+  body: string;
+}
+
+/**
+ * Load this game's knowledge_cards (SQLite store, refreshed by the ingest
+ * cron) so the session modules are data-driven instead of static-only.
+ * Server-side only — the dynamic import keeps client bundles free of db deps.
+ * Returns [] on any failure (static KB fallback stays intact).
+ */
+async function loadGameKnowledgeCards(gameId: string): Promise<KnowledgeCardRow[]> {
+  try {
+    const { getDb } = await import('../server/db.ts');
+    const rows = getDb()
+      .prepare(
+        "SELECT kind, title, body FROM knowledge_cards WHERE game_id = ? AND kind IN ('qa','question','trick','glitch') ORDER BY updated_at DESC LIMIT 120"
+      )
+      .all(gameId) as unknown as KnowledgeCardRow[];
+    return rows;
+  } catch {
+    return [];
+  }
+}
+
+/** Keyword router: maps knowledge cards to the session module they belong to. */
+const MODULE_CARD_MATCHERS: Record<string, RegExp> = {
+  finishing: /شوت|فینس|finishing|shot|goal|header|herka|هریک|پنالتی|penalty|ضربه/i,
+  formation: /ترکیب|فرم|تاکتیک|formation|tactic|press|پرس|roles|نقش/i,
+  updates: /پچ|آپدیت|متا|meta|patch|update|price|قیمت|sbc/i,
+  training: /تمرین|دریل|drill|training|practice|تمرین روزانه/i,
+};
+
+/** Turn a card body into a module lesson line (single sentence, trimmed). */
+function cardToLine(card: KnowledgeCardRow, isFa: boolean): string | null {
+  const text = card.body.replace(/\s+/g, ' ').trim();
+  if (!text) return null;
+  const isFaCard = /[\u0600-\u06FF]/.test(text);
+  if (isFa && !isFaCard) return null; // English session: English cards only
+  if (!isFa && isFaCard) return null; // Persian session: Persian cards only
+  return text.length > 160 ? `${text.slice(0, 157)}…` : text;
+}
+
+function moduleCardLines(
+  cards: KnowledgeCardRow[],
+  moduleId: 'finishing' | 'formation' | 'updates' | 'training',
+  isFa: boolean
+): string[] {
+  const matcher = MODULE_CARD_MATCHERS[moduleId];
+  const out: string[] = [];
+  for (const card of cards) {
+    if (out.length >= 4) break;
+    if (!matcher.test(`${card.title} ${card.body}`)) continue;
+    const line = cardToLine(card, isFa);
+    if (line && !out.includes(line)) out.push(line);
+  }
+  return out;
+}
+
 function fmtPatchLines(intel: LiveIntelResult, isFa: boolean): string[] {
   return intel.sources
     .filter((s) => s.source === 'steamnews' || s.source === 'reddit')
@@ -280,6 +340,15 @@ export async function buildCoachSession(
 
   const kbTopics = topicsByRealm(realm);
   const queryEn = query ? buildEnglishQuery(query) : '';
+  // Data-driven modules: this game's ingested knowledge_cards lead each
+  // module's lines; the static KB stays as fallback beneath them.
+  const gameCards = await loadGameKnowledgeCards(gameId);
+  const cardLines = {
+    finishing: moduleCardLines(gameCards, 'finishing', isFa),
+    formation: moduleCardLines(gameCards, 'formation', isFa),
+    updates: moduleCardLines(gameCards, 'updates', isFa),
+    training: moduleCardLines(gameCards, 'training', isFa),
+  };
 
   // Live intel + per-module clips, all in parallel
   const [intel, finishingClips, formationClips, updatesClips, mistakesClips, trainingClips] =
@@ -304,6 +373,7 @@ export async function buildCoachSession(
       titleFa: '⚽ شوت‌زنی حرفه‌ای — کی و چطور',
       titleEn: '⚽ Pro finishing — when & how',
       linesFa: [
+        ...(cardLines.finishing.length ? cardLines.finishing : []),
         ...(finishingTopics.length ? finishingTopics.flatMap((t) => t.lessonsFa.slice(0, 2)) : kbLines(kbTopics.slice(0, 1), isFa).linesFa),
         'قدرت شوت: نوار ۲-۳ سلول کافیه؛ پرکردن کامل = توپ بلند و بی‌دقت.',
         'فینس شوت: زاویه ۴۵ درجه داخل محوطه + زمان‌بندی سبز = بالاترین تبدیل.',
@@ -326,6 +396,7 @@ export async function buildCoachSession(
       titleFa: '🧩 بهترین ترکیب و نقش‌ها',
       titleEn: '🧩 Best formation & roles',
       linesFa: [
+        ...(cardLines.formation.length ? cardLines.formation : []),
         ...(formationTopics.length ? formationTopics.flatMap((t) => t.lessonsFa.slice(0, 2)) : []),
         'انتخاب بر اساس تیم تو: مهره‌های قوی وسط → 4-2-3-1؛ وینگ‌های سریع → 4-3-3؛ دفاع فشرده → 4-2-1-3.',
         'نقش‌ها: CDM باید بهترین بازیکن دفاعی باشه؛ CAM نزدیک‌ترین به استایل تو.',
@@ -346,6 +417,7 @@ export async function buildCoachSession(
       titleEn: '📈 Player updates & meta — right now',
       linesFa: patchLines.length
         ? [
+            ...(cardLines.updates.length ? cardLines.updates : []),
             ...patchLines,
             'بعد از هر پچ: قیمت بازیکن‌های متا ۲۴ ساعت اول بالا می‌ره — قبل از خرید صبر کن.',
             'کارت‌های untradeable رو نگه دار؛ برای SBC فقط لیگ کم‌مصرف خرج کن.',
@@ -378,6 +450,7 @@ export async function buildCoachSession(
       titleFa: `🏋️ تمرین امروز — تمرکز روی ${isFa ? weakest.name : weakest.name} (${weakest.val}/100)`,
       titleEn: `🏋️ Today's training — focus: ${weakest.name} (${weakest.val}/100)`,
       linesFa: [
+        ...(cardLines.training.length ? cardLines.training : []),
         ...trainingTopics.flatMap((t) => t.drills.map((d) => `${d}: ${t.titleFa} — ${t.lessonsFa[0].slice(0, 80)}…`)),
         '۵ دقیقه warmup ایستگاه آزاد → ۲۰ دقیقه دریل هدفمند روی ضعیف‌ترین محور → ۵ دقیقه مرور باخت‌ها.',
         'هر روز فقط ۱ محور؛ تغییر روزانه = هیچ‌چیز فیکس نمی‌شه.',
