@@ -49,7 +49,7 @@ test('GAME_THEMES matches exact native palettes, turntable videos, roles, metric
   assert.match(GAME_THEMES.FC27.fonts.display, /Barlow Condensed/);
   assert.equal(
     GAME_THEMES.FC27.turntableVideo?.src,
-    '/assets/aistudio/gemini_generated_video_9528C2CF_39592eeb.mp4'
+    '/assets/aistudio/spatial_stadium_loop_9528C2CF_39592eeb.mp4'
   );
 
   assert.equal(GAME_THEMES.NBA2K.colors.primary, '#F97316');
