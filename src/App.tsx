@@ -1169,7 +1169,7 @@ export function App() {
         initialCollectionId={storeInitialCollectionId}
         onClose={() => setActiveLeftOverlay(null)}
       />
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
         {activeMasterHub === 'cinema' ? (
           <motion.div
             key="hub-cinema"
