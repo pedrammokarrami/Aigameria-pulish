@@ -5,6 +5,7 @@ import {
   BookOpen,
   ChevronLeft,
   Clapperboard,
+  Compass,
   Disc3,
   Film,
   Headphones,
@@ -14,6 +15,7 @@ import {
   Play,
   PlayCircle,
   ShieldCheck,
+  ShoppingBag,
   Sparkles,
   Sun,
   Trophy,
@@ -49,6 +51,8 @@ interface Ps5GameControlCenterProps {
   onOpenTournamentHub: () => void;
   onOpenSocialClub: () => void;
   onOpenIdentityProfile?: () => void;
+  onOpenMap: () => void;
+  onOpenStore: () => void;
   onToggleBackdropMode: () => void;
 }
 
@@ -97,6 +101,8 @@ export const Ps5GameControlCenter: React.FC<Ps5GameControlCenterProps> = ({
   onOpenTournamentHub,
   onOpenSocialClub,
   onOpenIdentityProfile,
+  onOpenMap,
+  onOpenStore,
   onToggleBackdropMode,
 }) => {
   const { languageCode, isRtl, copy } = useLanguage();
@@ -121,6 +127,8 @@ export const Ps5GameControlCenter: React.FC<Ps5GameControlCenterProps> = ({
     else if (id === 'tournament') onOpenTournamentHub();
     else if (id === 'social') onOpenSocialClub();
     else if (id === 'identity') onOpenIdentityProfile?.();
+    else if (id === 'map') onOpenMap();
+    else if (id === 'store') onOpenStore();
     else if (id === 'backdrop') onToggleBackdropMode();
   };
 
@@ -176,6 +184,8 @@ export const Ps5GameControlCenter: React.FC<Ps5GameControlCenterProps> = ({
     if (id === 'tournament') return <Trophy className="w-6 h-6" style={{ color: accentHex }} />;
     if (id === 'social') return <Users className="w-6 h-6" style={{ color: accentHex }} />;
     if (id === 'identity') return <ShieldCheck className="w-6 h-6" style={{ color: accentHex }} />;
+    if (id === 'map') return <Compass className="w-6 h-6" style={{ color: accentHex }} />;
+    if (id === 'store') return <ShoppingBag className="w-6 h-6" style={{ color: accentHex }} />;
     return useVideoBackdrop ? (
       <Sparkles className="w-6 h-6" style={{ color: accentHex }} />
     ) : (
@@ -188,6 +198,8 @@ export const Ps5GameControlCenter: React.FC<Ps5GameControlCenterProps> = ({
     if (id === 'tournament') return 'quick-menu-tournament-btn';
     if (id === 'social') return 'quick-menu-social-btn';
     if (id === 'identity') return 'quick-menu-identity-btn';
+    if (id === 'map') return 'quick-menu-map-btn';
+    if (id === 'store') return 'quick-menu-store-btn';
     return 'toggle-backdrop-mode';
   };
 
@@ -404,6 +416,8 @@ interface SpotifyAudioMenuSheetProps {
   onTogglePlay: () => void;
   onClose: () => void;
   onSelectSubView: (view: 'rooms-hub' | 'player' | 'identity' | 'social') => void;
+  onOpenMap: () => void;
+  onOpenStore: () => void;
 }
 
 export const SpotifyAudioMenuSheet: React.FC<SpotifyAudioMenuSheetProps> = ({
@@ -415,6 +429,8 @@ export const SpotifyAudioMenuSheet: React.FC<SpotifyAudioMenuSheetProps> = ({
   onTogglePlay,
   onClose,
   onSelectSubView,
+  onOpenMap,
+  onOpenStore,
 }) => {
   const { languageCode, isRtl, copy } = useLanguage();
   const items = getAudioSpotifyMenuItems();
@@ -453,6 +469,20 @@ export const SpotifyAudioMenuSheet: React.FC<SpotifyAudioMenuSheetProps> = ({
       return (
         <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-[#2E77D0] to-[#12264A] flex items-center justify-center shrink-0 shadow-md">
           <ShieldCheck className="w-6 h-6 text-white" />
+        </div>
+      );
+    }
+    if (id === 'map') {
+      return (
+        <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-[#0E7490] to-[#082F49] flex items-center justify-center shrink-0 shadow-md">
+          <Compass className="w-6 h-6 text-cyan-300" />
+        </div>
+      );
+    }
+    if (id === 'store') {
+      return (
+        <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-[#9D174D] to-[#500724] flex items-center justify-center shrink-0 shadow-md">
+          <ShoppingBag className="w-6 h-6 text-pink-200" />
         </div>
       );
     }
@@ -593,7 +623,9 @@ export const SpotifyAudioMenuSheet: React.FC<SpotifyAudioMenuSheetProps> = ({
                       onClick={() => {
                         playSpotifyTapSound('tap');
                         onClose();
-                        onSelectSubView(
+                        if (item.id === 'map') onOpenMap();
+                        else if (item.id === 'store') onOpenStore();
+                        else onSelectSubView(
                           item.id as 'rooms-hub' | 'player' | 'identity' | 'social'
                         );
                       }}
@@ -638,6 +670,8 @@ interface NetflixCinemaMenuOverlayProps {
   onToggleCinemaDim: () => void;
   onClose: () => void;
   onSelectSubView: (view: 'rooms-hub' | 'player' | 'identity' | 'social') => void;
+  onOpenMap: () => void;
+  onOpenStore: () => void;
 }
 
 export const NetflixCinemaMenuOverlay: React.FC<NetflixCinemaMenuOverlayProps> = ({
@@ -647,6 +681,8 @@ export const NetflixCinemaMenuOverlay: React.FC<NetflixCinemaMenuOverlayProps> =
   onToggleCinemaDim,
   onClose,
   onSelectSubView,
+  onOpenMap,
+  onOpenStore,
 }) => {
   const { languageCode, isRtl, copy } = useLanguage();
   const items = getCinemaNetflixMenuItems(cinemaDimMode);
@@ -671,6 +707,8 @@ export const NetflixCinemaMenuOverlay: React.FC<NetflixCinemaMenuOverlayProps> =
     if (id === 'player') return <PlayCircle className="w-7 h-7 text-amber-400" />;
     if (id === 'identity') return <ShieldCheck className="w-7 h-7 text-sky-400" />;
     if (id === 'social') return <Users className="w-7 h-7 text-cyan-300" />;
+    if (id === 'map') return <Compass className="w-7 h-7 text-cyan-300" />;
+    if (id === 'store') return <ShoppingBag className="w-7 h-7 text-pink-300" />;
     return cinemaDimMode ? (
       <Sun className="w-7 h-7 text-amber-300" />
     ) : (
@@ -784,6 +822,10 @@ export const NetflixCinemaMenuOverlay: React.FC<NetflixCinemaMenuOverlayProps> =
                       onClose();
                       if (item.id === 'dim') {
                         onToggleCinemaDim();
+                      } else if (item.id === 'map') {
+                        onOpenMap();
+                      } else if (item.id === 'store') {
+                        onOpenStore();
                       } else {
                         onSelectSubView(
                           item.id as 'rooms-hub' | 'player' | 'identity' | 'social'

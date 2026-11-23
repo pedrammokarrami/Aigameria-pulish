@@ -50,13 +50,15 @@ import { AudioRoomsTournamentHub } from './AudioRoomsTournamentHub';
 interface AudioHubViewProps {
   activeHub: MasterHubId;
   onSelectHub: (hub: MasterHubId) => void;
+  onOpenMap: () => void;
+  onOpenStore: () => void;
 }
 
 type AudioSubViewMode = 'lobby' | 'rooms-hub' | 'player' | 'identity' | 'social';
 
 const CHAPTERIZER_STORAGE_KEY = 'aipetros-audio-chapterizer-v1';
 
-export const AudioHubView: React.FC<AudioHubViewProps> = ({ activeHub, onSelectHub }) => {
+export const AudioHubView: React.FC<AudioHubViewProps> = ({ activeHub, onSelectHub, onOpenMap, onOpenStore }) => {
   const { languageCode, isRtl, copy } = useLanguage();
   const [subView, setSubView] = useState<AudioSubViewMode>('lobby');
   const [activeRoomId, setActiveRoomId] = useState<AudioRoomId>('westworld-cafe');
@@ -758,6 +760,8 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({ activeHub, onSelectH
               onTogglePlay={handleTogglePlay}
               onClose={() => setQuickMenuOpen(false)}
               onSelectSubView={(view) => setSubView(view)}
+              onOpenMap={onOpenMap}
+              onOpenStore={onOpenStore}
             />
 
             <div

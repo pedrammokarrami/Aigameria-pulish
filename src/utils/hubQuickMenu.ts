@@ -315,6 +315,20 @@ export function getGamePs5MenuItems(options: {
       accentHex: '#818CF8',
       badgeText: 'هویت ۳بعدی',
     },
+    {
+      id: 'map',
+      titleFa: 'نقشه سه‌بعدی محله',
+      subtitleFa: 'رادار زنده GTA با لوکیشن واقعی GPS',
+      accentHex: '#22D3EE',
+      badgeText: 'نقشه',
+    },
+    {
+      id: 'store',
+      titleFa: 'فروشگاه AIPETROS',
+      subtitleFa: 'تجهیزات، کلکسیون‌ها و کالای گیمینگ',
+      accentHex: '#F472B6',
+      badgeText: 'استور',
+    },
   ];
 
   if (options.hasVideoBackdrop) {
@@ -362,6 +376,20 @@ export function getAudioSpotifyMenuItems(): HubMenuDescriptor[] {
       accentHex: '#F59E0B',
       badgeText: 'دیوان و محفل',
     },
+    {
+      id: 'map',
+      titleFa: 'نقشه سه‌بعدی محله',
+      subtitleFa: 'رادار زنده GTA با لوکیشن واقعی GPS',
+      accentHex: '#22D3EE',
+      badgeText: 'نقشه',
+    },
+    {
+      id: 'store',
+      titleFa: 'فروشگاه AIPETROS',
+      subtitleFa: 'تجهیزات و کالای گیمینگ و موسیقی',
+      accentHex: '#F472B6',
+      badgeText: 'استور',
+    },
   ];
 }
 
@@ -394,6 +422,20 @@ export function getCinemaNetflixMenuItems(cinemaDimMode: boolean): HubMenuDescri
       subtitleFa: 'گفت‌وگو با کاربران، ارسال مستقیم لینک فیلم و کلاب',
       accentHex: '#22D3EE',
       badgeText: 'شبکه امن',
+    },
+    {
+      id: 'map',
+      titleFa: 'نقشه سه‌بعدی محله',
+      subtitleFa: 'رادار زنده GTA با لوکیشن واقعی GPS',
+      accentHex: '#22D3EE',
+      badgeText: 'نقشه',
+    },
+    {
+      id: 'store',
+      titleFa: 'فروشگاه AIPETROS',
+      subtitleFa: 'تجهیزات و کالای گیمینگ و سینما',
+      accentHex: '#F472B6',
+      badgeText: 'استور',
     },
     {
       id: 'dim',

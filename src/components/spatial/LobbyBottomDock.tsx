@@ -13,6 +13,8 @@ interface LobbyBottomDockProps {
   onOpenTournamentHub: () => void;
   onOpenSocialClub: () => void;
   onOpenIdentityProfile?: () => void;
+  onOpenMap: () => void;
+  onOpenStore: () => void;
   onToggleBackdropMode: () => void;
 }
 
@@ -26,6 +28,8 @@ export const LobbyBottomDock: React.FC<LobbyBottomDockProps> = ({
   onOpenTournamentHub,
   onOpenSocialClub,
   onOpenIdentityProfile,
+  onOpenMap,
+  onOpenStore,
   onToggleBackdropMode,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -64,6 +68,8 @@ export const LobbyBottomDock: React.FC<LobbyBottomDockProps> = ({
         onOpenTournamentHub={onOpenTournamentHub}
         onOpenSocialClub={onOpenSocialClub}
         onOpenIdentityProfile={onOpenIdentityProfile}
+        onOpenMap={onOpenMap}
+        onOpenStore={onOpenStore}
         onToggleBackdropMode={onToggleBackdropMode}
       />
 

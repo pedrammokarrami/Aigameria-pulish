@@ -11,7 +11,6 @@ import { loadLastStyleSelection, saveLastStyleSelection, defaultGameForStyle } f
 import { GlobalEarthLanguageButton } from './components/spatial/GlobalEarthLanguageButton';
 import { GtaSocialWorld } from './components/spatial/GtaSocialWorld';
 import { LanguageSelectorModal } from './components/spatial/LanguageSelectorModal';
-import { LeftPlatformMenu } from './components/spatial/LeftPlatformMenu';
 import { LobbyBottomDock } from './components/spatial/LobbyBottomDock';
 import { MasterHubSwitcher, type MasterHubId } from './components/spatial/MasterHubSwitcher';
 import { PlatformMapModal } from './components/spatial/PlatformMapModal';
@@ -1107,15 +1106,6 @@ export function App() {
       </AnimatePresence>
       <GlobalEarthLanguageButton />
       <LanguageSelectorModal activeHub={activeMasterHub} />
-      <LeftPlatformMenu
-        activeHub={activeMasterHub}
-        activeOverlay={activeLeftOverlay}
-        onOpenMap={() => setActiveLeftOverlay((prev) => (prev === 'map' ? null : 'map'))}
-        onOpenStore={() => {
-          setStoreInitialCollectionId(null);
-          setActiveLeftOverlay((prev) => (prev === 'store' ? null : 'store'));
-        }}
-      />
       <PlatformMapModal
         open={activeLeftOverlay === 'map'}
         activeHub={activeMasterHub}
@@ -1141,7 +1131,15 @@ export function App() {
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
             className="w-full h-full"
           >
-            <CinemaHubView activeHub={activeMasterHub} onSelectHub={setActiveMasterHub} />
+            <CinemaHubView
+              activeHub={activeMasterHub}
+              onSelectHub={setActiveMasterHub}
+              onOpenMap={() => setActiveLeftOverlay('map')}
+              onOpenStore={() => {
+                setStoreInitialCollectionId(null);
+                setActiveLeftOverlay('store');
+              }}
+            />
           </motion.div>
         ) : activeMasterHub === 'audio' ? (
           <motion.div
@@ -1152,7 +1150,15 @@ export function App() {
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
             className="w-full h-full"
           >
-            <AudioHubView activeHub={activeMasterHub} onSelectHub={setActiveMasterHub} />
+            <AudioHubView
+              activeHub={activeMasterHub}
+              onSelectHub={setActiveMasterHub}
+              onOpenMap={() => setActiveLeftOverlay('map')}
+              onOpenStore={() => {
+                setStoreInitialCollectionId(null);
+                setActiveLeftOverlay('store');
+              }}
+            />
           </motion.div>
         ) : isIdentityProfileOpen ? (
           <motion.div
@@ -1376,6 +1382,11 @@ export function App() {
                 }}
                 onOpenSocialClub={() => setIsGtaSocialOpen(true)}
                 onOpenIdentityProfile={() => setIsIdentityProfileOpen(true)}
+                onOpenMap={() => setActiveLeftOverlay('map')}
+                onOpenStore={() => {
+                  setStoreInitialCollectionId(null);
+                  setActiveLeftOverlay('store');
+                }}
                 onToggleBackdropMode={() => setUseVideoBackdrop((v) => !v)}
               />
             </div>

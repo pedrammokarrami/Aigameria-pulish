@@ -20,29 +20,33 @@ test('stepMenuFocusIndex wraps forward and backward across menu tiles cleanly', 
   assert.equal(stepMenuFocusIndex(0, 0, 1), 0);
 });
 
-test('getGamePs5MenuItems returns 4 core PS5 cards and optional backdrop mode toggle', () => {
+test('getGamePs5MenuItems returns core PS5 cards + map/store and optional backdrop mode toggle', () => {
   const withoutVideo = getGamePs5MenuItems({ hasVideoBackdrop: false, useVideoBackdrop: false });
-  assert.equal(withoutVideo.length, 4);
+  assert.equal(withoutVideo.length, 6);
   assert.deepEqual(
     withoutVideo.map((item) => item.id),
-    ['demo', 'tournament', 'social', 'identity']
+    ['demo', 'tournament', 'social', 'identity', 'map', 'store']
   );
 
   const withVideo = getGamePs5MenuItems({ hasVideoBackdrop: true, useVideoBackdrop: true });
-  assert.equal(withVideo.length, 5);
-  assert.equal(withVideo[4].id, 'backdrop');
-  assert.equal(withVideo[4].titleFa, 'حالت صحنه UE 5.8');
+  assert.equal(withVideo.length, 7);
+  assert.equal(withVideo[6].id, 'backdrop');
+  assert.equal(withVideo[6].titleFa, 'حالت صحنه UE 5.8');
 });
 
 test('getAudioSpotifyMenuItems and getCinemaNetflixMenuItems expose complete working entries', () => {
   const spotify = getAudioSpotifyMenuItems();
-  assert.equal(spotify.length, 4);
+  assert.equal(spotify.length, 6);
   assert.ok(spotify.some((i) => i.id === 'rooms-hub' && i.accentHex === '#1DB954'));
   assert.ok(spotify.some((i) => i.id === 'social'));
+  assert.ok(spotify.some((i) => i.id === 'map'));
+  assert.ok(spotify.some((i) => i.id === 'store'));
 
   const netflixDimOff = getCinemaNetflixMenuItems(false);
-  assert.equal(netflixDimOff.length, 5);
+  assert.equal(netflixDimOff.length, 7);
   assert.equal(netflixDimOff[0].accentHex, '#E50914');
+  assert.ok(netflixDimOff.some((i) => i.id === 'map'));
+  assert.ok(netflixDimOff.some((i) => i.id === 'store'));
   assert.ok(netflixDimOff.some((i) => i.id === 'dim' && i.titleFa.includes('Cinema Mode')));
 
   const netflixDimOn = getCinemaNetflixMenuItems(true);

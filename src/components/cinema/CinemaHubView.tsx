@@ -45,11 +45,13 @@ import { CinemaRoomsTournamentHub } from './CinemaRoomsTournamentHub';
 interface CinemaHubViewProps {
   activeHub: MasterHubId;
   onSelectHub: (hub: MasterHubId) => void;
+  onOpenMap: () => void;
+  onOpenStore: () => void;
 }
 
 type CinemaSubViewMode = 'lobby' | 'rooms-hub' | 'player' | 'identity' | 'social';
 
-export const CinemaHubView: React.FC<CinemaHubViewProps> = ({ activeHub, onSelectHub }) => {
+export const CinemaHubView: React.FC<CinemaHubViewProps> = ({ activeHub, onSelectHub, onOpenMap, onOpenStore }) => {
   const { languageCode, isRtl, copy } = useLanguage();
   const [subView, setSubView] = useState<CinemaSubViewMode>('lobby');
   const [activeRoomId, setActiveRoomId] = useState<CinemaRoomId>('movie');
@@ -467,6 +469,8 @@ export const CinemaHubView: React.FC<CinemaHubViewProps> = ({ activeHub, onSelec
               onToggleCinemaDim={() => setCinemaDimMode((d) => !d)}
               onClose={() => setQuickMenuOpen(false)}
               onSelectSubView={(view) => setSubView(view)}
+              onOpenMap={onOpenMap}
+              onOpenStore={onOpenStore}
             />
 
             <div
