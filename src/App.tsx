@@ -15,6 +15,7 @@ import { GlobalEarthLanguageButton } from './components/spatial/GlobalEarthLangu
 import { GtaSocialWorld } from './components/spatial/GtaSocialWorld';
 import { LanguageSelectorModal } from './components/spatial/LanguageSelectorModal';
 import { LobbyBottomDock } from './components/spatial/LobbyBottomDock';
+import { GamepadTutorialDock } from './components/spatial/GamepadTutorialDock';
 import { MasterHubSwitcher, type MasterHubId } from './components/spatial/MasterHubSwitcher';
 import { PlatformMapModal } from './components/spatial/PlatformMapModal';
 import { PlatformStoreModal } from './components/spatial/PlatformStoreModal';
@@ -1461,6 +1462,8 @@ export function App() {
                 }}
                 onToggleBackdropMode={() => setUseVideoBackdrop((v) => !v)}
               />
+              {/* Frontend-wide controller button tutorial (Petros-gamepad theme) */}
+              <GamepadTutorialDock comboTokens={[]} accentHex="#10B981" />
             </div>
           </motion.div>
         )}
