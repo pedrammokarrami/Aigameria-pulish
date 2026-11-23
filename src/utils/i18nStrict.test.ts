@@ -78,9 +78,7 @@ test('strict: suggested questions in English mode contain zero Persian', () => {
 
 test('strict: game ambiguity choice chips have English labels', () => {
   const r = detectGameAmbiguity('بهترین ترکیب بارسا');
-  for (const c of r.candidates) {
-    // shared-club candidates (fc27/eFootball) are Latin brand names; the
-    // requirement is only that no Persian leaks in English mode.
+  for (const c of r.candidates as Array<{ gameId: string; labelFa: string; labelEn?: string }>) {
     assert.ok(c.labelFa !== undefined, `${c.gameId} shape broken`);
     if (c.labelEn) assert.ok(!FA_RE.test(c.labelEn), `${c.gameId} labelEn is Persian`);
   }
