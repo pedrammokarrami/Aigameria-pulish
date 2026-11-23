@@ -4,6 +4,7 @@ import { triLayerQuery } from './src/agents/triLayerQuery';
 import { detectGameAmbiguity } from './src/agents/gameAmbiguity';
 import type { LobbyGameId } from './src/utils/lobbySkillCatalog';
 import fs from 'fs';
+import zlib from 'zlib';
 import path from 'path';
 import {
   runCoachSymbioteAgent,
@@ -1660,6 +1661,29 @@ export class ErrorOverlay {
     });
   } else {
     const distDir = path.resolve(process.cwd(), 'dist');
+    // gzip on the fly for big JS/CSS — the production bundle is ~3MB and phones
+    // on WiFi/cellular choke on it uncompressed (page looks dead while loading)
+    app.get(/\.(js|css|html|json|svg|mp4)$/i, (req, res, next) => {
+      const accept = String(req.headers['accept-encoding'] ?? '');
+      if (!accept.includes('gzip')) return next();
+      const file = path.join(distDir, decodeURIComponent(req.path.replace(/^\//, '')));
+      if (!fs.existsSync(file) || !fs.statSync(file).isFile()) return next();
+      const ext = path.extname(file).toLowerCase();
+      if (ext === '.mp4') return next(); // video: let express.static stream range requests
+      const types: Record<string, string> = {
+        '.js': 'application/javascript', '.css': 'text/css', '.html': 'text/html',
+        '.json': 'application/json', '.svg': 'image/svg+xml',
+      };
+      const type = types[ext] ?? 'application/octet-stream';
+      const buf = fs.readFileSync(file);
+      zlib.gzip(buf, (err, gz) => {
+        if (err) return next();
+        res.setHeader('Content-Encoding', 'gzip');
+        res.setHeader('Content-Type', type);
+        res.setHeader('Cache-Control', ext === '.html' ? 'no-store' : 'public, max-age=31536000');
+        res.end(gz);
+      });
+    });
     app.use(express.static(distDir));
     app.get('*', (_req, res) => {
       res.sendFile(path.join(distDir, 'index.html'));
