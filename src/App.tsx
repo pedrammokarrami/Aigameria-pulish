@@ -7,7 +7,8 @@ import { CrossGameSpatialProfilePage } from './components/identity/CrossGameSpat
 import { GameNativeTournamentHub } from './components/spatial/GameNativeTournamentHub';
 import { GameSwitcherBar } from './components/spatial/GameSwitcherBar';
 import { QuestionSuggestions } from './components/spatial/QuestionSuggestions';
-import { loadLastStyleSelection, saveLastStyleSelection, defaultGameForStyle } from './utils/gameStyles';
+import { loadLastStyleSelection, saveLastStyleSelection, defaultGameForStyle, gameStyleForGame } from './utils/gameStyles';
+import { triageImageMedia, triageVideoMedia, type MediaTriageState } from './utils/mediaTriage';
 import { GlobalEarthLanguageButton } from './components/spatial/GlobalEarthLanguageButton';
 import { GtaSocialWorld } from './components/spatial/GtaSocialWorld';
 import { LanguageSelectorModal } from './components/spatial/LanguageSelectorModal';
@@ -231,6 +232,11 @@ export function App() {
     loadLastStyleSelection()?.gameId ??
     resolveLobbyGameFromAppState(mapRealmToGameId(activeRealm), activeRealm)
   );
+  const [lobbyStyleId, setLobbyStyleId] = useState<string>(
+    () => loadLastStyleSelection()?.styleId ?? gameStyleForGame(
+      loadLastStyleSelection()?.gameId ?? resolveLobbyGameFromAppState(mapRealmToGameId(activeRealm), activeRealm)
+    ).id
+  );
   const [lobbyCategoryId, setLobbyCategoryId] = useState<string>('all');
   const [lobbySearchQuery, setLobbySearchQuery] = useState<string>('');
   const [isListeningSearchVoice, setIsListeningSearchVoice] = useState<boolean>(false);
@@ -243,6 +249,8 @@ export function App() {
 
   const [uploadedMedia, setUploadedMedia] = useState<UploadedCoachMedia | null>(null);
   const [isAnalyzingUpload, setIsAnalyzingUpload] = useState<boolean>(false);
+  const [uploadTriage, setUploadTriage] = useState<MediaTriageState | null>(null);
+  const [uploadTriageNoteFa, setUploadTriageNoteFa] = useState<string>('');
   const [isListeningVoice, setIsListeningVoice] = useState<boolean>(false);
 
   const speakTimerRef = useRef<number | null>(null);
@@ -593,7 +601,11 @@ export function App() {
       const tab = getLobbyGameTab(nextGameId);
       const catalogHit = findCatalogGameById(tab.catalogGameId);
       setLobbyGameId(nextGameId);
-      saveLastStyleSelection(nextGameId); // remember last selection → next visit defaults to it
+      setLobbyStyleId((prevStyle) => {
+        const style = gameStyleForGame(nextGameId, prevStyle);
+        saveLastStyleSelection(nextGameId, style.id); // remember last selection → next visit defaults to it
+        return style.id;
+      });
       setLobbyCategoryId('all');
       setLobbySearchQuery('');
       setActiveRealm(tab.realm);
@@ -750,7 +762,7 @@ export function App() {
     const nextGameId = selectedGame.id || mapRealmToGameId(activeRealm);
     const isVideo = file.type.startsWith('video/');
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       const resultUrl = typeof reader.result === 'string' ? reader.result : undefined;
       if (!resultUrl) return;
 
@@ -768,6 +780,26 @@ export function App() {
         fileName: file.name,
       });
       triggerCoachSpeech(activeMotionPayload.voiceExplanationEn);
+
+      // Honest 3-state triage (client-side pixel analysis, no external AI APIs):
+      // 1) precise → detailed analysis, 2) unrecognized → ask to resend,
+      // 3) irrelevant → tell the user the media is not gameplay.
+      const triage = isVideo ? await triageVideoMedia(resultUrl) : await triageImageMedia(resultUrl);
+      setUploadTriage(triage.state);
+      setUploadTriageNoteFa(triage.reasonFa);
+      if (triage.state !== 'precise') {
+        setActiveTopic((prev) => (prev ? {
+          ...prev,
+          titleFa: triage.state === 'irrelevant' ? 'رسانه غیرمرتبط' : 'تشخیص ممکن نبود',
+          titleEn: triage.state === 'irrelevant' ? 'Irrelevant media' : 'Not recognizable',
+          coachAdviceFa: triage.reasonFa,
+          coachVoiceEn: triage.reasonEn,
+        } : prev));
+        if (triage.state === 'unrecognized') {
+          setUploadTriageNoteFa((prev) => prev + ' · لطفاً دوباره عکس/ویدیو بفرست');
+        }
+        return; // skip the fake vision pipeline for non-gameplay media
+      }
 
       if (!isVideo) {
         setIsAnalyzingUpload(true);
@@ -1315,8 +1347,13 @@ export function App() {
                 <div className="pl-11 sm:pl-0">
                   <GameSwitcherBar
                     activeGameId={lobbyGameId}
+                    activeStyleId={lobbyStyleId}
                     onSelectGame={handleLobbyGameSwitch}
-                    onSelectStyle={() => undefined}
+                    onSelectStyle={(styleId) => {
+                      setLobbyStyleId(styleId);
+                      const target = defaultGameForStyle(styleId);
+                      handleLobbyGameSwitch(target);
+                    }}
                     onOpenTournamentHub={() => {
                       setTournamentInitialGame(resolveTournamentGameFromLobby(lobbyGameId));
                       setIsTournamentHubOpen(true);

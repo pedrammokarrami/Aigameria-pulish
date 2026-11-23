@@ -6,6 +6,7 @@ import { LOBBY_GAME_TABS, type LobbyGameId } from '../../utils/lobbySkillCatalog
 
 interface GameSwitcherBarProps {
   activeGameId: LobbyGameId;
+  activeStyleId: string;
   onSelectGame: (gameId: LobbyGameId) => void;
   onSelectStyle: (styleId: string) => void;
   onOpenTournamentHub: () => void;
@@ -20,6 +21,7 @@ interface GameSwitcherBarProps {
  */
 export const GameSwitcherBar: React.FC<GameSwitcherBarProps> = ({
   activeGameId,
+  activeStyleId,
   onSelectGame,
   onSelectStyle,
   onOpenTournamentHub,
@@ -27,9 +29,8 @@ export const GameSwitcherBar: React.FC<GameSwitcherBarProps> = ({
   onOpenIdentityProfile,
 }) => {
   const { copy, isRtl } = useLanguage();
-  const activeStyle: GameStyle = gameStyleForGame(activeGameId);
-  const styleGames = activeStyle.games;
-  const isRtlLang = true; // lobby is Persian-first; labels are bilingual already
+  const activeStyle: GameStyle = GAME_STYLES.find((s) => s.id === activeStyleId) ?? gameStyleForGame(activeGameId);
+    const isRtlLang = true; // lobby is Persian-first; labels are bilingual already
 
   return (
     <header className="w-full shrink-0">
@@ -61,6 +62,7 @@ export const GameSwitcherBar: React.FC<GameSwitcherBarProps> = ({
             >
               <span aria-hidden="true">{style.icon}</span>
               <span dir={isRtlLang ? 'rtl' : 'ltr'}>{style.labelFa}</span>
+              <span dir="ltr" className="text-[10.5px] font-bold opacity-55">{style.labelEn}</span>
             </button>
           );
         })}
@@ -103,34 +105,6 @@ export const GameSwitcherBar: React.FC<GameSwitcherBarProps> = ({
         </button>
       </nav>
 
-      {styleGames.length > 1 ? (
-        <div
-          data-testid="style-game-subpills"
-          dir="ltr"
-          className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 px-0.5"
-        >
-          {styleGames.map((gameId) => {
-            const tab = LOBBY_GAME_TABS.find((t) => t.id === gameId);
-            const isGameActive = gameId === activeGameId;
-            return (
-              <button
-                key={gameId}
-                type="button"
-                data-testid={`game-pill-${gameId}`}
-                aria-pressed={isGameActive}
-                onClick={() => onSelectGame(gameId)}
-                className={`shrink-0 whitespace-nowrap min-h-[26px] px-2.5 rounded-full text-[11px] font-bold transition-all duration-150 cursor-pointer border ${
-                  isGameActive
-                    ? 'border-white/45 bg-white/10 text-white'
-                    : 'border-white/10 bg-slate-950/40 text-white/60 hover:text-white hover:border-white/25'
-                }`}
-              >
-                {tab?.label ?? gameId}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
     </header>
   );
 };

@@ -29,7 +29,11 @@ const STYLE_ACCENTS: Record<string, string> = {
   strategy: '#F59E0B',
 };
 
-export function gameStyleForGame(gameId: LobbyGameId): GameStyle {
+export function gameStyleForGame(gameId: LobbyGameId, preferredStyleId?: string): GameStyle {
+  if (preferredStyleId) {
+    const preferred = GAME_STYLES.find((s) => s.id === preferredStyleId && s.games.includes(gameId));
+    if (preferred) return preferred;
+  }
   const hit = GAME_STYLES.find((s) => s.games.includes(gameId));
   if (hit) return hit;
   const realm = LOBBY_GAME_TABS.find((t) => t.id === gameId)?.realm;
@@ -59,10 +63,10 @@ export function loadLastStyleSelection(): LastStyleSelection | null {
   }
 }
 
-export function saveLastStyleSelection(gameId: LobbyGameId): void {
+export function saveLastStyleSelection(gameId: LobbyGameId, styleId?: string): void {
   try {
     localStorage.setItem(LAST_GAME_KEY, gameId);
-    localStorage.setItem(LAST_STYLE_KEY, gameStyleForGame(gameId).id);
+    localStorage.setItem(LAST_STYLE_KEY, styleId ?? gameStyleForGame(gameId).id);
   } catch {
     // storage unavailable — non-fatal
   }
