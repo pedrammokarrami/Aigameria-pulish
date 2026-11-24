@@ -472,3 +472,51 @@
   --color-electric-pink: #FF3E8A;
   --color-tropical-cyan: #22D3EE;
 }
+
+/* ── AIGAMERIA desktop shell (option a — user-approved) ─────────────────────
+   The product is a 9:16 mobile-first app. On wide desktop screens it renders
+   inside a sleek centered phone-style frame over an ambient AIGAMERIA backdrop
+   instead of stretching edge-to-edge. `transform: translateZ(0)` makes the
+   frame the containing block for fixed-position children, so full-screen
+   layers (3D stage, coach room, gates) stay trapped inside the frame. */
+.aigameria-desktop-shell {
+  min-height: 100dvh;
+}
+
+@media (min-width: 1024px) {
+  .aigameria-desktop-shell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #05070d;
+    background-image:
+      radial-gradient(ellipse 70% 55% at 18% -8%, rgba(255, 107, 53, 0.13), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 85% 4%, rgba(255, 62, 138, 0.11), transparent 58%),
+      radial-gradient(ellipse 50% 45% at 50% 108%, rgba(34, 211, 238, 0.08), transparent 60%);
+  }
+
+  .aigameria-desktop-shell [data-testid='aipetros-spatial-root'] {
+    width: min(52.9dvh, 100vw);
+    height: min(94dvh, calc(100vw * 1.7778));
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow:
+      0 40px 140px rgba(0, 0, 0, 0.65),
+      0 0 0 1px rgba(255, 255, 255, 0.08);
+    transform: translateZ(0);
+  }
+
+  .aigameria-desktop-shell [data-testid='aipetros-spatial-root'] > * {
+    border-radius: inherit;
+  }
+}
+
+/* Frame containment: full-viewport utility layers (fixed w-screen/h-screen,
+   h-dvh) must size to the phone frame, not the browser viewport. */
+@media (min-width: 1024px) {
+  .aigameria-desktop-shell [data-testid='aipetros-spatial-root'] .w-screen { width: 100%; }
+  .aigameria-desktop-shell [data-testid='aipetros-spatial-root'] .h-screen { height: 100%; }
+  .aigameria-desktop-shell [data-testid='aipetros-spatial-root'] .h-dvh { height: 100%; }
+  .aigameria-desktop-shell [data-testid='aipetros-spatial-root'] .min-h-dvh { min-height: 100%; }
+  .aigameria-desktop-shell [data-testid='aipetros-spatial-root'] .min-h-screen { min-height: 100%; }
+}

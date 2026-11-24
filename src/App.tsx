@@ -892,6 +892,7 @@ export function App() {
 
 
   return (
+    <div className="aigameria-desktop-shell">
     <MotionConfig skipAnimations={isRafFrozen}>
     {/* App-root ErrorBoundary: a single module crash (3D scene / video / map)
         must never blank the whole site — bounded Persian/English fallback. */}
@@ -1221,6 +1222,7 @@ export function App() {
     </div>
     </AppErrorBoundary>
     </MotionConfig>
+    </div>
   );
 }
 
