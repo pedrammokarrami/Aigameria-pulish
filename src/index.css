@@ -1,6 +1,7 @@
 @import "./styles/hudMotion.css";
 
 @import "tailwindcss";
+@import "./connection/connection.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -458,4 +459,16 @@
 
 .studio-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
+}
+
+/* ---- Aigameria Social Club theme tokens (from Petros-connection) ---- */
+@theme {
+  --color-midnight-950: #0D091A;
+  --color-midnight-900: #140E27;
+  --color-midnight-850: #1B1333;
+  --color-midnight-800: #231942;
+  --color-sunset-orange: #FF6B35;
+  --color-sunset-amber: #FF9F43;
+  --color-electric-pink: #FF3E8A;
+  --color-tropical-cyan: #22D3EE;
 }

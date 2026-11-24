@@ -4,6 +4,8 @@ dist
 
 # local data dir (SQLite database + runtime artifacts)
 .data/
+data/
+glb-pad/
 
 # Telegram bridge secrets
 telegram-bridge/session_new.txt

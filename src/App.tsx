@@ -12,7 +12,6 @@ import { loadLastStyleSelection, saveLastStyleSelection, defaultGameForStyle, ga
 import { speakWithPersona } from './utils/voicePersona';
 import { triageImageMedia, triageVideoMedia, type MediaTriageState } from './utils/mediaTriage';
 import { GlobalEarthLanguageButton } from './components/spatial/GlobalEarthLanguageButton';
-import { GtaSocialWorld } from './components/spatial/GtaSocialWorld';
 import { LanguageSelectorModal } from './components/spatial/LanguageSelectorModal';
 import { LobbyBottomDock } from './components/spatial/LobbyBottomDock';
 import { MasterHubSwitcher, type MasterHubId } from './components/spatial/MasterHubSwitcher';
@@ -32,6 +31,7 @@ import {
 import { REALM_CONFIGS } from './data/realmsData';
 import { AppBootGate, useAppBoot, useSectionWarmup } from './components/spatial/AppBootGate';
 import { useLanguage } from './contexts/LanguageContext';
+import { SocialClubApp } from './connection/SocialClubApp';
 import {
   type MotionCoachPayload,
   getInstantMotionCoachPayload,
@@ -55,33 +55,6 @@ import {
 } from './utils/coachSearchRules';
 import { RAF_FROZEN_EVENT, isRafShimmed } from './utils/rafFallback';
 import {
-  type GtaChatMessage,
-  type GtaSocialState,
-  type GtaSocialTabId,
-  INITIAL_GTA_SOCIAL_STATE,
-  type LivePredictionMarketId,
-  addPostComment,
-  appendSocialChatMessage,
-  backRivalryFaction,
-  buildAutoCrewReply,
-  createGtaClub,
-  createGtaHighlightClip,
-  createGtaSquadLobby,
-  createScrimChallenge,
-  createSocialPost,
-  joinOrLeaveGtaSquad,
-  postClubAnnouncement,
-  postFanClubMessage,
-  registerForWeeklyTournament,
-  shareSocialPost,
-  submitLiveArenaPrediction,
-  toggleClipFireReaction,
-  toggleClubMembership,
-  toggleCommentLike,
-  toggleGamerFriendship,
-  togglePostReaction,
-} from './utils/gtaSocialRules';
-import {
   LOBBY_CATEGORIES_BY_GAME,
   type LobbyGameId,
   type LobbySkillCardItem,
@@ -92,7 +65,6 @@ import {
 import { LOBBY_SKILLS_BY_GAME } from './utils/lobbySkillCatalog';
 
 const STORAGE_REALM_KEY = 'aipetros-coach-realm-v5';
-const STORAGE_SOCIAL_KEY = 'aipetros-gta-social-v5';
 
 interface BrowserSpeechRecognition {
   lang: string;
@@ -179,37 +151,6 @@ export function App() {
     return 'FC27';
   });
 
-  const [socialState, setSocialState] = useState<GtaSocialState>(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_SOCIAL_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as GtaSocialState;
-        if (parsed?.gamers && parsed?.rivalries) {
-          const validTabs: GtaSocialTabId[] = ['feed', 'chat', 'friends', 'clubs'];
-          return {
-            ...INITIAL_GTA_SOCIAL_STATE,
-            ...parsed,
-            activeTab: validTabs.includes(parsed.activeTab) ? parsed.activeTab : 'feed',
-            posts:
-              Array.isArray(parsed.posts) && parsed.posts.length > 0
-                ? parsed.posts
-                : INITIAL_GTA_SOCIAL_STATE.posts,
-            clubs:
-              Array.isArray(parsed.clubs) && parsed.clubs.length > 0
-                ? parsed.clubs
-                : INITIAL_GTA_SOCIAL_STATE.clubs,
-          };
-        }
-      }
-    } catch {
-      // ignore
-    }
-    return {
-      ...INITIAL_GTA_SOCIAL_STATE,
-      activeTab: 'feed',
-    };
-  });
-  const [isSendingSocialChat, setIsSendingSocialChat] = useState(false);
 
   const [manifest, setManifest] = useState<MediaManifest>({
     lobbyVideoUrl: null,
@@ -341,13 +282,6 @@ export function App() {
     }
   }, [activeMasterHub, activeRealm, isIdentityProfileOpen, isTournamentHubOpen, isGtaSocialOpen, activeTopic]);
 
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(STORAGE_SOCIAL_KEY, JSON.stringify(socialState));
-    } catch {
-      // ignore
-    }
-  }, [socialState]);
 
   useEffect(() => {
     let mounted = true;
@@ -938,173 +872,6 @@ export function App() {
     }
   };
 
-  // GTA Social Club Handlers
-  const handleSelectSocialTab = (tab: GtaSocialTabId) => {
-    setSocialState((prev) => ({ ...prev, activeTab: tab }));
-  };
-
-  const handleToggleFriend = (gamerId: string) => {
-    setSocialState((prev) => toggleGamerFriendship(prev, gamerId));
-  };
-
-  const handleSendSocialChat = (channelId: string, text: string) => {
-    if (!text.trim()) return;
-    setSocialState((prev) =>
-      appendSocialChatMessage(prev, {
-        channelId,
-        text,
-        isSelf: true,
-        accentHex: '#22D3EE',
-      })
-    );
-    setIsSendingSocialChat(true);
-
-    fetch('/api/social/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        channelId,
-        text,
-        userHandle: socialState.userHandle,
-      }),
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.reply) {
-          const srvReply = data.reply as GtaChatMessage;
-          setSocialState((prev) => ({
-            ...prev,
-            messages: [...prev.messages, srvReply].slice(-30),
-          }));
-        } else {
-          setSocialState((prev) => {
-            const fallbackReply = buildAutoCrewReply(prev, text, channelId);
-            return {
-              ...prev,
-              messages: [...prev.messages, fallbackReply].slice(-30),
-            };
-          });
-        }
-      })
-      .catch(() => {
-        setSocialState((prev) => {
-          const fallbackReply = buildAutoCrewReply(prev, text, channelId);
-          return {
-            ...prev,
-            messages: [...prev.messages, fallbackReply].slice(-30),
-          };
-        });
-      })
-      .finally(() => {
-        setIsSendingSocialChat(false);
-      });
-  };
-
-  const handleToggleSquadJoin = (squadId: string) => {
-    setSocialState((prev) => joinOrLeaveGtaSquad(prev, squadId));
-  };
-
-  const handleCreateSquad = (input: {
-    titleFa: string;
-    gameTitle: string;
-    realm: RealmId;
-    neededRoleFa: string;
-    micRequired?: boolean;
-    requiredRank?: string;
-  }) => {
-    setSocialState((prev) => createGtaSquadLobby(prev, input));
-  };
-
-  const handleCreateHighlightClip = (input: {
-    gameTag: string;
-    captionFa: string;
-    thumbnailUrl?: string;
-  }) => {
-    setSocialState((prev) => createGtaHighlightClip(prev, input));
-  };
-
-  const handleToggleClipLike = (clipId: string) => {
-    setSocialState((prev) => toggleClipFireReaction(prev, clipId));
-  };
-
-  const handleRegisterTournament = (tournamentId: string) => {
-    setSocialState((prev) => registerForWeeklyTournament(prev, tournamentId));
-  };
-
-  const handleCreateChallenge = (input: {
-    mode: '1v1' | '5v5';
-    gameTitle: string;
-    targetClanOrHandle: string;
-    stakeRep: number;
-    noteFa: string;
-  }) => {
-    setSocialState((prev) => createScrimChallenge(prev, input));
-  };
-
-  const handleSubmitLivePrediction = (input: {
-    market: LivePredictionMarketId;
-    contenderId: 'nima' | 'parsa';
-    stakeRep: number;
-  }) => {
-    setSocialState((prev) => submitLiveArenaPrediction(prev, input));
-  };
-
-  const handlePostFanClubMessage = (gamerId: string, text: string) => {
-    setSocialState((prev) => postFanClubMessage(prev, gamerId, text));
-  };
-
-  const handleBackFaction = (
-    rivalryId: string,
-    factionId: string,
-    chantText?: string
-  ) => {
-    setSocialState((prev) =>
-      backRivalryFaction(prev, rivalryId, factionId, chantText)
-    );
-  };
-
-  const handleTogglePostReaction = (postId: string, reaction: 'like' | 'dislike') => {
-    setSocialState((prev) => togglePostReaction(prev, postId, reaction));
-  };
-
-  const handleAddPostComment = (postId: string, text: string) => {
-    setSocialState((prev) => addPostComment(prev, postId, text));
-  };
-
-  const handleToggleCommentLike = (postId: string, commentId: string) => {
-    setSocialState((prev) => toggleCommentLike(prev, postId, commentId));
-  };
-
-  const handleSharePost = (postId: string, targetChannelId?: string) => {
-    setSocialState((prev) => shareSocialPost(prev, postId, targetChannelId));
-  };
-
-  const handleCreatePost = (input: {
-    captionFa: string;
-    gameTag?: string;
-    districtFa?: string;
-    mediaUrl?: string;
-  }) => {
-    setSocialState((prev) => createSocialPost(prev, input));
-  };
-
-  const handleToggleClubJoin = (clubId: string) => {
-    setSocialState((prev) => toggleClubMembership(prev, clubId));
-  };
-
-  const handleCreateClub = (input: {
-    name: string;
-    tag: string;
-    districtFa?: string;
-    mottoFa?: string;
-    gameFocus?: string;
-  }) => {
-    setSocialState((prev) => createGtaClub(prev, input));
-  };
-
-  const handlePostClubAnnouncement = (clubId: string, text: string) => {
-    setSocialState((prev) => postClubAnnouncement(prev, clubId, text));
-  };
 
   return (
     <MotionConfig skipAnimations={isRafFrozen}>
@@ -1263,45 +1030,8 @@ export function App() {
             transition={{ duration: 0.2 }}
             className="absolute inset-0"
           >
-            {/* 1. Dedicated GTA VI Vice City Social Media & Club World */}
-            <GtaSocialWorld
-              socialState={socialState}
-              isSendingChat={isSendingSocialChat}
-              onSelectTab={handleSelectSocialTab}
-              onToggleFriend={handleToggleFriend}
-              onSendChat={handleSendSocialChat}
-              onTogglePostReaction={handleTogglePostReaction}
-              onAddPostComment={handleAddPostComment}
-              onToggleCommentLike={handleToggleCommentLike}
-              onSharePost={handleSharePost}
-              onCreatePost={handleCreatePost}
-              onToggleClubJoin={handleToggleClubJoin}
-              onCreateClub={handleCreateClub}
-              onPostClubAnnouncement={handlePostClubAnnouncement}
-              onToggleSquadJoin={handleToggleSquadJoin}
-              onCreateSquad={handleCreateSquad}
-              onCreateHighlightClip={handleCreateHighlightClip}
-              onToggleClipLike={handleToggleClipLike}
-              onRegisterTournament={handleRegisterTournament}
-              onCreateChallenge={handleCreateChallenge}
-              onSubmitLivePrediction={handleSubmitLivePrediction}
-              onPostFanClubMessage={handlePostFanClubMessage}
-              onBackFaction={handleBackFaction}
-              onExitToCoach={() => setIsGtaSocialOpen(false)}
-              onOpenTournamentHub={() => {
-                setTournamentInitialGame(resolveTournamentGameFromLobby(lobbyGameId));
-                setIsTournamentHubOpen(true);
-              }}
-              onUploadSceneFile={handleUploadFile}
-              onToggleSpeak={() =>
-                isSpeaking
-                  ? stopSpeaking()
-                  : triggerCoachSpeech(
-                      activeTopic?.coachVoiceEn ?? realmTopics[0].coachVoiceEn
-                    )
-              }
-              isSpeaking={isSpeaking}
-            />
+            {/* 1. Aigameria Social Club — unified Petros-connection social layer */}
+            <SocialClubApp skipInviteGate onExit={() => setIsGtaSocialOpen(false)} />
           </motion.div>
         ) : activeTopic ? (
           <motion.div

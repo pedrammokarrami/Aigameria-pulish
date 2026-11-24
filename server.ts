@@ -2,6 +2,27 @@ import 'dotenv/config';
 import express from 'express';
 import { spawn } from 'child_process';
 import os from 'os';
+// ---- Aigameria Social Club (Petros-connection) backend engines ----
+import { LocalNodeStore } from './src/server/connection/personal-server/localStore';
+import { P2PSignalingServer } from './src/server/connection/p2p/signalingServer';
+import { LanDiscoveryService } from './src/server/connection/p2p/lanDiscovery';
+import { LocalStreamEngine } from './src/server/connection/streaming/streamEngine';
+import { PersonalNodeController } from './src/server/connection/personal-server/nodeController';
+import { createPersonalNodeRouter } from './src/server/connection/personal-server/nodeRouter';
+import { TelegramBotBridge } from './src/server/connection/telegram-bot/botBridge';
+import {
+  CatboxProvider,
+  EphemeralLanMemoryProvider,
+  EphemeralRamStore,
+  GitHubReleasesProvider,
+  IpfsPinningProvider,
+  LitterboxProvider,
+  TmpfilesProvider,
+} from './src/server/connection/cloud-uploader/providers';
+import { CloudUploadPipeline } from './src/server/connection/cloud-uploader/uploadPipeline';
+import { createLinkAndUploadRouters } from './src/server/connection/link-router/router';
+import { createStreamRouter } from './src/server/connection/streaming/streamRouter';
+import { startClubSimulation } from './src/server/connection/clubSimulation';
 import { triLayerQuery } from './src/agents/triLayerQuery';
 import { detectGameAmbiguity } from './src/agents/gameAmbiguity';
 import type { LobbyGameId } from './src/utils/lobbySkillCatalog';
@@ -1664,6 +1685,68 @@ document.getElementById('r').innerHTML=rows.join('');
 
   // Real-time chat WebSocket at /ws/chat (token auth at upgrade)
   setupChatWebSocket(server);
+
+  // ---- Aigameria Social Club node (Petros-connection backend) ----
+  // Encrypted-at-rest SQLite metadata store (public posts, links, members, lounge)
+  const clubStore = new LocalNodeStore(
+    path.resolve(process.cwd(), 'data', 'aigameria-node.sqlite'),
+  );
+  const clubIdentity = clubStore.getOrCreateNodeIdentity();
+  const clubSignaling = new P2PSignalingServer({
+    nodeId: clubIdentity.nodeId,
+    onPublicPost: (post) => clubStore.savePublicPost(post),
+  });
+  clubSignaling.attach(server, '/ws/signal');
+  const clubLanDiscovery = new LanDiscoveryService(
+    clubIdentity.nodeId,
+    PORT,
+    clubIdentity.fingerprint,
+  );
+  if (process.env.LAN_DISCOVERY_ENABLED !== 'false') {
+    clubLanDiscovery.start();
+  }
+  const clubStreamEngine = new LocalStreamEngine();
+  const clubController = new PersonalNodeController({
+    store: clubStore,
+    identity: clubIdentity,
+    signaling: clubSignaling,
+    lanDiscovery: clubLanDiscovery,
+    streamEngine: clubStreamEngine,
+  });
+  const clubTelegram = new TelegramBotBridge({ controller: clubController, store: clubStore, streamEngine: clubStreamEngine });
+  clubTelegram.startIfConfigured();
+  clubController.startHealthMonitor(60_000);
+  const clubRamStore = new EphemeralRamStore();
+  const clubUploadPipeline = new CloudUploadPipeline([
+    new LitterboxProvider(),
+    new TmpfilesProvider(),
+    new GitHubReleasesProvider(),
+    new IpfsPinningProvider(),
+    new CatboxProvider(),
+    new EphemeralLanMemoryProvider(clubRamStore, () => clubController.getPublicBaseUrl()),
+  ]);
+  const clubLinkRouters = createLinkAndUploadRouters({
+    store: clubStore,
+    pipeline: clubUploadPipeline,
+    ramStore: clubRamStore,
+    controller: clubController,
+  });
+
+  app.get('/api/connection/health', (_req, res) => {
+    res.json({
+      ok: true,
+      nodeId: clubIdentity.nodeId,
+      fingerprint: clubIdentity.fingerprint,
+      uptimeSec: clubController.getStatusSnapshot().uptimeSec,
+      zeroStoragePolicy: true,
+    });
+  });
+  app.use('/api/node', createPersonalNodeRouter(clubController, clubStore, clubSignaling));
+  app.use('/api/streams', createStreamRouter(clubStreamEngine, clubController));
+  app.use('/api/telegram', clubTelegram.createRouter());
+  app.use('/api', clubLinkRouters.apiRouter);
+  app.use('/', clubLinkRouters.publicRouter);
+  startClubSimulation(clubStore);
 
   // Vite dev middleware vs static production serving
   if (process.env.NODE_ENV !== 'production') {

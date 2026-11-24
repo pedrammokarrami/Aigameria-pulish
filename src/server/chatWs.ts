@@ -90,6 +90,10 @@ export function setupChatWebSocket(server: import('node:http').Server): WebSocke
   const wss = new WebSocketServer({ noServer: true });
 
   server.on('upgrade', (req: IncomingMessage, socket: Duplex, head: Buffer) => {
+    // Only claim the /ws/chat path — other upgrade handlers (e.g. the Aigameria
+    // club P2P signaling at /ws/signal) must own their own sockets.
+    const url = new URL(req.url ?? '/ws/chat', 'http://localhost');
+    if (url.pathname !== '/ws/chat') return;
     const auth = authenticateUpgrade(req);
     if (!auth) {
       socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
