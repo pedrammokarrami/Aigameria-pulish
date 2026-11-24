@@ -21,6 +21,7 @@ export function requestContext(req: Request, res: Response, next: NextFunction):
 
 /** Security headers (CSP, clickjacking, MIME sniffing, referrer, HSTS). */
 export function securityHeaders(req: Request, res: Response, next: NextFunction): void {
+  const isAnalyzEmbed = req.path.startsWith('/analyz');
   res.setHeader(
     'Content-Security-Policy',
     [
@@ -29,16 +30,17 @@ export function securityHeaders(req: Request, res: Response, next: NextFunction)
       `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV !== 'production' ? " 'unsafe-eval'" : ''} blob:`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",
-      "img-src 'self' data: blob: https:",
+      "img-src 'self' data: blob: https://fonts.googleapis.com https://fonts.gstatic.com https:",
       "media-src 'self' blob: data: https:",
       "connect-src 'self' blob: data: ws: wss: https:",
-      "frame-ancestors 'none'",
+      // the vendored analyz stage is embedded as an iframe on our own origin
+      isAnalyzEmbed ? "frame-ancestors 'self'" : "frame-ancestors 'none'",
       'base-uri \'self\'',
       "form-action 'self'",
     ].join('; ')
   );
+  if (!isAnalyzEmbed) res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=()');
   if (req.secure || process.env.FORCE_HSTS === '1') {
