@@ -29,8 +29,10 @@ import {
   resolveTournamentGameFromLobby,
 } from './data/gameTournamentThemes';
 import { REALM_CONFIGS } from './data/realmsData';
+import { IS_GAME_ONLY_HOST } from './utils/hostBrand';
 import { AppBootGate, useAppBoot, useSectionWarmup } from './components/spatial/AppBootGate';
 import { useAuthGate } from './components/spatial/AuthGate';
+import { AppErrorBoundary } from './components/spatial/AppErrorBoundary';
 import { useLanguage } from './contexts/LanguageContext';
 import { SocialClubApp } from './connection/SocialClubApp';
 import {
@@ -99,6 +101,7 @@ export function App() {
   });
 
   const [activeMasterHub, setActiveMasterHub] = useState<MasterHubId>(() => {
+    if (IS_GAME_ONLY_HOST) return 'game'; // game-only brand: hub locked
     try {
       const params = new URLSearchParams(window.location.search);
       const hub = params.get('hub');
@@ -108,6 +111,12 @@ export function App() {
     }
     return 'game';
   });
+
+  // Game-only brand (aigameria.com): hub switching to cinema/audio is blocked.
+  const selectHub = React.useCallback((hub: MasterHubId) => {
+    if (IS_GAME_ONLY_HOST && hub !== 'game') return;
+    setActiveMasterHub(hub);
+  }, []);
 
   const [isGtaSocialOpen, setIsGtaSocialOpen] = useState<boolean>(() => {
     try {
@@ -261,6 +270,11 @@ export function App() {
     setIsRafFrozen(isRafShimmed());
     window.addEventListener(RAF_FROZEN_EVENT, onRafFrozen);
     return () => window.removeEventListener(RAF_FROZEN_EVENT, onRafFrozen);
+  }, []);
+
+  useEffect(() => {
+    // Split-brand: game-only host carries the AIGAMERIA title.
+    if (IS_GAME_ONLY_HOST) document.title = 'AIGAMERIA v1.02 — Game';
   }, []);
 
   useEffect(() => {
@@ -879,6 +893,9 @@ export function App() {
 
   return (
     <MotionConfig skipAnimations={isRafFrozen}>
+    {/* App-root ErrorBoundary: a single module crash (3D scene / video / map)
+        must never blank the whole site — bounded Persian/English fallback. */}
+    <AppErrorBoundary>
     <div
       data-realm={activeRealm}
       data-build={__BUILD_ID__}
@@ -973,7 +990,7 @@ export function App() {
           >
             <CinemaHubView
               activeHub={activeMasterHub}
-              onSelectHub={setActiveMasterHub}
+              onSelectHub={selectHub}
               onOpenMap={() => setActiveLeftOverlay('map')}
               onOpenStore={() => {
                 setStoreInitialCollectionId(null);
@@ -992,7 +1009,7 @@ export function App() {
           >
             <AudioHubView
               activeHub={activeMasterHub}
-              onSelectHub={setActiveMasterHub}
+              onSelectHub={selectHub}
               onOpenMap={() => setActiveLeftOverlay('map')}
               onOpenStore={() => {
                 setStoreInitialCollectionId(null);
@@ -1111,7 +1128,7 @@ export function App() {
                 <div className="flex justify-center pl-12 sm:pl-0">
                   <MasterHubSwitcher
                     activeHub={activeMasterHub}
-                    onSelectHub={setActiveMasterHub}
+                    onSelectHub={selectHub}
                   />
                 </div>
 
@@ -1202,6 +1219,7 @@ export function App() {
         )}
       </AnimatePresence>
     </div>
+    </AppErrorBoundary>
     </MotionConfig>
   );
 }

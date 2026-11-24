@@ -13,7 +13,9 @@
     "lint": "tsc --noEmit",
     "test:e2e": "node scripts/e2e-test.mjs",
     "test:users": "node scripts/ten-user-test.mjs",
-    "lang-strict": "tsx --test src/utils/i18nStrict.test.ts src/utils/hubQuickMenu.test.ts"
+    "lang-strict": "tsx --test src/utils/i18nStrict.test.ts src/utils/hubQuickMenu.test.ts",
+    "smoke": "node scripts/build-smoke.mjs",
+    "build:check": "npm run build && npm run smoke"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
