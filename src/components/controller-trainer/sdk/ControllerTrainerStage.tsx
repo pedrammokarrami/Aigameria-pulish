@@ -435,6 +435,14 @@ export function ControllerTrainerStage({
     controller.setSurfaceAnchors(anchorsRef.current[startDevice]);
     controllerRef.current = controller;
 
+    // Invisible calibration diagnostics handle (no visible UI)
+    if (typeof window !== 'undefined') {
+      (window as unknown as Record<string, unknown>).__astroTrainerDebug = {
+        getSnapshot: () => controllerRef.current?.getDebugSnapshot() ?? null,
+        getRoot: () => controllerRef.current?.debugGetRoot() ?? null,
+      };
+    }
+
     if (autoPlayRef.current) {
       controller.setPlaying(true);
     }

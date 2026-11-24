@@ -32,6 +32,10 @@ import {
   createDefaultGlbTransform,
   type GlbMeshHint,
 } from '../core/glbPlacement';
+import {
+  buildAnchorsFromReference,
+  referenceSpecsForDevice,
+} from '../core/referenceAnchors';
 import { buildPcKeyboardMouse, buildProceduralDevice } from './deviceBuilders';
 import { buildBackgroundEnvironment } from './backgroundEnvironments';
 import { createStudioStage, type StudioStageSystem } from './stageBuilder';
@@ -595,6 +599,9 @@ export class StudioSceneController {
             if (this.deviceType === targetDevice) {
               this.glbTransform = { ...finalTransform };
               this.mountDeviceModel(targetDevice);
+              // Some authored-standing GLBs (e.g. display-pose controllers) get
+              // presented vertically by the portrait heuristic — lay them flat.
+              this.correctStandingGlbOrientation(targetDevice);
             }
           }
           resolve();
@@ -1070,6 +1077,7 @@ export class StudioSceneController {
       this.devicePivot.add(cloned);
       this.indexDeviceMeshes(cloned);
       this.applyGlbTransformToCurrentRoot();
+      this.autoAnchorCustomDevice(device);
     } else if (device === 'pc' && (this.customPcSubCache.keyboard || this.customPcSubCache.mouse)) {
       const built = buildPcKeyboardMouse(
         this.renderer.capabilities.getMaxAnisotropy(),
@@ -1103,6 +1111,134 @@ export class StudioSceneController {
     this.evaluateAndApplyFrame(0.016, false);
     this.scene.updateMatrixWorld(true);
     this.requestRender();
+  }
+
+  /**
+   * Auto-generates surface anchors for a custom .glb by scaling the calibrated
+   * reference-studio button coordinates into the GLB's measured local bounding
+   * box and raycast-snapping every point onto the real mesh surface. Explicit
+   * anchors (props / calibration) always win; procedural built-ins are skipped.
+   */
+  private autoAnchorCustomDevice(device: DeviceType) {
+    if (!referenceSpecsForDevice(device)) return;
+    if (Object.keys(this.surfaceAnchors).length > 0) return; // explicit anchors win
+    if (!this.currentDeviceRoot || !this.customDeviceCache[device]) return;
+    if (this.pickableMeshes.length === 0) return;
+
+    // Synchronous measurement: updateMatrixWorld once, then derive the GLB's
+    // bounding box in root-local space (invRoot undoes pivot tilt + root transform).
+    this.currentDeviceRoot.updateMatrixWorld(true);
+    const worldBox = new THREE.Box3();
+    for (const mesh of this.pickableMeshes) {
+      worldBox.expandByObject(mesh);
+    }
+    const invRoot = new THREE.Matrix4().copy(this.currentDeviceRoot.matrixWorld).invert();
+    const localBox = worldBox.clone().applyMatrix4(invRoot);
+
+    const generated = buildAnchorsFromReference(device, {
+      root: this.currentDeviceRoot,
+      pickableMeshes: this.pickableMeshes,
+      localBox,
+    });
+    if (Object.keys(generated).length === 0) return;
+
+    this.surfaceAnchors = generated;
+    this.rebuildAnchorOverlay();
+    // Keep pin size consistent with the GLB transform scale (same contract as
+    // applyGlbTransformToCurrentRoot uses for pre-existing pins).
+    const invScale = 1 / Math.max(0.35, this.glbTransform.scale);
+    for (const pin of this.anchorVisuals.values()) {
+      pin.group.scale.setScalar(invScale);
+    }
+  }
+
+  /**
+   * Detects a custom controller GLB mounted standing upright (height extent
+   * larger than depth — the portrait heuristic cannot know the author's pose)
+   * and lays it flat face-up on the pedestal by rotating -90° about X. The
+   * corrected transform is persisted into the device cache so remounts and
+   * device switches keep the flat pose.
+   */
+  private correctStandingGlbOrientation(device: DeviceType) {
+    if (device !== 'ps5' && device !== 'xbox') return;
+    if (!this.customDeviceCache[device] || !this.currentDeviceRoot) return;
+
+    const measureFlatness = (): { height: number; depth: number } => {
+      const savedPivotRot = this.devicePivot.rotation.clone();
+      this.devicePivot.rotation.set(0, 0, 0);
+      this.currentDeviceRoot!.updateMatrixWorld(true);
+      const box = new THREE.Box3();
+      for (const mesh of this.pickableMeshes) {
+        box.expandByObject(mesh);
+      }
+      this.devicePivot.rotation.copy(savedPivotRot);
+      this.currentDeviceRoot!.updateMatrixWorld(true);
+      const size = box.getSize(new THREE.Vector3());
+      return { height: size.y, depth: size.z };
+    };
+
+    let flat = measureFlatness();
+    if (flat.height <= flat.depth * 1.05) return; // already lying flat
+
+    const baseRotX = this.glbTransform.rotX;
+    const baseRotY = this.glbTransform.rotY;
+    const baseRotZ = this.glbTransform.rotZ;
+    // Baked GLB node rotations compose with the heuristic transform in ways no
+    // static rule can predict — search 90°-step deltas on all three axes and
+    // keep the flattest pose (min height extent). Face-up vs face-down is then
+    // resolved empirically via the reference-anchor hit normals.
+    const applyCandidate = (dx: number, dy: number, dz: number) => {
+      this.glbTransform = {
+        ...this.glbTransform,
+        rotX: baseRotX + dx,
+        rotY: baseRotY + dy,
+        rotZ: baseRotZ + dz,
+      };
+      const cached = this.customDeviceCache[device];
+      if (cached) cached.autoTransform = { ...this.glbTransform };
+      this.applyGlbTransformToCurrentRoot();
+      this.currentDeviceRoot!.updateMatrixWorld(true);
+    };
+
+    const STEPS = [0, -Math.PI / 2, Math.PI / 2, Math.PI];
+    let best: { d: [number, number, number]; height: number } | null = null;
+    for (const dx of STEPS) {
+      for (const dy of STEPS) {
+        for (const dz of STEPS) {
+          applyCandidate(dx, dy, dz);
+          const f = measureFlatness();
+          if (!best || f.height < best.height - 0.01) {
+            best = { d: [dx, dy, dz], height: f.height };
+          }
+        }
+      }
+    }
+    if (!best || best.height > flat.depth * 1.05) {
+      // nothing flattened it — restore the heuristic pose
+      applyCandidate(0, 0, 0);
+      return;
+    }
+    applyCandidate(best.d[0], best.d[1], best.d[2]);
+
+    // Face-up check: top-face reference buttons must hit upward-facing surfaces.
+    // On a face-down pose the top rays land on the back shell instead.
+    this.surfaceAnchors = {};
+    this.autoAnchorCustomDevice(device);
+    const topIds = ['BTN_CROSS', 'BTN_TRIANGLE', 'BTN_A', 'BTN_Y', 'BTN_X', 'BTN_TOUCHPAD'];
+    let up = 0;
+    let down = 0;
+    for (const id of topIds) {
+      const a = this.surfaceAnchors[id];
+      if (!a) continue;
+      if (a.normal[1] > 0.3) up += 1;
+      else if (a.normal[1] < -0.3) down += 1;
+    }
+    if (down > up) {
+      // Face-down: flip 180° about X (stays flat, face becomes up)
+      applyCandidate(best.d[0] + Math.PI, best.d[1], best.d[2]);
+      this.surfaceAnchors = {};
+      this.autoAnchorCustomDevice(device);
+    }
   }
 
   public setDevice(
@@ -1145,6 +1281,24 @@ export class StudioSceneController {
     this.rebuildAnchorOverlay();
     this.evaluateAndApplyFrame(0.016, false);
     this.requestRender();
+  }
+
+  /** Invisible diagnostics for calibration tooling — no UI is rendered from this. */
+  public getDebugSnapshot() {
+    return {
+      device: this.deviceType,
+      hasCustomGlb: Boolean(this.customDeviceCache[this.deviceType]),
+      anchoredButtonIds: Object.keys(this.surfaceAnchors),
+      anchorMeshes: Object.fromEntries(
+        Object.entries(this.surfaceAnchors).map(([id, a]) => [id, a.meshName ?? null]),
+      ),
+      pickableMeshCount: this.pickableMeshes.length,
+    };
+  }
+
+  /** Invisible: raw current device root for calibration debugging only. */
+  public debugGetRoot(): THREE.Object3D | null {
+    return this.currentDeviceRoot;
   }
 
   public setLoopEnabled(loop: boolean) {
