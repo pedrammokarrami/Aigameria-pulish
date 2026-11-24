@@ -73,7 +73,7 @@ export const CoachSessionPanel: React.FC<CoachSessionPanelProps> = ({
       .then((body: SessionData) => {
         if (!cancelled && body?.session) {
           setSession(body.session);
-          setActiveModuleId(body.session.modules[0]?.id ?? 'finishing');
+          setActiveModuleId(body.session.modules[0]?.id ?? '');
         }
       })
       .catch(() => undefined)

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { buildAnalyzFootballCommand, sendAnalyzCommand } from '../../utils/analyzBridge';
+import { buildAnalyzCommand, sendAnalyzCommand } from '../../utils/analyzBridge';
 import { isIosLikeDevice } from '../../utils/iosPlayback';
 import {
   ArrowRight,
@@ -146,8 +146,16 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
   const accent = motionPayload.accentHex || '#22C55E';
   const analyzFrameRef = useRef<HTMLIFrameElement | null>(null);
   const analyzCommand = useMemo(
-    () => buildAnalyzFootballCommand(answerBlock, accent),
-    [answerBlock, accent],
+    () =>
+      buildAnalyzCommand({
+        gameId: motionPayload.gameId,
+        gameName: motionPayload.gameName,
+        realm: activeRealm,
+        query: problemQuery,
+        answerBlock,
+        accentHex: accent,
+      }),
+    [motionPayload.gameId, motionPayload.gameName, activeRealm, problemQuery, answerBlock, accent],
   );
   useEffect(() => {
     sendAnalyzCommand(analyzFrameRef.current, analyzCommand);

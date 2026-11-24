@@ -117,6 +117,32 @@ export function buildAnalyzFootballCommand(
   };
 }
 
+/**
+ * Build the analyz stage command for any game: sports realms map to the
+ * football schema; everything else falls back to a natural-language prompt
+ * object ({ prompt }) — the vendored engine auto-detects the game/mode and
+ * renders the matching section (weapon / map / strategy / basketball).
+ */
+export function buildAnalyzCommand(
+  args: {
+    gameId: string;
+    gameName: string;
+    realm: string;
+    query: string;
+    answerBlock?: CoachAnswerBlock | null;
+    accentHex: string;
+  },
+): Record<string, unknown> | null {
+  const football = buildAnalyzFootballCommand(args.answerBlock, args.accentHex);
+  if (football) return football;
+  const lines = [
+    args.answerBlock?.titleEn,
+    ...(args.answerBlock?.linesEn ?? []).slice(0, 4),
+  ].filter(Boolean);
+  const prompt = [args.gameName, args.query, ...lines].filter(Boolean).join('. ').slice(0, 800);
+  if (!prompt.trim()) return null;
+  return { prompt };
+}
 /** postMessage the command to an embedded analyz stage once it's ready. */
 export function sendAnalyzCommand(
   frame: HTMLIFrameElement | null,

@@ -245,7 +245,8 @@ async function loadGameKnowledgeCards(gameId: string): Promise<KnowledgeCardRow[
     const { getDb } = await import('../server/db.ts');
     const rows = getDb()
       .prepare(
-        "SELECT kind, title, body FROM knowledge_cards WHERE game_id = ? AND kind IN ('qa','question','trick','glitch') ORDER BY updated_at DESC LIMIT 120"
+        "SELECT kind, title, body FROM knowledge_cards WHERE game_id = ? AND kind IN ('qa','question','trick','glitch') " +
+        "ORDER BY CASE kind WHEN 'qa' THEN 0 WHEN 'trick' THEN 1 WHEN 'glitch' THEN 2 ELSE 3 END, updated_at DESC LIMIT 200"
       )
       .all(gameId) as unknown as KnowledgeCardRow[];
     return rows;
@@ -349,6 +350,13 @@ export async function buildCoachSession(
     updates: moduleCardLines(gameCards, 'updates', isFa),
     training: moduleCardLines(gameCards, 'training', isFa),
   };
+  // English variants so the English UI is also knowledge-card-led, not static-KB-led
+  const cardLinesEn = {
+    finishing: moduleCardLines(gameCards, 'finishing', false),
+    formation: moduleCardLines(gameCards, 'formation', false),
+    updates: moduleCardLines(gameCards, 'updates', false),
+    training: moduleCardLines(gameCards, 'training', false),
+  };
 
   // Live intel + per-module clips, all in parallel
   const [intel, finishingClips, formationClips, updatesClips, mistakesClips, trainingClips] =
@@ -382,6 +390,7 @@ export async function buildCoachSession(
         'ضرب ایستگاهی: هریک رو به نقطه پنج‌متری نزدیک کاد نده؛ درِوازه‌بان خروج قوی داره — نقطه دوم یا پس‌کش به لبه محوطه.',
       ],
       linesEn: [
+        ...(cardLinesEn.finishing.length ? cardLinesEn.finishing : []),
         'Power: 2-3 bars is enough; full power = wild miss.',
         'Finesse: 45° inside the box + green timing = best conversion.',
         'Control first touch, shoot second touch — first-touch shots only on open goal.',
@@ -403,6 +412,7 @@ export async function buildCoachSession(
         'پرس بعد از پاس عرضی فعال بشه، نه همه‌جا — مهم‌ترین تنظیم متا فعلی.',
       ],
       linesEn: [
+        ...(cardLinesEn.formation.length ? cardLinesEn.formation : []),
         'Pick by your squad: strong central mids → 4-2-3-1; fast wingers → 4-3-3; compact block → 4-2-1-3.',
         'Roles: your best defensive player must be the CDM; CAM matches your style.',
         'Press after sideways passes only — the single most important current meta setting.',
