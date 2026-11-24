@@ -1,13 +1,18 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface PageLoadGateProps {
-  /** True while the page's data (APIs / GLB / media) is still loading. */
+  /** True while the page's data (APIs / GLB / video) is still loading. */
   active: boolean;
   labelFa?: string;
   labelEn?: string;
   testId?: string;
+  /**
+   * Hard backstop so a hung resource can never dead-lock the page:
+   * the gate force-releases after this many milliseconds (default 20s).
+   */
+  backstopMs?: number;
 }
 
 /**
@@ -21,10 +26,22 @@ export function PageLoadGate({
   labelFa,
   labelEn,
   testId = 'page-load-gate',
+  backstopMs = 20_000,
 }: PageLoadGateProps) {
   const { languageCode } = useLanguage();
   const isFa = languageCode.toLowerCase().startsWith('fa');
-  if (!active) return null;
+  const [backstopElapsed, setBackstopElapsed] = useState(false);
+
+  useEffect(() => {
+    if (!active) {
+      setBackstopElapsed(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setBackstopElapsed(true), backstopMs);
+    return () => window.clearTimeout(timer);
+  }, [active, backstopMs]);
+
+  if (!active || backstopElapsed) return null;
   return (
     <div
       data-testid={testId}

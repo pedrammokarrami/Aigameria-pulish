@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { PageLoadGate } from './PageLoadGate';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -82,6 +83,10 @@ export const CoachStage3D: React.FC<CoachStage3DProps> = ({
   const mountRef = useRef<HTMLDivElement | null>(null);
   const backdropRef = useRef<HTMLDivElement | null>(null);
   const [imgFailed, setImgFailed] = useState(false);
+  // Page-load gate: entry is blocked until the lobby backdrop (video frame or
+  // fallback image) has actually rendered — never a black flash behind menus.
+  const [videoReady, setVideoReady] = useState(false);
+  const [imageReady, setImageReady] = useState(false);
 
   const cfg = REALM_CONFIGS[realm];
   const activeImageUrl = customBackdropUrl || cfg.ue5SceneImageUrl;
@@ -457,6 +462,8 @@ export const CoachStage3D: React.FC<CoachStage3DProps> = ({
             muted
             loop
             playsInline
+            onLoadedData={() => setVideoReady(true)}
+            onError={() => setVideoReady(true)} // broken asset must never dead-lock the lobby
             className="w-full h-full object-cover object-[68%_center] sm:object-center"
           />
         ) : !imgFailed ? (
@@ -465,7 +472,11 @@ export const CoachStage3D: React.FC<CoachStage3DProps> = ({
             src={activeImageUrl}
             alt={`${cfg.coachName} — ${cfg.label}`}
             referrerPolicy="no-referrer"
-            onError={() => setImgFailed(true)}
+            onLoad={() => setImageReady(true)}
+            onError={() => {
+              setImgFailed(true);
+              setImageReady(true); // broken asset must never dead-lock the lobby
+            }}
             className="w-full h-full object-cover object-[76%_center] sm:object-[65%_center] md:object-center select-none"
           />
         ) : (
@@ -481,6 +492,15 @@ export const CoachStage3D: React.FC<CoachStage3DProps> = ({
           )
         )}
       </div>
+
+      {/* Page loading gate — lobby stays covered until its backdrop asset (video
+          frame / image) is fully decoded, so menus never sit on a blank stage. */}
+      <PageLoadGate
+        active={showLiveVideo ? !videoReady : !imageReady}
+        labelFa="در حال لود کامل لابی..."
+        labelEn="Loading lobby…"
+        testId="lobby-load-gate"
+      />
 
       {/* 2. Measured Left-Side Negative-Space Contrast Scrim (Protects In-Game Menu Readability while keeping Right Character 100% Crystal Clear) */}
       <div

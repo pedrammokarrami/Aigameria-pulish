@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Loader2, RefreshCw, Send, Users } from 'lucide-react';
 import SocialClubAppCore from './SocialClubAppCore';
+import { PageLoadGate } from '../components/spatial/PageLoadGate';
 
 interface SocialClubAppProps {
   /** Skip the invite-only landing gate (the club is unlocked inside AIPETROS). */
@@ -69,6 +70,8 @@ export function SocialClubApp({ skipInviteGate = false, onExit }: SocialClubAppP
   const [newName, setNewName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [isJoinOpen, setIsJoinOpen] = useState(false);
+  // Page-load gate: covered from mount until the first members/chat round-trip lands.
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   const refresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -87,6 +90,7 @@ export function SocialClubApp({ skipInviteGate = false, onExit }: SocialClubAppP
       setApiError('Club node offline — showing local lobby only.');
     } finally {
       setIsRefreshing(false);
+      setHasLoadedOnce(true);
     }
   }, []);
 
@@ -164,6 +168,13 @@ export function SocialClubApp({ skipInviteGate = false, onExit }: SocialClubAppP
 
   return (
     <div className="aigameria-club-root relative w-full h-full overflow-hidden bg-[#0D091A]">
+      {/* Page loading gate — covered until the first DB round-trip (members + chat) lands. */}
+      <PageLoadGate
+        active={!hasLoadedOnce}
+        labelFa="در حال لود کامل کلاب..."
+        labelEn="Loading social club…"
+        testId="club-load-gate"
+      />
       {/* Exit to the previous AIPETROS view */}
       {onExit && (
         <button
