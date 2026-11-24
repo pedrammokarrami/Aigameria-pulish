@@ -8,7 +8,7 @@ import { CrossGameSpatialProfilePage } from './components/identity/CrossGameSpat
 import { GameNativeTournamentHub } from './components/spatial/GameNativeTournamentHub';
 import { GameSwitcherBar } from './components/spatial/GameSwitcherBar';
 import { QuestionSuggestions } from './components/spatial/QuestionSuggestions';
-import { TopTrendsStrip } from './components/spatial/TopTrendsStrip';
+import { loadCuratedTop, mergeCuratedIntoSkills, type CuratedTop } from './utils/curatedTrends';
 import { loadLastStyleSelection, saveLastStyleSelection, defaultGameForStyle, gameStyleForGame } from './utils/gameStyles';
 import { speakWithPersona } from './utils/voicePersona';
 import { triageImageMedia, triageVideoMedia, type MediaTriageState } from './utils/mediaTriage';
@@ -241,9 +241,15 @@ export function App() {
   );
 
   const lobbyCategories = LOBBY_CATEGORIES_BY_GAME[lobbyGameId];
+  const [curatedTop, setCuratedTop] = useState<CuratedTop | null>(null);
+  useEffect(() => {
+    let alive = true;
+    loadCuratedTop().then((d) => { if (alive) setCuratedTop(d); });
+    return () => { alive = false; };
+  }, []);
   const filteredLobbySkills = useMemo(
-    () => filterLobbySkills(lobbyGameId, lobbyCategoryId, lobbySearchQuery),
-    [lobbyGameId, lobbyCategoryId, lobbySearchQuery]
+    () => mergeCuratedIntoSkills(lobbyGameId, lobbyCategoryId, filterLobbySkills(lobbyGameId, lobbyCategoryId, lobbySearchQuery), curatedTop),
+    [lobbyGameId, lobbyCategoryId, lobbySearchQuery, curatedTop]
   );
 
   const activeMotionPayload: MotionCoachPayload =
@@ -1167,11 +1173,6 @@ export function App() {
                 onSelectCategory={setLobbyCategoryId}
                 isListeningVoice={isListeningSearchVoice}
                 onToggleVoiceSearch={handleToggleLobbyVoiceSearch}
-              />
-              <TopTrendsStrip
-                gameId={lobbyGameId}
-                accentHex={getLobbyGameTab(lobbyGameId).accentHex}
-                onSelectQuestion={handleAskLobbyQuestion}
               />
               <QuestionSuggestions
                 gameId={lobbyGameId}

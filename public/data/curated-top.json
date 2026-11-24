@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-24T19:18:31.504Z",
+  "generatedAt": "2026-11-24T19:37:30.582Z",
   "note": "Curated locally by the AIGAMERIA daily agent. Zero external AI. Cheat cards are awareness-only.",
   "genres": {
     "sports": {
@@ -13,7 +13,7 @@
       ],
       "counts": {
         "cards": 983,
-        "trends": 9,
+        "trends": 5,
         "tricks": 5,
         "cheatAwareness": 4,
         "tutorials": 10
@@ -28,46 +28,6 @@
           "url": "https://github.com/myqtechofficial-byte/nba2k20apk",
           "awarenessOnly": false,
           "updatedAt": "2026-11-24T18:49:15.013Z"
-        },
-        {
-          "game": "fc27",
-          "kind": "trick",
-          "title": "List of best-selling game consoles",
-          "summary": "Zackariasson, Peter; Wilson, Timothy (eds.). The Video Game Industry: Formation, Present State, and Future. Routledge. p. 158. ISBN 9781136258244. Archived",
-          "source": "web-auto",
-          "url": "https://en.wikipedia.org/wiki/List_of_best-selling_game_consoles",
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-22T13:50:20.424Z"
-        },
-        {
-          "game": "fc27",
-          "kind": "trick",
-          "title": "Formation (song)",
-          "summary": "&quot;Formation&quot; is a song by American singer and songwriter Beyoncé from her sixth studio album, Lemonade (2016). Beyoncé wrote and produced the song with",
-          "source": "web-auto",
-          "url": "https://en.wikipedia.org/wiki/Formation_(song)",
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-22T13:50:20.424Z"
-        },
-        {
-          "game": "fc27",
-          "kind": "trick",
-          "title": "Lemonade (album)",
-          "summary": "Video of the Year, Best Pop Video, Best Direction, Best Editing, and Best Cinematography for &quot;Formation&quot;, Best Female Video and Best Art Direction for",
-          "source": "web-auto",
-          "url": "https://en.wikipedia.org/wiki/Lemonade_(album)",
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-22T13:50:20.424Z"
-        },
-        {
-          "game": "fc27",
-          "kind": "trick",
-          "title": "Three Sisters (Australia)",
-          "summary": "Mountains&#039; best known sites, towering above the Jamison Valley. Their names are Meehni (922 m), Wimlah (918 m), and Gunnedoo (906 m). The formation receives",
-          "source": "web-auto",
-          "url": "https://en.wikipedia.org/wiki/Three_Sisters_(Australia)",
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-22T13:50:20.424Z"
         },
         {
           "game": "fc27",

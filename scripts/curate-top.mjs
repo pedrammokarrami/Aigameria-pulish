@@ -49,6 +49,23 @@ const cards = db.prepare(`
   ORDER BY updated_at DESC
 `).all();
 
+/**
+ * Quality gate for trend picks: keep only cards whose source looks on-topic
+ * (official pages, Steam, GitHub, Reddit, EA/2K) or whose Wikipedia title
+ * matches the game — disambiguation pages like "Formation (song)" are dropped.
+ */
+const TRUSTED_HOST = /(github\.com|steampowered\.com|reddit\.com|ea\.com|2k\.com|rockstargames\.com|riotgames\.com|counter-strike\.net|fortnite\.com|fifa\.com)/i;
+const isRelevant = (c) => {
+  if (!c.url) return false;
+  const u = c.url.toLowerCase();
+  if (TRUSTED_HOST.test(u)) return true;
+  if (/wikipedia\.org/.test(u)) {
+    const tokens = c.game_id.replace(/-/g, ' ').split(' ').filter((t) => t.length > 3);
+    return tokens.some((t) => u.includes(t));
+  }
+  return true;
+};
+
 const out = {
   generatedAt: new Date().toISOString(),
   note: 'Curated locally by the AIGAMERIA daily agent. Zero external AI. Cheat cards are awareness-only.',
@@ -70,7 +87,7 @@ for (const [genre, ids] of Object.entries(GENRES)) {
     updatedAt: c.updated_at,
   });
 
-  const live = mine.filter((c) => c.url && c.url.startsWith('http'));
+  const live = mine.filter((c) => isRelevant(c));
   const trends = [
     ...live.filter((c) => c.kind !== 'cheat'),
     ...live.filter((c) => c.kind === 'cheat'),
