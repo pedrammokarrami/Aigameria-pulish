@@ -135,6 +135,47 @@ const MIGRATIONS: string[] = [
     updated_at TEXT NOT NULL
   );
   `,
+  // 0002 — Aigameria v1.02 auth standards: email activation, OAuth identities,
+  // device registry (FCM token / location / permissions), profile extras
+  `
+  ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE users ADD COLUMN avatar_url TEXT;
+  CREATE TABLE IF NOT EXISTS auth_activations (
+    token_hash TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    used_at TEXT
+  );
+  CREATE INDEX IF NOT EXISTS idx_auth_activations_user ON auth_activations(user_id);
+  CREATE TABLE IF NOT EXISTS oauth_identities (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    provider TEXT NOT NULL,
+    external_id TEXT NOT NULL,
+    email TEXT,
+    display_name TEXT,
+    avatar_url TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE(provider, external_id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_oauth_identities_user ON oauth_identities(user_id);
+  CREATE TABLE IF NOT EXISTS user_devices (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    fcm_token TEXT,
+    platform TEXT,
+    user_agent TEXT,
+    ip TEXT,
+    location TEXT,
+    permissions TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_user_devices_user ON user_devices(user_id);
+  CREATE INDEX IF NOT EXISTS idx_user_devices_fcm ON user_devices(fcm_token);
+  `,
 ];
 
 function migrate(db: DatabaseSync): void {

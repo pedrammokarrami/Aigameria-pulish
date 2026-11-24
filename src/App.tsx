@@ -30,6 +30,7 @@ import {
 } from './data/gameTournamentThemes';
 import { REALM_CONFIGS } from './data/realmsData';
 import { AppBootGate, useAppBoot, useSectionWarmup } from './components/spatial/AppBootGate';
+import { useAuthGate } from './components/spatial/AuthGate';
 import { useLanguage } from './contexts/LanguageContext';
 import { SocialClubApp } from './connection/SocialClubApp';
 import {
@@ -212,6 +213,9 @@ export function App() {
     [manifest.lobbyVideoUrl]
   );
   const boot = useAppBoot(criticalAssets, manifestResolved);
+  // Aigameria v1.02 — auth gate (register/login/OAuth) before the app; guest
+  // keeps the app open. Session persists in localStorage.
+  const authGate = useAuthGate();
   const sectionWarming = useSectionWarmup(
     [
       activeMasterHub,
@@ -885,6 +889,8 @@ export function App() {
       style={{ backgroundColor: 'var(--realm-bg)', color: 'var(--realm-text)' }}
     >
       <AppBootGate ready={boot.ready} progress={boot.progress} stageKey={boot.stageKey} />
+      {/* Aigameria v1.02 auth gate — full-cover before the app until signed in / guest */}
+      {!authGate.ready && authGate.gate}
       {/* Section warmup — slim glass cover while a hub/section is being prepared */}
       <AnimatePresence>
         {sectionWarming && (

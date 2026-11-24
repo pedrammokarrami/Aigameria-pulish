@@ -22,6 +22,7 @@ import {
 import {
   badInput,
   changePassword,
+  createSession,
   loginUser,
   registerSchema,
   registerUser,
@@ -34,6 +35,25 @@ import {
   hashPassword,
   type AuthUser,
 } from './auth';
+import {
+  buildAuthorizeUrl,
+  configuredProviders,
+  consumeActivationToken,
+  createActivationToken,
+  exchangeProviderCode,
+  isEmailVerified,
+  registerDevice,
+  registerSessionFactory,
+  sendActivationEmail,
+  upsertOAuthUser,
+  type OAuthProvider,
+} from './authStandards';
+import { randomBytes } from 'node:crypto';
+
+// Session engine shared with the OAuth flow (same standard as password sessions).
+registerSessionFactory((userId) => createSession(userId));
+
+const APP_PUBLIC_BASE = process.env.APP_PUBLIC_BASE ?? 'http://localhost:3000';
 import {
   addAccountSchema,
   addLinkedAccount,
@@ -90,18 +110,28 @@ apiV1.get('/health', (_req, res) => {
 /* Auth                                                                */
 /* ------------------------------------------------------------------ */
 
-apiV1.post('/auth/register', rateLimit({ windowMs: 60_000, max: 10 }), (req, res) => {
+apiV1.post('/auth/register', rateLimit({ windowMs: 60_000, max: 10 }), asyncRoute(async (req, res) => {
   const parsed = registerSchema.safeParse(req.body ?? {});
   if (!parsed.success) return badInput(res, parsed.error);
   const { user, token, expiresAt } = registerUser(parsed.data, clientIp(req));
-  res.status(201).json(successEnvelope(res.locals.requestId, { user, token, expiresAt }));
-});
+  // Aigameria v1.02 standard: email activation before the account is trusted.
+  const activation = createActivationToken(user.id);
+  const mail = await sendActivationEmail(user.email, activation.token, APP_PUBLIC_BASE);
+  res.status(201).json(successEnvelope(res.locals.requestId, {
+    user, token, expiresAt,
+    emailVerified: false,
+    activationEmailSent: mail.sent,
+    // Dev mode (no mail provider configured): the link comes back so the
+    // flow stays fully testable without leaking anything to production mail.
+    ...(mail.devActivationUrl && !mail.sent ? { devActivationUrl: mail.devActivationUrl } : {}),
+  }));
+}));
 
 apiV1.post('/auth/login', rateLimit({ windowMs: 60_000, max: 10, keyBy: (req) => clientIp(req) }), (req, res) => {
   const parsed = loginSchema.safeParse(req.body ?? {});
   if (!parsed.success) return badInput(res, parsed.error);
   const { user, token, expiresAt } = loginUser(parsed.data, clientIp(req));
-  ok(res, { user, token, expiresAt });
+  ok(res, { user, token, expiresAt, emailVerified: isEmailVerified(user.id) });
 });
 
 apiV1.post('/auth/refresh', (req, res) => {
@@ -129,6 +159,100 @@ apiV1.post('/auth/change-password', requireAuth, (req, res) => {
   const changed = changePassword(req.user!.id, parsed.data.currentPassword, parsed.data.newPassword);
   if (!changed) return badRequest(res, 'INVALID_CREDENTIALS', 'Current password is incorrect.');
   ok(res, { changed: true });
+});
+
+/* ---------------- Aigameria v1.02 auth standards ----------------
+   Email activation + OAuth sign-in (Google / Apple / Epic / Steam /
+   Microsoft) + device registry (FCM token, location, permissions). */
+
+apiV1.get('/auth/activate', (req, res) => {
+  const token = String(req.query.token ?? '');
+  if (!token) return badRequest(res, 'NO_TOKEN', 'Provide the activation token.');
+  const result = consumeActivationToken(token);
+  if (!result.ok) return badRequest(res, result.reason ?? 'INVALID_TOKEN', 'Activation link is invalid, used, or expired.');
+  ok(res, { activated: true });
+});
+
+apiV1.post('/auth/resend-activation', rateLimit({ windowMs: 60_000, max: 3 }), asyncRoute(async (req, res) => {
+  const schema = z.object({ email: z.string().trim().toLowerCase().email() });
+  const parsed = schema.safeParse(req.body ?? {});
+  if (!parsed.success) return badInput(res, parsed.error);
+  const db = getDb();
+  const row = db.prepare('SELECT id, email_verified FROM users WHERE email = ?').get(parsed.data.email) as
+    | { id: string; email_verified: number } | undefined;
+  // Always answer OK (no account enumeration); only send when unverified.
+  if (!row || row.email_verified === 1) return ok(res, { sent: true });
+  const activation = createActivationToken(row.id);
+  const mail = await sendActivationEmail(parsed.data.email, activation.token, APP_PUBLIC_BASE);
+  ok(res, { sent: true, ...(mail.devActivationUrl && !mail.sent ? { devActivationUrl: mail.devActivationUrl } : {}) });
+}));
+
+apiV1.get('/auth/oauth/providers', (req, res) => {
+  ok(res, { providers: configuredProviders(), activationRequired: true });
+});
+
+// Standard OAuth 2.0 / OpenID start — redirects to the provider's authorize URL.
+apiV1.get('/auth/oauth/:provider/start', (req, res) => {
+  const provider = req.params.provider as OAuthProvider;
+  if (!['google', 'microsoft', 'apple', 'epic', 'steam'].includes(provider)) return notFound(res, 'Unknown provider.');
+  const redirectUri = `${APP_PUBLIC_BASE}/api/v1/auth/oauth/${provider}/callback`;
+  const state = randomBytes(16).toString('hex');
+  const kv = getDb();
+  kv.prepare('INSERT INTO kv (key, value, updated_at) VALUES (?, ?, ?)')
+    .run(`oauth_state_${state}`, JSON.stringify({ provider, created: Date.now() }), new Date().toISOString());
+  const url = buildAuthorizeUrl(provider, redirectUri, state);
+  if (!url) {
+    res.status(501).json(errorEnvelope(res.locals.requestId, 'PROVIDER_NOT_CONFIGURED',
+      `${provider} OAuth is not configured on this deployment yet (missing client credentials).`));
+    return;
+  }
+  res.redirect(url);
+});
+
+// Standard OAuth callback → exchange → link/create user → session.
+apiV1.get('/auth/oauth/:provider/callback', asyncRoute(async (req, res) => {
+  const provider = req.params.provider as OAuthProvider;
+  const query = new URLSearchParams(req.query as Record<string, string>);
+  const state = query.get('state');
+  const db = getDb();
+  let stored: { provider: string } | null = null;
+  if (state) {
+    const row = db.prepare('SELECT value FROM kv WHERE key = ?').get(`oauth_state_${state}`) as { value: string } | undefined;
+    if (row) {
+      stored = JSON.parse(row.value);
+      db.prepare('DELETE FROM kv WHERE key = ?').run(`oauth_state_${state}`);
+    }
+  }
+  if (query.get('error')) {
+    return res.redirect(`/auth?error=${encodeURIComponent(query.get('error') as string)}`);
+  }
+  const redirectUri = `${APP_PUBLIC_BASE}/api/v1/auth/oauth/${provider}/callback`;
+  const profile = await exchangeProviderCode(provider, query, redirectUri);
+  if (!profile) return res.redirect('/auth?error=oauth_exchange_failed');
+  if (stored && stored.provider !== provider) return res.redirect('/auth?error=state_mismatch');
+  const { userId, token, expiresAt, isNew } = upsertOAuthUser(profile, clientIp(req));
+  res.redirect(`/auth?token=${token}&expiresAt=${encodeURIComponent(expiresAt)}&new=${isNew ? 1 : 0}&uid=${userId}`);
+}));
+
+// Device registry — FCM token, platform, location, permissions (saved after login).
+apiV1.post('/devices', requireAuth, rateLimit({ windowMs: 60_000, max: 30, keyBy: (req) => req.user!.id }), (req, res) => {
+  const schema = z.object({
+    fcmToken: z.string().max(512).nullish(),
+    platform: z.string().max(60).nullish(),
+    location: z.string().max(200).nullish(),
+    permissions: z.record(z.string(), z.boolean()).nullish(),
+  });
+  const parsed = schema.safeParse(req.body ?? {});
+  if (!parsed.success) return badInput(res, parsed.error);
+  const { id } = registerDevice(req.user!.id, {
+    fcmToken: parsed.data.fcmToken ?? null,
+    platform: parsed.data.platform ?? null,
+    userAgent: req.headers['user-agent'] ?? null,
+    ip: clientIp(req),
+    location: parsed.data.location ?? null,
+    permissions: parsed.data.permissions ? JSON.stringify(parsed.data.permissions) : null,
+  });
+  ok(res, { deviceId: id, saved: true });
 });
 
 /* ------------------------------------------------------------------ */

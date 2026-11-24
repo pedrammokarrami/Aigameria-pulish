@@ -56,7 +56,7 @@ export const loginSchema = z.object({
 
 /* ---------------- helpers ---------------- */
 
-function createSession(userId: string): { token: string; expiresAt: string } {
+export function createSession(userId: string): { token: string; expiresAt: string } {
   const token = crypto.randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
   getDb()
