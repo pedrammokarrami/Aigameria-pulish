@@ -36,6 +36,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import type { ClipSourceKind } from '../../services/realClipAgentService';
 import type { RealmId } from '../../types/spatial';
 import { CoachWorld3D } from './CoachWorld3D';
+import { PageLoadGate } from './PageLoadGate';
 import { MotionCoachCard } from './MotionCoachCard';
 import { formatCompactComboStrip } from '../../utils/controllerCoachTiming';
 import { ControllerTrainerStage } from '../controller-trainer/sdk';
@@ -320,6 +321,15 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
     >
       {/* LAYER 1: Game-Adaptive Real-Time Three.js Unreal 5.8 3D Backdrop */}
       <CoachWorld3D worldTheme={motionPayload.worldTheme} accentHex={accent} />
+
+      {/* Page loading gate — stays up from page entry until the page's APIs /
+          clip data are fully in (GLB + video have their own in-page gates). */}
+      <PageLoadGate
+        active={isLoadingClips && !activeClip && !uploadedMedia}
+        labelFa="در حال لود کامل سالن مربی..."
+        labelEn="Loading coach room…"
+        testId="coach-room-load-gate"
+      />
 
       <input
         ref={fileInputRef}
