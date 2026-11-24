@@ -8,6 +8,7 @@ import { CrossGameSpatialProfilePage } from './components/identity/CrossGameSpat
 import { GameNativeTournamentHub } from './components/spatial/GameNativeTournamentHub';
 import { GameSwitcherBar } from './components/spatial/GameSwitcherBar';
 import { QuestionSuggestions } from './components/spatial/QuestionSuggestions';
+import { TopTrendsStrip } from './components/spatial/TopTrendsStrip';
 import { loadLastStyleSelection, saveLastStyleSelection, defaultGameForStyle, gameStyleForGame } from './utils/gameStyles';
 import { speakWithPersona } from './utils/voicePersona';
 import { triageImageMedia, triageVideoMedia, type MediaTriageState } from './utils/mediaTriage';
@@ -30,6 +31,7 @@ import {
 } from './data/gameTournamentThemes';
 import { REALM_CONFIGS } from './data/realmsData';
 import { IS_GAME_ONLY_HOST } from './utils/hostBrand';
+import { initFcmPush } from './services/fcmClient';
 import { AppBootGate, useAppBoot, useSectionWarmup } from './components/spatial/AppBootGate';
 import { useAuthGate } from './components/spatial/AuthGate';
 import { AppErrorBoundary } from './components/spatial/AppErrorBoundary';
@@ -270,6 +272,11 @@ export function App() {
     setIsRafFrozen(isRafShimmed());
     window.addEventListener(RAF_FROZEN_EVENT, onRafFrozen);
     return () => window.removeEventListener(RAF_FROZEN_EVENT, onRafFrozen);
+  }, []);
+
+  useEffect(() => {
+    // Web push (FCM): best-effort registration once per session.
+    void initFcmPush();
   }, []);
 
   useEffect(() => {
@@ -1160,6 +1167,11 @@ export function App() {
                 onSelectCategory={setLobbyCategoryId}
                 isListeningVoice={isListeningSearchVoice}
                 onToggleVoiceSearch={handleToggleLobbyVoiceSearch}
+              />
+              <TopTrendsStrip
+                gameId={lobbyGameId}
+                accentHex={getLobbyGameTab(lobbyGameId).accentHex}
+                onSelectQuestion={handleAskLobbyQuestion}
               />
               <QuestionSuggestions
                 gameId={lobbyGameId}
