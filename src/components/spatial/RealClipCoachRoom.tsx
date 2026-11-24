@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { buildAnalyzFootballCommand, sendAnalyzCommand } from '../../utils/analyzBridge';
 import { isIosLikeDevice } from '../../utils/iosPlayback';
 import {
   ArrowRight,
@@ -143,6 +144,14 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const accent = motionPayload.accentHex || '#22C55E';
+  const analyzFrameRef = useRef<HTMLIFrameElement | null>(null);
+  const analyzCommand = useMemo(
+    () => buildAnalyzFootballCommand(answerBlock, accent),
+    [answerBlock, accent],
+  );
+  useEffect(() => {
+    sendAnalyzCommand(analyzFrameRef.current, analyzCommand);
+  }, [analyzCommand]);
 
   useEffect(() => {
     setDraftProblem(problemQuery);
@@ -704,7 +713,18 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
               }
             }}
           />
-          {/* Formation board + motion-pattern cards removed per product decision */}
+          {/* Ai-petros-game-analyz tactical stage (vendored build) — coach JSON in, visuals out.
+              Sits above the joystick / controller trainer section. */}
+          {analyzCommand ? (
+            <iframe
+              ref={analyzFrameRef}
+              data-testid="analyz-tactical-stage"
+              src="/analyz/?transparent=1&autoplay=1"
+              title="Ai-petros-game-analyz tactical stage"
+              className="w-full h-[300px] sm:h-[380px] rounded-2xl overflow-hidden border border-white/10 bg-transparent"
+              allow="autoplay"
+            />
+          ) : null}
           {/* Bottom-of-coach-page REAL 3D controller trainer stage (Petros-gamepad engine, verbatim) */}
           <div
             data-testid="controller-trainer-slot"
