@@ -34,8 +34,10 @@ import {
 } from '../core/glbPlacement';
 import {
   buildAnchorsFromReference,
+  buildMeshMappingFromNames,
   referenceSpecsForDevice,
 } from '../core/referenceAnchors';
+import { ANCHOR_STORAGE_KEY } from '../core/glbPlacement';
 import { buildPcKeyboardMouse, buildProceduralDevice } from './deviceBuilders';
 import { buildBackgroundEnvironment } from './backgroundEnvironments';
 import { createStudioStage, type StudioStageSystem } from './stageBuilder';
@@ -150,6 +152,8 @@ export class StudioSceneController {
 
   private meshMap = new Map<string, AnimatedMeshState>();
   private pickableMeshes: THREE.Mesh[] = [];
+  private calibrationCache: Record<string, DeviceAnchorMap> | null = null;
+  private calibrationChecked = false;
 
   // Exact 3D surface anchor pin overlay attached inside currentDeviceRoot
   private anchorOverlayGroup: THREE.Group | null = null;
@@ -326,6 +330,7 @@ export class StudioSceneController {
       this.resizeObserver.observe(this.container);
     }
     this.renderer.domElement.addEventListener('webglcontextlost', this.handleContextLost);
+    this.setupCalibrationClicks();
 
     this.requestRender();
   }
@@ -484,6 +489,24 @@ export class StudioSceneController {
   private async loadConfiguredAssetsInner(device: DeviceType): Promise<void> {
     const cfg = this.modelUrls[device];
     if (!cfg) return;
+
+    // Optional per-device manual calibration file (explicit anchors always win)
+    if (!this.calibrationCache && !this.calibrationChecked) {
+      this.calibrationChecked = true;
+      try {
+        const res = await fetch('/models/calibration.json', { cache: 'no-store' });
+        if (res.ok) {
+          const json = (await res.json()) as Record<string, DeviceAnchorMap>;
+          if (json && typeof json === 'object') this.calibrationCache = json;
+        }
+      } catch {
+        // optional file — ignore
+      }
+    }
+    if (this.calibrationCache?.[device] && Object.keys(this.calibrationCache[device]).length > 0) {
+      this.surfaceAnchors = { ...this.calibrationCache[device] };
+      this.rebuildAnchorOverlay();
+    }
 
     // 1. Optional custom foreground device GLB
     if (cfg.deviceGlbUrl && !this.loadedUrlSet.has(`dev:${device}:${cfg.deviceGlbUrl}`)) {
@@ -1142,7 +1165,23 @@ export class StudioSceneController {
     });
     if (Object.keys(generated).length === 0) return;
 
-    this.surfaceAnchors = generated;
+    // Manual tap overrides (persisted by ?calibrate=1 tweaking) win over auto
+    let overrides: DeviceAnchorMap = {};
+    try {
+      const raw = window.localStorage.getItem(ANCHOR_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Record<string, DeviceAnchorMap>;
+        overrides = parsed[device] ?? {};
+      }
+    } catch {
+      // ignore
+    }
+    this.surfaceAnchors = { ...generated, ...overrides };
+
+    // Fuzzy mesh-name matching: auto-fill the mesh mapping for separate
+    // button meshes so emissive glow targets the real parts when available.
+    const meshNames = this.pickableMeshes.map((m) => m.name);
+    this.meshMapping = buildMeshMappingFromNames(device, meshNames, this.meshMapping);
     this.rebuildAnchorOverlay();
     // Keep pin size consistent with the GLB transform scale (same contract as
     // applyGlbTransformToCurrentRoot uses for pre-existing pins).
@@ -1281,6 +1320,89 @@ export class StudioSceneController {
     this.rebuildAnchorOverlay();
     this.evaluateAndApplyFrame(0.016, false);
     this.requestRender();
+  }
+
+  /**
+   * Optional ?calibrate=1 mode: click the model to nudge the nearest anchor to
+   * the clicked surface point (persisted to localStorage per device). Invisible
+   * to normal users — no UI is rendered; power users fine-tune unique GLBs.
+   */
+  private calibrateModeEnabled = typeof window !== 'undefined'
+    && new URLSearchParams(window.location.search).get('calibrate') === '1';
+
+  private setupCalibrationClicks() {
+    if (!this.calibrateModeEnabled) return;
+    let downX = 0;
+    let downY = 0;
+    const onDown = (ev: PointerEvent) => {
+      downX = ev.clientX;
+      downY = ev.clientY;
+    };
+    const onUp = (ev: PointerEvent) => {
+      if (Math.hypot(ev.clientX - downX, ev.clientY - downY) > 6) return; // orbit drag
+      const rect = this.renderer.domElement.getBoundingClientRect();
+      const ndc = new THREE.Vector2(
+        ((ev.clientX - rect.left) / rect.width) * 2 - 1,
+        -((ev.clientY - rect.top) / rect.height) * 2 + 1,
+      );
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(ndc, this.camera);
+      const hits = raycaster.intersectObjects(this.pickableMeshes, false);
+      if (hits.length === 0) return;
+      const hit = hits[0];
+      const localPoint = this.currentDeviceRoot
+        ? this.currentDeviceRoot.worldToLocal(hit.point.clone())
+        : hit.point.clone();
+      const invRoot = new THREE.Matrix4().copy(this.currentDeviceRoot!.matrixWorld).invert();
+      const localNormal = hit.face
+        ? hit.face.normal
+            .clone()
+            .applyMatrix3(new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld))
+            .transformDirection(invRoot)
+            .normalize()
+        : new THREE.Vector3(0, 1, 0);
+
+      // Nudge the nearest existing anchor (root-local distance)
+      let nearestId: string | null = null;
+      let nearestDist = Infinity;
+      for (const [btnId, anchor] of Object.entries(this.surfaceAnchors)) {
+        const d = Math.hypot(
+          anchor.point[0] - localPoint.x,
+          anchor.point[1] - localPoint.y,
+          anchor.point[2] - localPoint.z,
+        );
+        if (d < nearestDist) {
+          nearestDist = d;
+          nearestId = btnId;
+        }
+      }
+      if (!nearestId) return;
+      this.surfaceAnchors[nearestId] = {
+        point: [
+          Math.round(localPoint.x * 10000) / 10000,
+          Math.round(localPoint.y * 10000) / 10000,
+          Math.round(localPoint.z * 10000) / 10000,
+        ],
+        normal: [
+          Math.round(localNormal.x * 10000) / 10000,
+          Math.round(localNormal.y * 10000) / 10000,
+          Math.round(localNormal.z * 10000) / 10000,
+        ],
+        meshName: hit.object.name || undefined,
+      };
+      try {
+        const raw = window.localStorage.getItem(ANCHOR_STORAGE_KEY);
+        const all = raw ? (JSON.parse(raw) as Record<string, DeviceAnchorMap>) : {};
+        all[this.deviceType] = { ...(all[this.deviceType] ?? {}), [nearestId]: this.surfaceAnchors[nearestId] };
+        window.localStorage.setItem(ANCHOR_STORAGE_KEY, JSON.stringify(all));
+      } catch {
+        // storage unavailable — tweak stays session-only
+      }
+      this.rebuildAnchorOverlay();
+      this.requestRender();
+    };
+    this.renderer.domElement.addEventListener('pointerdown', onDown);
+    this.renderer.domElement.addEventListener('pointerup', onUp);
   }
 
   /** Invisible diagnostics for calibration tooling — no UI is rendered from this. */

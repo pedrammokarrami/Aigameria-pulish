@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { DeviceAnchorMap, DeviceType } from '../types/trainer';
+import type { DeviceAnchorMap, DeviceMeshMapping, DeviceType } from '../types/trainer';
 
 /**
  * Calibrated reference-studio button coordinates for custom .glb models.
@@ -14,6 +14,9 @@ import type { DeviceAnchorMap, DeviceType } from '../types/trainer';
 
 export const REFERENCE_HALF_X = 1.84;
 export const REFERENCE_HALF_Z = 1.08;
+/** Reference model vertical center/half-extent (derived from the calibrated points). */
+export const REFERENCE_CENTER_Y = 0.2;
+export const REFERENCE_HALF_Y = 0.27;
 
 export type ReferenceRayKind = 'top' | 'back-top' | 'back' | 'front-screen';
 
@@ -155,7 +158,6 @@ function robustLocalBounds(ctx: SnapContext): THREE.Box3 {
     const stride = Math.max(1, Math.floor(pos.count / 12000));
     mesh.updateMatrixWorld(true);
     const mw = mesh.matrixWorld;
-    const e = mw.elements;
     for (let i = 0; i < pos.count; i += stride) {
       v.set(pos.getX(i), pos.getY(i), pos.getZ(i)).applyMatrix4(mw).applyMatrix4(invRoot);
       xs.push(v.x); ys.push(v.y); zs.push(v.z);
@@ -175,6 +177,8 @@ function robustLocalBounds(ctx: SnapContext): THREE.Box3 {
 /**
  * Builds a full DeviceAnchorMap by scaling every reference anchor into the
  * measured GLB box and raycasting each point onto the actual mesh surface.
+ * Never leaves a standard button missing: on a total miss the anchor falls
+ * back to the scaled reference point + default normal.
  */
 export function buildAnchorsFromReference(
   device: DeviceType,
@@ -188,7 +192,8 @@ export function buildAnchorsFromReference(
   const size = robustBox.getSize(new THREE.Vector3());
   const scaleX = size.x / (REFERENCE_HALF_X * 2);
   const scaleZ = size.z / (REFERENCE_HALF_Z * 2);
-  const scaleY = Math.max(scaleX, scaleZ); // y reference heights are heuristic
+  const scaleY = size.y / (REFERENCE_HALF_Y * 2);
+  const centerY = (robustBox.min.y + robustBox.max.y) / 2;
   const map: DeviceAnchorMap = {};
 
   for (const spec of specs) {
@@ -208,20 +213,19 @@ export function buildAnchorsFromReference(
     } else {
       localX = robustBox.min.x + (spec.refPoint[0] + REFERENCE_HALF_X) * scaleX;
       localZ = robustBox.min.z + (spec.refPoint[2] + REFERENCE_HALF_Z) * scaleZ;
-      const refY = spec.refPoint[1] * scaleY;
+      const scaledY = centerY + (spec.refPoint[1] - REFERENCE_CENTER_Y) * scaleY;
 
       if (spec.rayFrom === 'top') {
         localY = robustBox.max.y + 1.5;
       } else {
         // back-top (bumpers) and back (triggers) cast from behind the top edge
-        localY = robustBox.max.y + 0.6;
+        localY = scaledY + 0.15;
         localZ = robustBox.min.z - 1.2;
         const n = spec.normal ?? [0, 0.15, -0.98];
         fallbackNormal = new THREE.Vector3(n[0], n[1], n[2]).normalize();
         // Ray direction points forward into the controller (opposite the outward normal)
         dir = fallbackNormal.clone().multiplyScalar(-1);
       }
-      void refY;
     }
 
     // Primary ray plus deterministic probe retries for small/thin geometry
@@ -236,12 +240,12 @@ export function buildAnchorsFromReference(
         candidates.push({ origin: new THREE.Vector3(localX + ox, localY, localZ + oz), dir });
       }
     } else {
-      const midY = (ctx.localBox.max.y + ctx.localBox.min.y) / 2;
+      const midY = (robustBox.max.y + robustBox.min.y) / 2;
       const horizontal = new THREE.Vector3(0, -0.02, 1);
       candidates.push(
         { origin: new THREE.Vector3(localX, midY, localZ), dir: horizontal },
-        { origin: new THREE.Vector3(localX, ctx.localBox.max.y * 0.45, localZ), dir: new THREE.Vector3(0, -0.15, 0.98) },
-        { origin: new THREE.Vector3(localX, midY, ctx.localBox.min.z - 0.5), dir: horizontal },
+        { origin: new THREE.Vector3(localX, robustBox.max.y * 0.45, localZ), dir: new THREE.Vector3(0, -0.15, 0.98) },
+        { origin: new THREE.Vector3(localX, midY, robustBox.min.z - 0.5), dir: horizontal },
       );
       for (const [ox] of PROBE_OFFSETS.slice(1, 5)) {
         candidates.push({ origin: new THREE.Vector3(localX + ox, midY, localZ), dir: horizontal });
@@ -279,14 +283,15 @@ export function buildAnchorsFromReference(
       normal = hit.normal;
       meshName = hit.meshName;
     } else {
-      // Deterministic fallback: project the point onto the reference surface plane
+      // Clean fallback — the scaled reference point + default normal, so NO
+      // standard button is ever left without an anchor.
       point = new THREE.Vector3(localX, localY, localZ);
       if (spec.rayFrom === 'top') {
         point.y = robustBox.max.y;
       } else if (spec.rayFrom === 'front-screen') {
         point.z = robustBox.max.z;
       } else {
-        point.y = robustBox.max.y * 0.45;
+        point.y = centerY + (spec.refPoint[1] - REFERENCE_CENTER_Y) * scaleY;
         point.z = robustBox.min.z;
       }
       normal = fallbackNormal;
@@ -308,4 +313,78 @@ export function buildAnchorsFromReference(
   }
 
   return map;
+}
+
+/**
+ * Fuzzy mesh-name matching — populates the mesh mapping automatically when a
+ * custom .glb ships with separate button meshes (tri, circle, cross, square,
+ * bumpers, triggers, dpad, touchpad, keys, mouse buttons...).
+ */
+const MESH_TOKEN_MATCHERS: Array<{ test: (tokens: Set<string>, joined: string) => boolean; ids: string[] }> = [
+  { test: (t) => t.has('triangle') || t.has('tri'), ids: ['BTN_TRIANGLE'] },
+  { test: (t) => t.has('circle') || t.has('circ'), ids: ['BTN_CIRCLE'] },
+  { test: (t) => t.has('cross') || t.has('crossbtn'), ids: ['BTN_CROSS'] },
+  { test: (t) => t.has('square') || t.has('sq'), ids: ['BTN_SQUARE'] },
+  { test: (t, j) => /dpad.*up|up.*dpad/.test(j), ids: ['BTN_DPAD_UP'] },
+  { test: (t, j) => /dpad.*down|down.*dpad/.test(j), ids: ['BTN_DPAD_DOWN'] },
+  { test: (t, j) => /dpad.*left|left.*dpad/.test(j), ids: ['BTN_DPAD_LEFT'] },
+  { test: (t, j) => /dpad.*right|right.*dpad/.test(j), ids: ['BTN_DPAD_RIGHT'] },
+  { test: (t, j) => t.has('dpad') || t.has('d_pad'), ids: ['BTN_DPAD_UP', 'BTN_DPAD_DOWN', 'BTN_DPAD_LEFT', 'BTN_DPAD_RIGHT'] },
+  { test: (t) => t.has('l1') || t.has('lb') || t.has('lbl') || t.has('bumperl') || t.has('bumper_l') || t.has('shoulderl'), ids: ['BTN_L1', 'BTN_LB'] },
+  { test: (t) => t.has('r1') || t.has('rb') || t.has('rbr') || t.has('bumper') && !t.has('left'), ids: ['BTN_R1', 'BTN_RB'] },
+  { test: (t) => t.has('l2') || t.has('lt') || t.has('triggerl') || t.has('trigger_l') || t.has('ltrigger'), ids: ['BTN_L2', 'BTN_LT'] },
+  { test: (t) => t.has('r2') || t.has('rt') || t.has('triggerr') || t.has('trigger_r') || t.has('rtrigger'), ids: ['BTN_R2', 'BTN_RT'] },
+  { test: (t, j) => (t.has('l3') || t.has('lstick') || t.has('stickl') || /l.*stick/.test(j)) && !t.has('r'), ids: ['BTN_L3', 'BTN_LS'] },
+  { test: (t, j) => t.has('r3') || t.has('rstick') || t.has('stickr') || /r.*stick/.test(j), ids: ['BTN_R3', 'BTN_RS'] },
+  { test: (t) => t.has('touchpad') || t.has('touch_pad') || t.has('pad'), ids: ['BTN_TOUCHPAD'] },
+  { test: (t) => t.has('share') || t.has('create'), ids: ['BTN_SHARE'] },
+  { test: (t) => t.has('options'), ids: ['BTN_OPTIONS'] },
+  { test: (t) => t.has('ps') || t.has('home') || t.has('xboxbtn') || t.has('guide'), ids: ['BTN_PS', 'BTN_XBOX'] },
+  { test: (t) => t.has('view') || t.has('select') || t.has('back'), ids: ['BTN_VIEW'] },
+  { test: (t) => t.has('menu') || t.has('start'), ids: ['BTN_MENU'] },
+  { test: (t) => t.has('lmb') || t.has('mouseleft'), ids: ['BTN_LMB'] },
+  { test: (t) => t.has('rmb') || t.has('mouseright'), ids: ['BTN_RMB'] },
+  { test: (t) => t.has('mmb') || t.has('mousemid'), ids: ['BTN_MMB'] },
+  { test: (t) => t.has('key_w') || t.has('keyw'), ids: ['KEY_W'] },
+  { test: (t) => t.has('key_a') || t.has('keya'), ids: ['KEY_A'] },
+  { test: (t) => t.has('key_s') || t.has('keys'), ids: ['KEY_S'] },
+  { test: (t) => t.has('key_d') || t.has('keyd'), ids: ['KEY_D'] },
+  { test: (t) => t.has('space') || t.has('spacebar'), ids: ['KEY_SPACE'] },
+  { test: (t) => t.has('shift'), ids: ['KEY_SHIFT'] },
+  { test: (t) => t.has('ctrl') || t.has('control'), ids: ['KEY_CTRL'] },
+];
+
+/**
+ * Derives a DeviceMeshMapping from GLB mesh names. Only fills buttons not
+ * already present in the explicit mapping, and only keeps matches that are
+ * unambiguous for the device (a mesh maps to at most one button per device).
+ */
+export function buildMeshMappingFromNames(
+  device: DeviceType,
+  meshNames: string[],
+  explicit: DeviceMeshMapping,
+): DeviceMeshMapping {
+  const mapping: DeviceMeshMapping = { ...explicit };
+  const usedMeshes = new Set<string>(Object.values(explicit));
+
+  for (const rawName of meshNames) {
+    const name = rawName.trim();
+    if (!name || usedMeshes.has(name)) continue;
+    const joined = name.toLowerCase().replace(/[_\-\s.]+/g, '_');
+    const tokens = new Set(joined.split(/[^a-z0-9]+/).filter(Boolean));
+
+    for (const matcher of MESH_TOKEN_MATCHERS) {
+      if (!matcher.test(tokens, joined)) continue;
+      const btnId = matcher.ids.find(
+        (id) => !(id in mapping) && !usedMeshes.has(name),
+      );
+      if (btnId) {
+        mapping[btnId] = name;
+        usedMeshes.add(name);
+      }
+      break;
+    }
+  }
+
+  return mapping;
 }

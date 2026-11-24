@@ -68,7 +68,8 @@ test('back-family anchors hit the rear geometry with outward normals', () => {
   assert.ok(l1, 'BTN_L1 anchor generated');
   // Bumper sits on the back face (min z) — the ray must have reached the shell
   assert.ok(l1.point[2] < box.max.z - 0.2, `z on rear half, got ${l1.point[2]}`);
-  assert.ok(l1.point[1] > box.max.y * 0.2, 'y in upper region of the controller');
+  // Spec origin is scaledY + 0.15 → the hit lands on the rear face within the body span
+  assert.ok(l1.point[1] >= box.min.y - 0.01 && l1.point[1] <= box.max.y + 0.01, `y within body span, got ${l1.point[1]}`);
   assert.ok(l1.normal[2] < 0, `normal points backward, got ${l1.normal.join()}`);
 
   const l2 = map['BTN_L2'];
