@@ -182,7 +182,7 @@ export function SocialClubApp({ skipInviteGate = false, onExit }: SocialClubAppP
           data-testid="social-club-back-btn"
           onClick={onExit}
           aria-label="Back to lobby"
-          className="absolute top-3 right-3 z-[70] flex items-center gap-1.5 rounded-xl bg-[#120C24]/85 border border-white/15 px-3 py-1.5 text-[11px] font-semibold text-white/85 hover:bg-[#1B1333] hover:text-white cursor-pointer"
+          className="absolute top-[4.75rem] right-3 z-[70] flex items-center gap-1.5 rounded-xl bg-[#120C24]/85 border border-white/15 px-3 py-1.5 text-[11px] font-semibold text-white/85 hover:bg-[#1B1333] hover:text-white cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           Back to lobby
@@ -195,7 +195,7 @@ export function SocialClubApp({ skipInviteGate = false, onExit }: SocialClubAppP
         data-testid="club-lounge-toggle"
         onClick={() => setIsLoungeOpen((v) => !v)}
         aria-label="Toggle live club lounge"
-        className={`absolute top-3 left-3 z-[70] flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[11px] font-semibold cursor-pointer ${
+        className={`absolute top-[4.75rem] left-3 z-[70] flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[11px] font-semibold cursor-pointer ${
           isLoungeOpen
             ? 'bg-[#FF6B35]/25 border-[#FF6B35]/60 text-white'
             : 'bg-[#120C24]/85 border-white/15 text-white/85 hover:text-white'
@@ -208,7 +208,7 @@ export function SocialClubApp({ skipInviteGate = false, onExit }: SocialClubAppP
       {isLoungeOpen && (
         <aside
           data-testid="club-lounge-panel"
-          className="absolute top-14 left-3 z-[69] w-[min(92vw,360px)] max-h-[70vh] flex flex-col rounded-2xl bg-[#0D091A]/95 border border-white/12 backdrop-blur-md overflow-hidden"
+          className="absolute top-[7.75rem] left-3 z-[69] w-[min(92vw,360px)] max-h-[70vh] flex flex-col rounded-2xl bg-[#0D091A]/95 border border-white/12 backdrop-blur-md overflow-hidden"
         >
           <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
             <div>

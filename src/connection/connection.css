@@ -286,3 +286,11 @@ input[type="range"].sunset-slider::-webkit-slider-thumb:hover {
     scroll-behavior: auto !important;
   }
 }
+
+/* Embedded-mode scroll fix: the club core was built for standalone full-page
+   (body scroll). Inside AIPETROS the wrapper clips overflow, so the core's
+   own full-height container must scroll instead — sticky TopBar stays put. */
+.aigameria-club-root > .absolute.inset-0 {
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
