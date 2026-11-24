@@ -248,8 +248,8 @@ export function App() {
     return () => { alive = false; };
   }, []);
   const filteredLobbySkills = useMemo(
-    () => mergeCuratedIntoSkills(lobbyGameId, lobbyCategoryId, filterLobbySkills(lobbyGameId, lobbyCategoryId, lobbySearchQuery), curatedTop),
-    [lobbyGameId, lobbyCategoryId, lobbySearchQuery, curatedTop]
+    () => mergeCuratedIntoSkills(lobbyGameId, lobbyCategoryId, filterLobbySkills(lobbyGameId, lobbyCategoryId, lobbySearchQuery), curatedTop, appLang),
+    [lobbyGameId, lobbyCategoryId, lobbySearchQuery, curatedTop, appLang]
   );
 
   const activeMotionPayload: MotionCoachPayload =

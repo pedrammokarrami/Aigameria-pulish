@@ -11,6 +11,7 @@ interface CuratedItem {
   game: string;
   kind: string;
   title: string;
+  titleFa?: string;
   summary: string;
   source: string;
   url: string | null;
@@ -59,35 +60,38 @@ export function mergeCuratedIntoSkills(
   categoryId: string,
   skills: LobbySkillCardItem[],
   curated: CuratedTop | null,
+  lang: string,
 ): LobbySkillCardItem[] {
   const genre = curated?.genres?.[GAME_GENRE[gameId]];
   if (!genre) return skills;
+  const fa = lang.slice(0, 2) === 'fa';
 
   const lists: CuratedItem[][] =
     categoryId === 'all'
-      ? [genre.trends, genre.tricks, genre.cheatAwareness, genre.tutorials]
+      ? [genre.trends, genre.trends.length < 10 ? genre.tutorials : [], genre.tricks]
       : categoryId === 'attack' || categoryId === 'aim' || categoryId === 'heist'
         ? [genre.tricks, genre.cheatAwareness]
         : categoryId === 'shoot' || categoryId === 'smoke' || categoryId === 'peek' || categoryId === 'utility' || categoryId === 'flank' || categoryId === 'pass' || categoryId === 'clutch' || categoryId === 'escape' || categoryId === 'cover'
           ? [genre.tutorials, genre.trends]
           : [genre.tutorials, genre.cheatAwareness];
 
-  const pool = lists.flat().slice(0, 12);
+  const pool = lists.flat().slice(0, 10);
   if (pool.length === 0) return skills;
 
-  const curatedCards: LobbySkillCardItem[] = pool.map((it, i) => ({
+  // Fresh data replaces the static catalog for this category (hardcoded cards
+  // only serve as offline fallback when the daily agent has no curated data).
+  return pool.map((it, i) => ({
     id: `cur-${gameId}-${categoryId}-${i}`,
     num: String(91 + i),
     gameId,
     topicId: `curated-${it.kind}`,
-    titleFa: it.awarenessOnly ? `${it.title} (awareness-only)` : it.title,
+    titleFa: fa ? it.titleFa ?? it.title : it.title,
     categoryId,
-    categoryLabelFa: it.awarenessOnly ? 'Anti-cheat awareness' : `Trend • ${it.source}`,
+    categoryLabelFa: fa
+      ? it.awarenessOnly ? 'هشدار ضدکیت' : 'ترند روز'
+      : it.awarenessOnly ? 'Anti-cheat awareness' : `Trend • ${it.source}`,
     combos: it.url ? [it.url] : [],
     keywords: [it.kind, it.game],
     problemQuery: it.title,
   }));
-
-  const seen = new Set(curatedCards.map((c) => c.problemQuery.toLowerCase()));
-  return [...curatedCards, ...skills.filter((s) => !seen.has(s.problemQuery.toLowerCase()))];
 }

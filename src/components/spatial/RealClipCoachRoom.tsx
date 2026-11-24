@@ -704,20 +704,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
               }
             }}
           />
-          {answerBlock && (
-            <CoachAnswerBoard
-              answerBlock={answerBlock}
-              accentHex={accent}
-              gameId={motionPayload.gameId}
-              gameClipThumbnail={proClipsData?.clips?.[0]?.thumbnailUrl ?? null}
-            />
-          )}
-          <MotionCoachCard
-            payload={motionPayload}
-            activePhase={activePhase}
-            isSpeaking={isSpeaking}
-            onToggleSpeak={() => onToggleSpeak(motionPayload.voiceExplanationEn)}
- />
+          {/* Formation board + motion-pattern cards removed per product decision */}
           {/* Bottom-of-coach-page REAL 3D controller trainer stage (Petros-gamepad engine, verbatim) */}
           <div
             data-testid="controller-trainer-slot"

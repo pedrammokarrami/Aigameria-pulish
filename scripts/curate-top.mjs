@@ -37,6 +37,26 @@ const GENRES = {
   horror: ['dead-by-daylight', 'r-e-p-o', 'it-takes-two', 'peak'],
 };
 
+/**
+ * Persian card labels — the agent renders every curated card in plain,
+ * simple Farsi so a normal player instantly understands it.
+ */
+const KIND_FA = { trick: 'ترفند', glitch: 'گلیچ و باگ', cheat: 'هشدار ضدکیت', qa: 'آموزش', question: 'آموزش' };
+const cleanTitle = (t) => {
+  let s = t.replace(/^[^/]+\//, '') // strip repo owner/
+    .replace(/\.(github|md|txt|exe)$/i, '')
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (s.length > 64) s = `${s.slice(0, 61)}…`;
+  return s || t;
+};
+const faLabel = (kind, title) => {
+  const k = KIND_FA[kind];
+  const c = cleanTitle(title);
+  return k ? `${k}: ${c}` : c;
+};
+
 const SECTION_KINDS = {
   trends: null, // handled below (cards with a live source URL)
   tricks: ['trick', 'glitch'],
@@ -48,6 +68,13 @@ const cards = db.prepare(`
   FROM knowledge_cards
   ORDER BY updated_at DESC
 `).all();
+
+/**
+ * Stale-generation filter — the homepage must show CURRENT-gen trends only
+ * (FC 27, not FIFA 19; NBA 2K27, not 2K20; no PES-era repos).
+ */
+const STALE_RE = /fifa[-_ ]?(1[0-9]|2[0-5])|nba[-_ ]?2k[-_ ]?(1[0-9]|2[0-6])|\bpes\b|fifa-19|2k20|2k21|2k22|2k23|2k24|2k25|2k26/i;
+const isStale = (c) => STALE_RE.test(`${c.title} ${c.url ?? ''}`);
 
 /**
  * Quality gate for trend picks: keep only cards whose source looks on-topic
@@ -73,13 +100,14 @@ const out = {
 };
 
 for (const [genre, ids] of Object.entries(GENRES)) {
-  const mine = cards.filter((c) => ids.includes(c.game_id));
+  const mine = cards.filter((c) => ids.includes(c.game_id) && !isStale(c));
   if (mine.length === 0) continue;
 
   const trim = (c, kind) => ({
     game: c.game_id,
     kind,
     title: c.title,
+    titleFa: faLabel(kind, c.title),
     summary: (c.body || '').slice(0, 220),
     source: c.source || 'aigameria-knowledge',
     url: c.url || null,
@@ -87,7 +115,7 @@ for (const [genre, ids] of Object.entries(GENRES)) {
     updatedAt: c.updated_at,
   });
 
-  const live = mine.filter((c) => isRelevant(c));
+  const live = mine.filter((c) => isRelevant(c) && !isStale(c));
   const trends = [
     ...live.filter((c) => c.kind !== 'cheat'),
     ...live.filter((c) => c.kind === 'cheat'),
@@ -96,7 +124,7 @@ for (const [genre, ids] of Object.entries(GENRES)) {
     .map((c) => trim(c, c.kind));
 
   const tricks = SECTION_KINDS.tricks
-    .flatMap((kind) => mine.filter((c) => c.kind === kind))
+    .flatMap((kind) => mine.filter((c) => c.kind === kind && (!c.url || isRelevant(c))))
     .slice(0, 10)
     .map((c) => trim(c, c.kind));
 
