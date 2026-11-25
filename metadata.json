@@ -1,0 +1,6 @@
+{
+  "name": "AIGAMERIA",
+  "description": "Unified gaming and tactical coaching platform with an interactive obsidian skill board, game-isolated tactical projector, controller input trainer, and AVA holographic coach.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
