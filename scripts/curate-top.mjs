@@ -57,6 +57,24 @@ const faLabel = (kind, title) => {
   return k ? `${k}: ${c}` : c;
 };
 
+/**
+ * Humanize raw titles for the EN core: no owner/repo slugs, no mixed
+ * Persian leftovers, no 0-1-word junk. Repo names become readable phrases.
+ */
+const humanizeTitle = (t) => {
+  if (/\p{Script=Arabic}/u.test(t)) return '';
+  let s = t.replace(/^[^/]+\//, '')
+    .replace(/\.(github|md|txt|exe)$/i, '')
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  // drop pure repo-slug fragments like "byte" / "myqtech" that add no meaning
+  if (s.length < 10 || !s.includes(' ')) return '';
+  // drop disambiguation junk already rejected elsewhere
+  if (s.length > 64) s = `${s.slice(0, 61)}…`;
+  return s;
+};
+
 const SECTION_KINDS = {
   trends: null, // handled below (cards with a live source URL)
   tricks: ['trick', 'glitch'],
@@ -128,12 +146,18 @@ for (const [genre, ids] of Object.entries(GENRES)) {
     .slice(0, 10)
     .map((c) => trim(c, c.kind));
 
-  const cheats = mine.filter((c) => c.kind === 'cheat').slice(0, 10).map((c) => trim(c, 'cheat'));
+  const cheats = mine.filter((c) => c.kind === 'cheat').slice(0, 10).map((c) => trim(c, 'cheat'))
+    .filter((c) => !/\p{Script=Arabic}/u.test(c.title));
 
   const tutorials = SECTION_KINDS.tutorials
     .flatMap((kind) => mine.filter((c) => c.kind === kind))
-    .slice(0, 10)
-    .map((c) => trim(c, c.kind));
+    .map((c) => trim(c, c.kind))
+    // EN core must be English-only: legacy Persian question-card titles are
+    // excluded, repo slugs are humanized, junk titles dropped.
+    .filter((c) => !/\p{Script=Arabic}/u.test(c.title))
+    .map((c) => ({ ...c, title: humanizeTitle(c.title) }))
+    .filter((c) => c.title)
+    .slice(0, 10);
 
   out.genres[genre] = {
     games: ids.filter((id) => mine.some((c) => c.game_id === id)),

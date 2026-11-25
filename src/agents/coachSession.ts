@@ -327,17 +327,23 @@ export async function buildCoachSession(
   const fetcher = options.fetcher ?? globalThis.fetch;
   const dna = state.profile.skillDNA;
   const ovr = computeCompositeDNA(dna);
-  const axes = [
-    { name: 'Spatial Passing', val: dna.spatialPassing },
-    { name: 'Tactical Vision', val: dna.tacticalVision },
-    { name: 'Trap Anticipation', val: dna.trapAnticipation },
-    { name: 'Endgame Composure', val: dna.endgameComposure },
-    { name: 'Tempo Control', val: dna.tempoControl },
-    { name: 'Risk Discipline', val: dna.riskDiscipline },
-  ].sort((a, b) => a.val - b.val);
+  // Game-strict telemetry labels: football vocabulary NEVER leaks into other
+  // realms (user mandate: CS2 must show shooter metrics, zero football).
+  const isSportsRealm = realm === 'sports';
+  const axisLabels = isSportsRealm
+    ? ['Spatial Passing', 'Tactical Vision', 'Trap Anticipation', 'Endgame Composure', 'Tempo Control', 'Risk Discipline']
+    : realm === 'shooter'
+      ? ['Crosshair Placement', 'Utility IQ', 'Counter-Strafe Control', 'Trade Timing', 'Map Awareness', 'Risk Discipline']
+      : ['Mission Planning', 'Situational Awareness', 'Vehicle Control', 'Heist Composure', 'Pacing', 'Risk Discipline'];
+  const axisVals = [dna.spatialPassing, dna.tacticalVision, dna.trapAnticipation, dna.endgameComposure, dna.tempoControl, dna.riskDiscipline];
+  const axes = axisLabels
+    .map((name, i) => ({ name, val: axisVals[i] }))
+    .sort((a, b) => a.val - b.val);
   const weakest = axes[0];
   const strongest = axes[axes.length - 1];
-  const latest = state.matches[0];
+  // Football-style last-match opponents (Madrid Titans etc.) are sports-only;
+  // other realms get a session-style line instead.
+  const latest = isSportsRealm ? state.matches[0] : undefined;
 
   const kbTopics = topicsByRealm(realm);
   const queryEn = query ? buildEnglishQuery(query) : '';
@@ -378,8 +384,8 @@ export async function buildCoachSession(
   const modules: CoachSessionModule[] = [
     {
       id: 'finishing',
-      titleFa: '⚽ شوت‌زنی حرفه‌ای — کی و چطور',
-      titleEn: '⚽ Pro finishing — when & how',
+      titleFa: isSportsRealm ? '⚽ شوت‌زنی حرفه‌ای — کی و چطور' : '🎯 ایم و کروس‌هیر حرفه‌ای — کی و چطور',
+      titleEn: isSportsRealm ? '⚽ Pro finishing — when & how' : '🎯 Crosshair & aim — when & how',
       linesFa: [
         ...(cardLines.finishing.length ? cardLines.finishing : []),
         ...(finishingTopics.length ? finishingTopics.flatMap((t) => t.lessonsFa.slice(0, 2)) : kbLines(kbTopics.slice(0, 1), isFa).linesFa),
@@ -402,8 +408,8 @@ export async function buildCoachSession(
     },
     {
       id: 'formation',
-      titleFa: '🧩 بهترین ترکیب و نقش‌ها',
-      titleEn: '🧩 Best formation & roles',
+      titleFa: isSportsRealm ? '🧩 بهترین ترکیب و نقش‌ها' : '🧩 بهترین تاکتیک و نقش‌ها',
+      titleEn: isSportsRealm ? '🧩 Best formation & roles' : '🧩 Best tactics & roles',
       linesFa: [
         ...(cardLines.formation.length ? cardLines.formation : []),
         ...(formationTopics.length ? formationTopics.flatMap((t) => t.lessonsFa.slice(0, 2)) : []),
