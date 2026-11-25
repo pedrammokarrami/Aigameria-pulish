@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import { spawn } from 'child_process';
 import os from 'os';
+import httpModule from 'http';
 // ---- Aigameria Social Club (Petros-connection) backend engines ----
 import { LocalNodeStore } from './src/server/connection/personal-server/localStore';
 import { P2PSignalingServer } from './src/server/connection/p2p/signalingServer';
@@ -145,6 +146,22 @@ async function startServer() {
   app.use(corsGuard(corsOrigins));
   app.use(optionalAuth);
   app.use(express.json({ limit: '12mb' }));
+
+  // AIGAMERIA FastAPI backend (:8090) — backend-owned /api/v1 namespaces are
+  // transparently proxied so the repo-UI frontend works same-origin.
+  const aigameriaUpstream = process.env.AIGAMERIA_API_UPSTREAM || 'http://127.0.0.1:8090';
+  app.use('/api/v1', (req, res, next) => {
+    if (!/^\/(games|coach|media\/stream|media\/analyze|stage|gamepad|ava|training|health)(\/|$)/.test(req.path)) {
+      return next();
+    }
+    const target = new URL(req.originalUrl, aigameriaUpstream);
+    const proxyReq = httpModule.request(target, { method: req.method, headers: { ...req.headers, host: target.host } }, (proxyRes) => {
+      res.writeHead(proxyRes.statusCode || 502, proxyRes.headers);
+      proxyRes.pipe(res);
+    });
+    proxyReq.on('error', () => res.status(502).json({ error: 'aigameria-api unreachable' }));
+    req.pipe(proxyReq);
+  });
 
   // Versioned REST API v1 + top-level health check
   app.use('/api/v1', apiV1);
@@ -1897,7 +1914,12 @@ export class ErrorOverlay {
       }
     });
   } else {
-    const distDir = path.resolve(process.cwd(), 'dist');
+  // Repo-UI frontend (frontend-repo-ui/dist) wins when present — it is the
+  // chosen AIGAMERIA UI/UX; its /api/v1 calls proxy to the FastAPI backend.
+  const repoUiDist = path.resolve(process.cwd(), 'frontend-repo-ui', 'dist');
+  const distDir = fs.existsSync(path.join(repoUiDist, 'index.html'))
+    ? repoUiDist
+    : path.resolve(process.cwd(), 'dist');
     // gzip on the fly for big JS/CSS — the production bundle is ~3MB and phones
     // on WiFi/cellular choke on it uncompressed (page looks dead while loading)
     app.get(/\.(js|css|html|json|svg|mp4)$/i, (req, res, next) => {

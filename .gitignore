@@ -12,3 +12,11 @@ telegram-bridge/session_new.txt
 telegram-bridge/login_state.json
 telegram-bridge/webhook_url.txt
 telegram-bridge/queue/inbox.jsonl
+
+# Google service account / secrets
+secrets/
+
+# pipeline runtime data
+data/live/
+data/report.json
+frontend-repo-ui/node_modules/
