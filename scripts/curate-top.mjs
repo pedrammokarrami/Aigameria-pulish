@@ -61,6 +61,16 @@ const faLabel = (kind, title) => {
  * Humanize raw titles for the EN core: no owner/repo slugs, no mixed
  * Persian leftovers, no 0-1-word junk. Repo names become readable phrases.
  */
+/**
+ * SPAM FILTER — glitch/exploit/cheat repos and raw `owner/repo` slugs are
+ * never user-facing content. Exploit awareness lives only in cheatAwareness.
+ */
+const SPAM_RX = /glitch|exploit|cheat|hack|trainer|menu|bypass|unlocker|free[- ]?coins|generator/i;
+const isRepoSlug = (t) => {
+  const s = t.trim();
+  return /^[^/]+\/[^/]+$/.test(s) || !s.includes(' '); // user/repo or single token
+};
+
 const humanizeTitle = (t) => {
   if (/\p{Script=Arabic}/u.test(t)) return '';
   let s = t.replace(/^[^/]+\//, '')
@@ -135,14 +145,14 @@ for (const [genre, ids] of Object.entries(GENRES)) {
 
   const live = mine.filter((c) => isRelevant(c) && !isStale(c));
   const trends = [
-    ...live.filter((c) => c.kind !== 'cheat'),
-    ...live.filter((c) => c.kind === 'cheat'),
+    ...live.filter((c) => c.kind !== 'cheat' && !SPAM_RX.test(c.title) && !isRepoSlug(c.title)),
   ]
     .slice(0, 10)
     .map((c) => trim(c, c.kind));
 
   const tricks = SECTION_KINDS.tricks
     .flatMap((kind) => mine.filter((c) => c.kind === kind && (!c.url || isRelevant(c))))
+    .filter((c) => !SPAM_RX.test(c.title) && !isRepoSlug(c.title))
     .slice(0, 10)
     .map((c) => trim(c, c.kind));
 
@@ -153,8 +163,10 @@ for (const [genre, ids] of Object.entries(GENRES)) {
     .flatMap((kind) => mine.filter((c) => c.kind === kind))
     .map((c) => trim(c, c.kind))
     // EN core must be English-only: legacy Persian question-card titles are
-    // excluded, repo slugs are humanized, junk titles dropped.
+    // excluded, repo slugs are humanized, junk titles dropped. Glitch/exploit
+    // listing pages stay out of user-facing tutorials too.
     .filter((c) => !/\p{Script=Arabic}/u.test(c.title))
+    .filter((c) => !SPAM_RX.test(c.title) && !isRepoSlug(c.title))
     .map((c) => ({ ...c, title: humanizeTitle(c.title) }))
     .filter((c) => c.title)
     .slice(0, 10);

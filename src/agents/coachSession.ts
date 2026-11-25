@@ -160,7 +160,7 @@ function diagnoseMatch(match: MatchRecord, dna: SkillDNAAxes, isFa: boolean): Ma
 
 /* ---------------- Module 4: real mistake review from telemetry ---------------- */
 
-function buildMistakeReview(state: EcosystemState, isFa: boolean): {
+function buildMistakeReview(state: EcosystemState, isFa: boolean, realm: RealmId = 'sports'): {
   linesFa: string[];
   linesEn: string[];
   stats: CoachSessionModule['stats'];
@@ -168,6 +168,16 @@ function buildMistakeReview(state: EcosystemState, isFa: boolean): {
 } {
   const { profile, matches } = state;
   const dna = profile.skillDNA;
+  // Football match telemetry is sports-only: other realms never render
+  // "Madrid Titans"-style opponents or football match stats.
+  if (realm !== 'sports') {
+    return {
+      linesFa: ['برای این بازی هنوز سناریوی ثبت‌شده‌ای نیست — اسکرین‌شات یا کلیپ بازی‌ت رو بفرست تا تحلیل دقیق بدم.'],
+      linesEn: ['No recorded scenarios for this game yet — send a screenshot or clip of your match for a precise review.'],
+      stats: [],
+      matchBreakdown: [],
+    };
+  }
   const latest = matches[0];
   const recent = matches.slice(0, 5);
   const wins = recent.filter((m) => m.result === 'win').length;
@@ -376,7 +386,7 @@ export async function buildCoachSession(
     ]);
 
   const patchLines = fmtPatchLines(intel, isFa);
-  const mistakeReview = buildMistakeReview(state, isFa);
+  const mistakeReview = buildMistakeReview(state, isFa, realm);
   const finishingTopics = kbTopics.filter((t) => /finish|shot|finishing|sp-finishing/.test(t.id) || t.keywords.some((k) => /شوت|فینس/.test(k)));
   const formationTopics = kbTopics.filter((t) => /formation|tactic|press/.test(t.id));
   const trainingTopics = kbTopics.filter((t) => t.drills.length > 0).slice(0, 2);
@@ -397,10 +407,17 @@ export async function buildCoachSession(
       ],
       linesEn: [
         ...(cardLinesEn.finishing.length ? cardLinesEn.finishing : []),
-        'Power: 2-3 bars is enough; full power = wild miss.',
-        'Finesse: 45° inside the box + green timing = best conversion.',
-        'Control first touch, shoot second touch — first-touch shots only on open goal.',
-        'Headers: hold the B pin until green, position BEHIND the defender, pick a player with 85+ header rating.',
+        ...(isSportsRealm ? [
+          'Power: 2-3 bars is enough; full power = wild miss.',
+          'Finesse: 45° inside the box + green timing = best conversion.',
+          'Control first touch, shoot second touch — first-touch shots only on open goal.',
+          'Headers: hold the B pin until green, position BEHIND the defender, pick a player with 85+ header rating.',
+        ] : [
+          'Crosshair stays at head level through every rotation — pre-aim the angle, don\'t flick to it.',
+          'Counter-strafe (A+D tap) before every shot: first bullet accuracy is won or lost in the stop.',
+          'One smoke, one flash per entry: utility beats raw aim — buy rounds are won by economy discipline.',
+          'Entry fragger opens, second man trades within 0.5s — never peek without a trade partner.',
+        ]),
       ],
       stats: [{ labelFa: 'دقت فینیش تو', labelEn: 'Your finishing', value: dna.trapAnticipation, max: 100 }],
       clips: finishingClips,
@@ -419,9 +436,15 @@ export async function buildCoachSession(
       ],
       linesEn: [
         ...(cardLinesEn.formation.length ? cardLinesEn.formation : []),
-        'Pick by your squad: strong central mids → 4-2-3-1; fast wingers → 4-3-3; compact block → 4-2-1-3.',
-        'Roles: your best defensive player must be the CDM; CAM matches your style.',
-        'Press after sideways passes only — the single most important current meta setting.',
+        ...(isSportsRealm ? [
+          'Pick by your squad: strong central mids → 4-2-3-1; fast wingers → 4-3-3; compact block → 4-2-1-3.',
+          'Roles: your best defensive player must be the CDM; CAM matches your style.',
+          'Press after sideways passes only — the single most important current meta setting.',
+        ] : [
+          'Buy rounds: force-buys only when the enemy is on a save — economy discipline wins halves.',
+          'Utility per execute: 1 smoke + 1 flash minimum; learn one Mirage and one Inferno set piece.',
+          'Default setups beat hero plays: play the round structure, punish over-rotations.',
+        ]),
       ],
       stats: [{ labelFa: 'بینش تاکتیکی تو', labelEn: 'Tactical vision', value: dna.tacticalVision, max: 100 }],
       clips: formationClips,

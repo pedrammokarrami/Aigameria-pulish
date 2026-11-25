@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-25T01:06:18.573Z",
+  "generatedAt": "2026-11-25T01:32:15.804Z",
   "note": "Curated locally by the AIGAMERIA daily agent. Zero external AI. Cheat cards are awareness-only.",
   "genres": {
     "sports": {
@@ -13,24 +13,12 @@
       ],
       "counts": {
         "cards": 979,
-        "trends": 1,
+        "trends": 0,
         "tricks": 0,
         "cheatAwareness": 1,
         "tutorials": 10
       },
-      "trends": [
-        {
-          "game": "nba2k",
-          "kind": "cheat",
-          "title": "CentralScreenPlank/nba2k27-overlay",
-          "titleFa": "هشدار ضدکیت: nba2k27 overlay",
-          "summary": "آگاهی از تقلب (استفاده آموزش نمی‌شود — ریسک بن دائمی): 42-module trainer/cheat for NBA 2K27 — perfect shooting, max attributes and badges, unlimited VC and MT, MyCAREER progression and full MyTEAM unlocks.",
-          "source": "github",
-          "url": "https://github.com/CentralScreenPlank/nba2k27-overlay",
-          "awarenessOnly": true,
-          "updatedAt": "2026-11-24T18:49:25.407Z"
-        }
-      ],
+      "trends": [],
       "tricks": [],
       "cheatAwareness": [
         {
@@ -137,9 +125,9 @@
         {
           "game": "ea-sports-fc-27-and-ea-sports-fc-26",
           "kind": "qa",
-          "title": "What are the known glitches, exploits, animation cancels, or …",
-          "titleFa": "آموزش: What are the known glitches, exploits, animation cancels, or …",
-          "summary": "Player Lock (L3 + R3) Manual Runs: locking onto an off-ball attacker while AI holds possession to curve diagonal runs behind high defensive lines | Skill Move & Shot Canceling (L2 + R2): canceling a winding-up shot or sk",
+          "title": "What are the top pro tips and tricks for improving in EA SPOR…",
+          "titleFa": "آموزش: What are the top pro tips and tricks for improving in EA SPOR…",
+          "summary": "Use Second Man Press (R1/RB) to pressure the ball carrier while you manually control a CDM to cut the most dangerous forward passing lane—never pull your Center Backs out of shape | Check FUTBIN or FUT.GG for daily Squad",
           "source": "archive:101-games (EA SPORTS FC 27 (and EA SPORTS FC 26))",
           "url": null,
           "awarenessOnly": false,
@@ -148,9 +136,9 @@
         {
           "game": "ea-sports-fc-27-and-ea-sports-fc-26",
           "kind": "qa",
-          "title": "What are the top pro tips and tricks for improving in EA SPOR…",
-          "titleFa": "آموزش: What are the top pro tips and tricks for improving in EA SPOR…",
-          "summary": "Use Second Man Press (R1/RB) to pressure the ball carrier while you manually control a CDM to cut the most dangerous forward passing lane—never pull your Center Backs out of shape | Check FUTBIN or FUT.GG for daily Squad",
+          "title": "What is the difference between Competitive and Authentic game…",
+          "titleFa": "آموزش: What is the difference between Competitive and Authentic game…",
+          "summary": "Competitive Gameplay is tuned for sharper responsiveness and higher player control in online modes like Ultimate Team and Clubs, while Authentic Gameplay slows tempo for realism in Career Mode.",
           "source": "archive:101-games (EA SPORTS FC 27 (and EA SPORTS FC 26))",
           "url": null,
           "awarenessOnly": false,
@@ -176,180 +164,13 @@
       ],
       "counts": {
         "cards": 831,
-        "trends": 10,
-        "tricks": 5,
+        "trends": 0,
+        "tricks": 0,
         "cheatAwareness": 9,
         "tutorials": 10
       },
-      "trends": [
-        {
-          "game": "cod",
-          "kind": "glitch",
-          "title": "Robin-qwerty/warzone2-dmz-underbarrel-glitch-exploit",
-          "titleFa": "گلیچ و باگ: warzone2 dmz underbarrel glitch exploit",
-          "summary": "Call of Duty: Warzone Underbarrel Glitch Exploit allowing the user to have a really fast shooting under barrel with infenite ammo",
-          "source": "github",
-          "url": "https://github.com/Robin-qwerty/warzone2-dmz-underbarrel-glitch-exploit",
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-24T19:02:28.762Z"
-        },
-        {
-          "game": "cod",
-          "kind": "glitch",
-          "title": "braydon911/bo6-glitch",
-          "titleFa": "گلیچ و باگ: bo6 glitch",
-          "summary": "BO6 Glitch Guide 2025: Latest Bugs, Fixes, and Exploits for Call of Duty Black Ops 6 Players on GitHub",
-          "source": "github",
-          "url": "https://github.com/braydon911/bo6-glitch",
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-24T19:02:28.730Z"
-        },
-        {
-          "game": "cod",
-          "kind": "glitch",
-          "title": "rayumusic/bo6-glitch",
-          "titleFa": "گلیچ و باگ: bo6 glitch",
-          "summary": "BO6 Glitch Guide 2025: Latest Call of Duty Black Ops 6 Glitch Fixes, Updates & Exploits on GitHub",
-          "source": "github",
-          "url": "https://github.com/rayumusic/bo6-glitch",
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-24T19:02:28.662Z"
-        },
-        {
-          "game": "cod",
-          "kind": "trick",
-          "title": "Sfedfcv/redesigned-pancake",
-          "titleFa": "ترفند: redesigned pancake",
-          "summary": "Skip to content github / docs Code Issues 80 Pull requests 35 Discussions Actions Projects 2 Security Insights Merge branch 'main' into 1862-Add-Travis-CI-migration-table  1862-Add-Travis-CI-migration-table (#1869, Iixix",
-          "source": "github",
-          "url": "https://github.com/Sfedfcv/redesigned-pancake",
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-24T19:02:23.449Z"
-        },
-        {
-          "game": "cod",
-          "kind": "trick",
-          "title": "alisanjooui9-lang/-Ghost-Academy-Betas",
-          "titleFa": "ترفند: Ghost Academy Betas",
-          "summary": "یک سایت آموزشی رایگان برای کالاف دیوتی موبایل شامل آموزش‌ها، نکات حرفه‌ای و راهنمای تمرین بازیکنان.A free Call of Duty Mobile academy website with professional tips, tutorials, and training guides for players.",
-          "source": "github",
-          "url": "https://github.com/alisanjooui9-lang/-Ghost-Academy-Betas",
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-24T19:02:23.416Z"
-        },
-        {
-          "game": "cod",
-          "kind": "cheat",
-          "title": "WiiZARDD/CallOfDuty-WWII-Trainer-Steam",
-          "titleFa": "هشدار ضدکیت: CallOfDuty WWII Trainer Steam",
-          "summary": "آگاهی از تقلب (استفاده آموزش نمی‌شود — ریسک بن دائمی): The official Call of Duty 14 - WWII Off-Host Trainer for Steam (UNDETECTABLE) Includes Valve Anti-Cheat Bypass.",
-          "source": "github",
-          "url": "https://github.com/WiiZARDD/CallOfDuty-WWII-Trainer-Steam",
-          "awarenessOnly": true,
-          "updatedAt": "2026-11-24T19:02:34.389Z"
-        },
-        {
-          "game": "cod",
-          "kind": "cheat",
-          "title": "KingfisherStay/black-ops-7-trainer",
-          "titleFa": "هشدار ضدکیت: black ops 7 trainer",
-          "summary": "آگاهی از تقلب (استفاده آموزش نمی‌شود — ریسک بن دائمی): Collection of open-source tools for Call of Duty Black Ops 7 — ESP, wallhack, and cheat notes. For educational and single-player use only.",
-          "source": "github",
-          "url": "https://github.com/KingfisherStay/black-ops-7-trainer",
-          "awarenessOnly": true,
-          "updatedAt": "2026-11-24T19:02:34.333Z"
-        },
-        {
-          "game": "cod",
-          "kind": "cheat",
-          "title": "Call-of-Duty-Modern-Warfare4-CheatsHack/.github",
-          "titleFa": "هشدار ضدکیت: Call-of-Duty-Modern-Warfare4-CheatsHack/.github",
-          "summary": "آگاهی از تقلب (استفاده آموزش نمی‌شود — ریسک بن دائمی): Call of Duty: Modern Warfare 4 Cheats is a fully loaded collection of trainers, DMA software, and campaign mod menus for MW4. Packing aimbot, ESP, triggerbot, and a ",
-          "source": "github",
-          "url": "https://github.com/Call-of-Duty-Modern-Warfare4-CheatsHack/.github",
-          "awarenessOnly": true,
-          "updatedAt": "2026-11-24T19:02:34.289Z"
-        },
-        {
-          "game": "cod",
-          "kind": "cheat",
-          "title": "Call-of-Duty-Modern-Warfare-4-Hacks/.github",
-          "titleFa": "هشدار ضدکیت: Call-of-Duty-Modern-Warfare-4-Hacks/.github",
-          "summary": "آگاهی از تقلب (استفاده آموزش نمی‌شود — ریسک بن دائمی): Call of Duty: Modern Warfare 4 Hacks is your complete guide to the MW4 cheat landscape. From DMA-powered aimbots and ESP to campaign mod menus and trainers, it maps ",
-          "source": "github",
-          "url": "https://github.com/Call-of-Duty-Modern-Warfare-4-Hacks/.github",
-          "awarenessOnly": true,
-          "updatedAt": "2026-11-24T19:02:34.233Z"
-        },
-        {
-          "game": "cod",
-          "kind": "cheat",
-          "title": "Call-of-Duty-Modern-Warfare4-CheatPanel/.github",
-          "titleFa": "هشدار ضدکیت: Call-of-Duty-Modern-Warfare4-CheatPanel/.github",
-          "summary": "آگاهی از تقلب (استفاده آموزش نمی‌شود — ریسک بن دائمی): Call of Duty: Modern Warfare 4 Cheat Panel is the definitive collection of DMA cheats, campaign mod menus, and trainers for MW4. Featuring Direct DMA COD, Fecurity, ",
-          "source": "github",
-          "url": "https://github.com/Call-of-Duty-Modern-Warfare4-CheatPanel/.github",
-          "awarenessOnly": true,
-          "updatedAt": "2026-11-24T19:02:34.190Z"
-        }
-      ],
-      "tricks": [
-        {
-          "game": "cod",
-          "kind": "trick",
-          "title": "Sfedfcv/redesigned-pancake",
-          "titleFa": "ترفند: redesigned pancake",
-          "summary": "Skip to content github / docs Code Issues 80 Pull requests 35 Discussions Actions Projects 2 Security Insights Merge branch 'main' into 1862-Add-Travis-CI-migration-table  1862-Add-Travis-CI-migration-table (#1869, Iixix",
-          "source": "github",
-          "url": "https://github.com/Sfedfcv/redesigned-pancake",
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-24T19:02:23.449Z"
-        },
-        {
-          "game": "cod",
-          "kind": "trick",
-          "title": "alisanjooui9-lang/-Ghost-Academy-Betas",
-          "titleFa": "ترفند: Ghost Academy Betas",
-          "summary": "یک سایت آموزشی رایگان برای کالاف دیوتی موبایل شامل آموزش‌ها، نکات حرفه‌ای و راهنمای تمرین بازیکنان.A free Call of Duty Mobile academy website with professional tips, tutorials, and training guides for players.",
-          "source": "github",
-          "url": "https://github.com/alisanjooui9-lang/-Ghost-Academy-Betas",
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-24T19:02:23.416Z"
-        },
-        {
-          "game": "cod",
-          "kind": "glitch",
-          "title": "Robin-qwerty/warzone2-dmz-underbarrel-glitch-exploit",
-          "titleFa": "گلیچ و باگ: warzone2 dmz underbarrel glitch exploit",
-          "summary": "Call of Duty: Warzone Underbarrel Glitch Exploit allowing the user to have a really fast shooting under barrel with infenite ammo",
-          "source": "github",
-          "url": "https://github.com/Robin-qwerty/warzone2-dmz-underbarrel-glitch-exploit",
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-24T19:02:28.762Z"
-        },
-        {
-          "game": "cod",
-          "kind": "glitch",
-          "title": "braydon911/bo6-glitch",
-          "titleFa": "گلیچ و باگ: bo6 glitch",
-          "summary": "BO6 Glitch Guide 2025: Latest Bugs, Fixes, and Exploits for Call of Duty Black Ops 6 Players on GitHub",
-          "source": "github",
-          "url": "https://github.com/braydon911/bo6-glitch",
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-24T19:02:28.730Z"
-        },
-        {
-          "game": "cod",
-          "kind": "glitch",
-          "title": "rayumusic/bo6-glitch",
-          "titleFa": "گلیچ و باگ: bo6 glitch",
-          "summary": "BO6 Glitch Guide 2025: Latest Call of Duty Black Ops 6 Glitch Fixes, Updates & Exploits on GitHub",
-          "source": "github",
-          "url": "https://github.com/rayumusic/bo6-glitch",
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-24T19:02:28.662Z"
-        }
-      ],
+      "trends": [],
+      "tricks": [],
       "cheatAwareness": [
         {
           "game": "cod",
@@ -488,17 +309,6 @@
         {
           "game": "valorant",
           "kind": "qa",
-          "title": "What are the known glitches, exploits, animation cancels, or …",
-          "titleFa": "آموزش: What are the known glitches, exploits, animation cancels, or …",
-          "summary": "Deadzoning: firing a single accurate bullet at the exact millisecond velocity hits zero between A and D strafes | Jump Spotting: strafe-jumping past a corner and air-strafing back to gather enemy intel without exposing a",
-          "source": "archive:101-games (VALORANT)",
-          "url": null,
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-22T00:00:00Z"
-        },
-        {
-          "game": "valorant",
-          "kind": "qa",
           "title": "What are the top pro tips and tricks for improving in VALORANT?",
           "titleFa": "آموزش: What are the top pro tips and tricks for improving in VALORANT?",
           "summary": "Keep your eDPI in a controllable range (typically 200-400 eDPI) for consistent micro-adjustments | Avoid crouching immediately in every gunfight, as it commits you to a spray and lowers your head into body-level crosshai",
@@ -561,6 +371,17 @@
           "url": null,
           "awarenessOnly": false,
           "updatedAt": "2026-11-22T00:00:00Z"
+        },
+        {
+          "game": "world-of-tanks",
+          "kind": "qa",
+          "title": "What are the best meta strategies and progression approaches …",
+          "titleFa": "آموزش: What are the best meta strategies and progression approaches …",
+          "summary": "Use the 15-meter bush rule: pull back until foliage turns opaque before firing so you preserve full bush camouflage | Control early central vision with Light Tanks and fast Mediums to farm assisted spotting damage and de",
+          "source": "archive:101-games (World of Tanks)",
+          "url": null,
+          "awarenessOnly": false,
+          "updatedAt": "2026-11-22T00:00:00Z"
         }
       ]
     },
@@ -611,17 +432,6 @@
           "title": "What are the best meta strategies and progression approaches …",
           "titleFa": "آموزش: What are the best meta strategies and progression approaches …",
           "summary": "Carry a balanced loadout: shotgun, mid-range rifle/SMG, mobility item, and two healing/shield slots | Claim high ground early in moving endgame zones to conserve materials and force opponents to burn mobility | Rotate on",
-          "source": "archive:101-games (Fortnite)",
-          "url": null,
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-22T00:00:00Z"
-        },
-        {
-          "game": "fortnite",
-          "kind": "qa",
-          "title": "What are the known glitches, exploits, animation cancels, or …",
-          "titleFa": "آموزش: What are the known glitches, exploits, animation cancels, or …",
-          "summary": "Scroll Wheel Reset: binding Building Edit and Reset Building Edit to mouse scroll wheel for instant one-flick wall resets | Mongraal Classic / Phase Exploit: placing a stair or cone inside an opponent's box while breakin",
           "source": "archive:101-games (Fortnite)",
           "url": null,
           "awarenessOnly": false,
@@ -692,6 +502,17 @@
           "url": null,
           "awarenessOnly": false,
           "updatedAt": "2026-11-22T00:00:00Z"
+        },
+        {
+          "game": "pubg-battlegrounds",
+          "kind": "qa",
+          "title": "What are the best meta strategies and progression approaches …",
+          "titleFa": "آموزش: What are the best meta strategies and progression approaches …",
+          "summary": "Pair a full-auto Assault Rifle (e.g., Beryl M762 or AUG) with a high-velocity DMR (e.g., Mini14 or Mk12) to cover close and long ranges | Carry 4 to 6 Smoke Grenades in squads to create portable cover for revives, cross-",
+          "source": "archive:101-games (PUBG: BATTLEGROUNDS)",
+          "url": null,
+          "awarenessOnly": false,
+          "updatedAt": "2026-11-22T00:00:00Z"
         }
       ]
     },
@@ -714,136 +535,13 @@
       ],
       "counts": {
         "cards": 503,
-        "trends": 10,
-        "tricks": 1,
+        "trends": 0,
+        "tricks": 0,
         "cheatAwareness": 10,
         "tutorials": 10
       },
-      "trends": [
-        {
-          "game": "gta",
-          "kind": "glitch",
-          "title": "v7upSln/Apartments-Trade-In-Exploit",
-          "titleFa": "گلیچ و باگ: Apartments Trade In Exploit",
-          "summary": "An automation for a glitch in gta 5 online. Works on enhanced",
-          "source": "github",
-          "url": "https://github.com/v7upSln/Apartments-Trade-In-Exploit",
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-24T19:04:00.951Z"
-        },
-        {
-          "game": "elden-ring",
-          "kind": "cheat",
-          "title": "berucat/nightreign-eldenring-enhanced-menu",
-          "titleFa": "هشدار ضدکیت: nightreign eldenring enhanced menu",
-          "summary": "آگاهی از تقلب (استفاده آموزش نمی‌شود — ریسک بن دائمی): Elden Ring Nightreign Cheat Menu Unlocker 🗡️ Powerful Trainer Mod for Enhanced Gameplay",
-          "source": "github",
-          "url": "https://github.com/berucat/nightreign-eldenring-enhanced-menu",
-          "awarenessOnly": true,
-          "updatedAt": "2026-11-24T19:03:42.521Z"
-        },
-        {
-          "game": "elden-ring",
-          "kind": "cheat",
-          "title": "anyxei23/Elden-Ring-Best-Trainer-2025",
-          "titleFa": "هشدار ضدکیت: Elden Ring Best Trainer 2025",
-          "summary": "آگاهی از تقلب (استفاده آموزش نمی‌شود — ریسک بن دائمی): Elden Ring Trainer 2025 v12.10 | Rune Farm x999999 One Hit Kill God Mode Infinite Stamina Item Spawner Fly Teleport Unlock All | Elden Ring Cheat PC Undetected EAC B",
-          "source": "github",
-          "url": "https://github.com/anyxei23/Elden-Ring-Best-Trainer-2025",
-          "awarenessOnly": true,
-          "updatedAt": "2026-11-24T19:03:42.485Z"
-        },
-        {
-          "game": "elden-ring",
-          "kind": "cheat",
-          "title": "CEOHarvey242/cheat-engine-7.5",
-          "titleFa": "هشدار ضدکیت: cheat engine 7.5",
-          "summary": "آگاهی از تقلب (استفاده آموزش نمی‌شود — ریسک بن دائمی): cheat engine 7.5  github  tables download pc windows 11 cheat tables forza horizon 6  elden ring  ct file memory scanner speedhack trainer maker",
-          "source": "github",
-          "url": "https://github.com/CEOHarvey242/cheat-engine-7.5",
-          "awarenessOnly": true,
-          "updatedAt": "2026-11-24T19:03:42.454Z"
-        },
-        {
-          "game": "elden-ring",
-          "kind": "cheat",
-          "title": "BoulevardMinister/Elden-Ring-Shadow-Of-The-Erdtree-Edition-Cheats-Hacks-Trainers",
-          "titleFa": "هشدار ضدکیت: Elden Ring Shadow Of The Erdtree Edition Cheats Hacks Trainers",
-          "summary": "آگاهی از تقلب (استفاده آموزش نمی‌شود — ریسک بن دائمی): 🤖🧙 explore Elden Ring Shadow Of The Erdtree with no limits — fly, teleport, and unlock everything with our powerful toolset.",
-          "source": "github",
-          "url": "https://github.com/BoulevardMinister/Elden-Ring-Shadow-Of-The-Erdtree-Edition-Cheats-Hacks-Trainers",
-          "awarenessOnly": true,
-          "updatedAt": "2026-11-24T19:03:42.418Z"
-        },
-        {
-          "game": "elden-ring",
-          "kind": "cheat",
-          "title": "CycleController/Elden-Ring-Max-Cheats-Hacks-Trainers",
-          "titleFa": "هشدار ضدکیت: Elden Ring Max Cheats Hacks Trainers",
-          "summary": "آگاهی از تقلب (استفاده آموزش نمی‌شود — ریسک بن دائمی): 💀💎 Elden Ring Trainer 2026 - Complete hack suite for Windows.",
-          "source": "github",
-          "url": "https://github.com/CycleController/Elden-Ring-Max-Cheats-Hacks-Trainers",
-          "awarenessOnly": true,
-          "updatedAt": "2026-11-24T19:03:42.387Z"
-        },
-        {
-          "game": "elden-ring",
-          "kind": "cheat",
-          "title": "digital-dev/Apprentice",
-          "titleFa": "هشدار ضدکیت: Apprentice",
-          "summary": "آگاهی از تقلب (استفاده آموزش نمی‌شود — ریسک بن دائمی): Free, open-source Windows game trainer & memory editor — Cheat Engine alternative with code-patch injection, Mono/IL2CPP support, and .CT import/export. Includes Val",
-          "source": "github",
-          "url": "https://github.com/digital-dev/Apprentice",
-          "awarenessOnly": true,
-          "updatedAt": "2026-11-24T19:03:42.351Z"
-        },
-        {
-          "game": "elden-ring",
-          "kind": "cheat",
-          "title": "BowSinceEnt/resocket-elden-ring-cheat-2026-trainer-mod-menu-tools",
-          "titleFa": "هشدار ضدکیت: resocket elden ring cheat 2026 trainer mod menu tools",
-          "summary": "آگاهی از تقلب (استفاده آموزش نمی‌شود — ریسک بن دائمی): Elden Ring Cheat 2026 — Single-player modding and gameplay toolkit concept featuring character build optimization, rune planning, weapon upgrades, boss strategies, s",
-          "source": "github",
-          "url": "https://github.com/BowSinceEnt/resocket-elden-ring-cheat-2026-trainer-mod-menu-tools",
-          "awarenessOnly": true,
-          "updatedAt": "2026-11-24T19:03:42.321Z"
-        },
-        {
-          "game": "elden-ring",
-          "kind": "cheat",
-          "title": "hajahajora1999/Lands-Between-Overlord",
-          "titleFa": "هشدار ضدکیت: Lands Between Overlord",
-          "summary": "آگاهی از تقلب (استفاده آموزش نمی‌شود — ریسک بن دائمی): Elden Ring Nightreign Trainer 2026: All DLC & Shadow of the Erdtree Cheats",
-          "source": "github",
-          "url": "https://github.com/hajahajora1999/Lands-Between-Overlord",
-          "awarenessOnly": true,
-          "updatedAt": "2026-11-24T19:03:42.285Z"
-        },
-        {
-          "game": "elden-ring",
-          "kind": "cheat",
-          "title": "Elden-Ring-Nightreign-CheatPanel/.github",
-          "titleFa": "هشدار ضدکیت: Elden-Ring-Nightreign-CheatPanel/.github",
-          "summary": "آگاهی از تقلب (استفاده آموزش نمی‌شود — ریسک بن دائمی): Elden Ring Nightreign Cheat Panel is a Windows trainer for the co-op roguelike Elden Ring Nightreign. It bundles god mode, infinite runes and murk, instant skill coo",
-          "source": "github",
-          "url": "https://github.com/Elden-Ring-Nightreign-CheatPanel/.github",
-          "awarenessOnly": true,
-          "updatedAt": "2026-11-24T19:03:42.254Z"
-        }
-      ],
-      "tricks": [
-        {
-          "game": "gta",
-          "kind": "glitch",
-          "title": "v7upSln/Apartments-Trade-In-Exploit",
-          "titleFa": "گلیچ و باگ: Apartments Trade In Exploit",
-          "summary": "An automation for a glitch in gta 5 online. Works on enhanced",
-          "source": "github",
-          "url": "https://github.com/v7upSln/Apartments-Trade-In-Exploit",
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-24T19:04:00.951Z"
-        }
-      ],
+      "trends": [],
+      "tricks": [],
       "cheatAwareness": [
         {
           "game": "elden-ring",
@@ -993,31 +691,9 @@
         {
           "game": "phantom-blade-zero",
           "kind": "qa",
-          "title": "What are the known glitches, exploits, animation cancels, or …",
-          "titleFa": "آموزش: What are the known glitches, exploits, animation cancels, or …",
-          "summary": "Flying Dagger Teleport / Super Jump Tech: early speedrun movement tech using Flying Dagger animations to cross gaps and reach non-fatal sequence skips | Weapon-Swap Recovery Canceling: switching primary weapons or trigge",
-          "source": "archive:101-games (Phantom Blade Zero)",
-          "url": null,
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-22T00:00:00Z"
-        },
-        {
-          "game": "phantom-blade-zero",
-          "kind": "qa",
           "title": "What are the top pro tips and tricks for improving in Phantom…",
           "titleFa": "آموزش: What are the top pro tips and tricks for improving in Phantom…",
           "summary": "Ring every regional Bell checkpoint (such as the Valley Sha-Chi Tower Base Bell) to unlock fast-travel nodes and shortcuts | Watch color-coded enemy glint cues closely: parry standard strikes to break posture, and Ghosts",
-          "source": "archive:101-games (Phantom Blade Zero)",
-          "url": null,
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-22T00:00:00Z"
-        },
-        {
-          "game": "phantom-blade-zero",
-          "kind": "qa",
-          "title": "Is Phantom Blade Zero a Soulslike or a hack and slash action …",
-          "titleFa": "آموزش: Is Phantom Blade Zero a Soulslike or a hack and slash action …",
-          "summary": "It blends fast-paced wuxia hack-and-slash combat and combo chaining with interconnected level design, Bell checkpoints, and demanding multi-phase boss fights.",
           "source": "archive:101-games (Phantom Blade Zero)",
           "url": null,
           "awarenessOnly": false,
@@ -1066,6 +742,28 @@
           "url": null,
           "awarenessOnly": false,
           "updatedAt": "2026-11-22T00:00:00Z"
+        },
+        {
+          "game": "gta",
+          "kind": "qa",
+          "title": "What are the best meta strategies and progression approaches …",
+          "titleFa": "آموزش: What are the best meta strategies and progression approaches …",
+          "summary": "Solo Cayo Perico Heist grinding using the Kosatka submarine and Drainage Tunnel stealth entry for consistent high hourly cash | Passive income stacking by linking Nightclub Warehouse technicians to MC Businesses, Bunker,",
+          "source": "archive:101-games (Grand Theft Auto V)",
+          "url": null,
+          "awarenessOnly": false,
+          "updatedAt": "2026-11-22T00:00:00Z"
+        },
+        {
+          "game": "gta",
+          "kind": "qa",
+          "title": "What are the top pro tips and tricks for improving in Grand T…",
+          "titleFa": "آموزش: What are the top pro tips and tricks for improving in Grand T…",
+          "summary": "Keep snacks and Super Heavy Armor stocked and eat snacks from cover or via the weapon wheel shortcut to skip the eating animation | Purchase the Armored Kuruma early in GTA Online to make NPC combat missions and heist se",
+          "source": "archive:101-games (Grand Theft Auto V)",
+          "url": null,
+          "awarenessOnly": false,
+          "updatedAt": "2026-11-22T00:00:00Z"
         }
       ]
     },
@@ -1077,79 +775,12 @@
       ],
       "counts": {
         "cards": 166,
-        "trends": 6,
+        "trends": 0,
         "tricks": 0,
         "cheatAwareness": 6,
         "tutorials": 10
       },
-      "trends": [
-        {
-          "game": "f1-25",
-          "kind": "cheat",
-          "title": "fallenangel1927/F1-Game-2023-unlimited-hp-mods",
-          "titleFa": "هشدار ضدکیت: F1 Game 2023 unlimited hp mods",
-          "summary": "آگاهی از تقلب (استفاده آموزش نمی‌شود — ریسک بن دائمی): F1 Manager Mods 2023 infinite wind hacks, F1 Manager Mods 2023 money cost cap, F1 Manager Trainer 2023 edit tyre hacks, F1 2023 infinite fuel trainer, PC F1 Manager ",
-          "source": "github",
-          "url": "https://github.com/fallenangel1927/F1-Game-2023-unlimited-hp-mods",
-          "awarenessOnly": true,
-          "updatedAt": "2026-11-24T19:02:56.496Z"
-        },
-        {
-          "game": "f1-25",
-          "kind": "cheat",
-          "title": "monk-1928/Ai-slowdown-F1-23-hack",
-          "titleFa": "هشدار ضدکیت: Ai slowdown F1 23 hack",
-          "summary": "آگاهی از تقلب (استفاده آموزش نمی‌شود — ریسک بن دائمی): Ai to F1 trainer, F1 23 game perfect tire hack, Speed F1 hacks, Ai slowdown F1 23 hack, Engine cool F1 game cheats, F1 cheats set tire, Custom settings F1 game, F1 2",
-          "source": "github",
-          "url": "https://github.com/monk-1928/Ai-slowdown-F1-23-hack",
-          "awarenessOnly": true,
-          "updatedAt": "2026-11-24T19:02:56.465Z"
-        },
-        {
-          "game": "f1-25",
-          "kind": "cheat",
-          "title": "mrbublegummrdoors9/Unlimited-money-cheats-F1-2020",
-          "titleFa": "هشدار ضدکیت: Unlimited money cheats F1 2020",
-          "summary": "آگاهی از تقلب (استفاده آموزش نمی‌شود — ریسک بن دائمی): Trainer no tyre wear F1 2020, Trainer F1 2020 god mode, Unlimited money cheats F1 2020, Mods no cooldown F1 2020, Cheat engine F1 2020 boost, PC F1 2020 freeze AI, C",
-          "source": "github",
-          "url": "https://github.com/mrbublegummrdoors9/Unlimited-money-cheats-F1-2020",
-          "awarenessOnly": true,
-          "updatedAt": "2026-11-24T19:02:56.429Z"
-        },
-        {
-          "game": "f1-25",
-          "kind": "cheat",
-          "title": "mrmonster556/F1-game-unlimited-research-points-cheat",
-          "titleFa": "هشدار ضدکیت: F1 game unlimited research points cheat",
-          "summary": "آگاهی از تقلب (استفاده آموزش نمی‌شود — ریسک بن دائمی): F1 24 parts zero damage hack, PC f1 24 unlimited ers mod, F1 game cheat unlimited research points, F124 pc cheats unlimited money, PC f1 24 damage zero engine traine",
-          "source": "github",
-          "url": "https://github.com/mrmonster556/F1-game-unlimited-research-points-cheat",
-          "awarenessOnly": true,
-          "updatedAt": "2026-11-24T19:02:56.398Z"
-        },
-        {
-          "game": "f1-25",
-          "kind": "cheat",
-          "title": "mrrippeck586/F122-ai-freeze-hacks",
-          "titleFa": "هشدار ضدکیت: F122 ai freeze hacks",
-          "summary": "آگاهی از تقلب (استفاده آموزش نمی‌شود — ریسک بن دائمی): F122 ai freeze hacks, Hack F1 22 cheats, No cooldown F1 22, Research points F1 22, F122 mods speed boost, F122 engine cheat, F1 game god mode cheats, F122 research p",
-          "source": "github",
-          "url": "https://github.com/mrrippeck586/F122-ai-freeze-hacks",
-          "awarenessOnly": true,
-          "updatedAt": "2026-11-24T19:02:56.363Z"
-        },
-        {
-          "game": "f1-25",
-          "kind": "cheat",
-          "title": "LanceRemember/007-First-Light-Helper-Game",
-          "titleFa": "هشدار ضدکیت: 007 First Light Helper Game",
-          "summary": "آگاهی از تقلب (استفاده آموزش نمی‌شود — ریسک بن دائمی): 🔫 007 First Light Trainer 2026 - undetected cheat for Windows 10/11. God Mode, Infinite Health, Infinite Ammo, No Reload, Super Accuracy, No Recoil, Stealth Mode, I",
-          "source": "github",
-          "url": "https://github.com/LanceRemember/007-First-Light-Helper-Game",
-          "awarenessOnly": true,
-          "updatedAt": "2026-11-24T19:02:56.305Z"
-        }
-      ],
+      "trends": [],
       "tricks": [],
       "cheatAwareness": [
         {
@@ -1256,17 +887,6 @@
         {
           "game": "forza-horizon-6",
           "kind": "qa",
-          "title": "What are the known glitches, exploits, animation cancels, or …",
-          "titleFa": "آموزش: What are the known glitches, exploits, animation cancels, or …",
-          "summary": "Manual-with-Clutch Shift Speed: Shifting with Manual + Clutch eliminates the shift-delay penalty on older gearboxes, shaving tenths off every straightaway. | Brake-Tap Drift Initiation: A sharp tap of the footbrake inste",
-          "source": "archive:101-games (Forza Horizon 6)",
-          "url": null,
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-22T00:00:00Z"
-        },
-        {
-          "game": "forza-horizon-6",
-          "kind": "qa",
           "title": "What are the top pro tips and tricks for improving in Forza H…",
           "titleFa": "آموزش: What are the top pro tips and tricks for improving in Forza H…",
           "summary": "Turn on the new Car Proximity Radar in HUD settings for cleaner side-by-side racing in online Horizon Open and tight Tokyo streets. | Smash Fast Travel Boards early so you can warp anywhere across Japan for free instead ",
@@ -1329,6 +949,17 @@
           "url": null,
           "awarenessOnly": false,
           "updatedAt": "2026-11-22T00:00:00Z"
+        },
+        {
+          "game": "forza-horizon",
+          "kind": "qa",
+          "title": "What are the best meta strategies and progression approaches …",
+          "titleFa": "آموزش: What are the best meta strategies and progression approaches …",
+          "summary": "Tune cars precisely to the top of their target PI bracket (e.g., A800 or S1 900), prioritizing tire compound, weight reduction, and suspension before raw horsepower on tight Touge passes. | Use AWD swaps with rear-biased",
+          "source": "archive:101-games (Forza Horizon 6)",
+          "url": null,
+          "awarenessOnly": false,
+          "updatedAt": "2026-11-22T00:00:00Z"
         }
       ]
     },
@@ -1386,17 +1017,6 @@
           "title": "What are the best meta strategies and progression approaches …",
           "titleFa": "آموزش: What are the best meta strategies and progression approaches …",
           "summary": "Build a Villager Trading Hall with cured librarians to secure Mending, Unbreaking III, and Protection IV books early | Construct a Nether Roof Ice Boat highway (1:8 coordinate ratio) for rapid long-distance Overworld tra",
-          "source": "archive:101-games (Minecraft)",
-          "url": null,
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-22T00:00:00Z"
-        },
-        {
-          "game": "minecraft",
-          "kind": "qa",
-          "title": "What are the known glitches, exploits, animation cancels, or …",
-          "titleFa": "آموزش: What are the known glitches, exploits, animation cancels, or …",
-          "summary": "Bedrock Breaking (Java Edition): using a piston, TNT, obsidian, and trapdoor setup to punch through the Nether ceiling | TNT Duplication: exploiting coral fans and detector rails on slime-block flying machines for automa",
           "source": "archive:101-games (Minecraft)",
           "url": null,
           "awarenessOnly": false,
@@ -1467,6 +1087,17 @@
           "url": null,
           "awarenessOnly": false,
           "updatedAt": "2026-11-22T00:00:00Z"
+        },
+        {
+          "game": "rust",
+          "kind": "qa",
+          "title": "What are the best meta strategies and progression approaches …",
+          "titleFa": "آموزش: What are the best meta strategies and progression approaches …",
+          "summary": "Wipe-day rush: place multiple sleeping bags near your target build spot, farm cloth and wood for a bow and 2x1 airlock starter before crafting a Workbench | Build multi-TC bunker bases with wide-gap shooting floors and e",
+          "source": "archive:101-games (Rust)",
+          "url": null,
+          "awarenessOnly": false,
+          "updatedAt": "2026-11-22T00:00:00Z"
         }
       ]
     },
@@ -1524,17 +1155,6 @@
           "title": "What are the best meta strategies and progression approaches …",
           "titleFa": "آموزش: What are the best meta strategies and progression approaches …",
           "summary": "Establish river vision 60 seconds before Dragon, Voidgrubs, Rift Herald, or Baron Nashor spawn | Execute 1-3-1 or 1-4 split-push macro with Teleport advantage to force unfavorable enemy rotations | Play around level 2, l",
-          "source": "archive:101-games (League of Legends)",
-          "url": null,
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-22T00:00:00Z"
-        },
-        {
-          "game": "league-of-legends",
-          "kind": "qa",
-          "title": "What are the known glitches, exploits, animation cancels, or …",
-          "titleFa": "آموزش: What are the known glitches, exploits, animation cancels, or …",
-          "summary": "Input Buffering + Flash: queuing a targeted ability or skillshot outside range and pressing Flash to execute it instantaneously without reaction time | Auto-Attack Animation Canceling: interrupting post-attack winddown a",
           "source": "archive:101-games (League of Legends)",
           "url": null,
           "awarenessOnly": false,
@@ -1605,6 +1225,17 @@
           "url": null,
           "awarenessOnly": false,
           "updatedAt": "2026-11-22T00:00:00Z"
+        },
+        {
+          "game": "genshin-impact",
+          "kind": "qa",
+          "title": "What are the top pro tips and tricks for improving in Genshin…",
+          "titleFa": "آموزش: What are the top pro tips and tricks for improving in Genshin…",
+          "summary": "Wait until Adventure Rank 45 before spending Fragile Resin on Artifact domains to guarantee a 5-star artifact per run | Level weapons and core Talents before grinding for marginal artifact upgrades, as they provide guara",
+          "source": "archive:101-games (Genshin Impact)",
+          "url": null,
+          "awarenessOnly": false,
+          "updatedAt": "2026-11-22T00:00:00Z"
         }
       ]
     },
@@ -1654,17 +1285,6 @@
           "title": "What are the best meta strategies and progression approaches …",
           "titleFa": "آموزش: What are the best meta strategies and progression approaches …",
           "summary": "Survivors: break potential '3-gen' clusters early by prioritizing central generators first so the Killer cannot easily patrol the final three generators | Killers: stack top regression and info perks (such as Scourge Hoo",
-          "source": "archive:101-games (Dead by Daylight)",
-          "url": null,
-          "awarenessOnly": false,
-          "updatedAt": "2026-11-22T00:00:00Z"
-        },
-        {
-          "game": "dead-by-daylight",
-          "kind": "qa",
-          "title": "What are the known glitches, exploits, animation cancels, or …",
-          "titleFa": "آموزش: What are the known glitches, exploits, animation cancels, or …",
-          "summary": "Moonwalking (walking backward around tall walls as Killer to hide your Red Stain and catch Survivors waiting at a vault or pallet) | Window-tech / CJ-tech (timing a vault or pallet drop during a Killer's attack recovery ",
           "source": "archive:101-games (Dead by Daylight)",
           "url": null,
           "awarenessOnly": false,
@@ -1731,6 +1351,17 @@
           "title": "What are the main maps, worlds, or regions in It Takes Two?",
           "titleFa": "آموزش: What are the main maps, worlds, or regions in It Takes Two?",
           "summary": "The Shed, The Tree, Rose's Room, Cuckoo Clock, Snow Globe, The Attic",
+          "source": "archive:101-games (It Takes Two)",
+          "url": null,
+          "awarenessOnly": false,
+          "updatedAt": "2026-11-22T00:00:00Z"
+        },
+        {
+          "game": "it-takes-two",
+          "kind": "qa",
+          "title": "What are the best meta strategies and progression approaches …",
+          "titleFa": "آموزش: What are the best meta strategies and progression approaches …",
+          "summary": "Coordinating verbal countdowns for synchronized ability triggers (such as Cody firing sap immediately before May ignites it with the match gun) | Assigning distinct combat roles during multi-phase bosses—one player draws",
           "source": "archive:101-games (It Takes Two)",
           "url": null,
           "awarenessOnly": false,
