@@ -157,8 +157,24 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
       accentHex: accent,
     });
     if (!raw) return null;
-    // Game-strict stage guard: a non-football game NEVER renders a football
-    // pitch or football formation — the guard remaps or downgrades the stage.
+    // HARD BLOCK (user mandate): the football stage (Real Madrid 4-3-3,
+    // pitch, football formations) physically cannot render unless the ACTIVE
+    // game is a football game. `gameId !== fc27` → any football-shaped
+    // command is dropped here at the host boundary and replaced with a
+    // natural-language prompt for THIS game, so the vendored stage resolves
+    // its own game-matched (map/weapon/court/moba) view.
+    const footballAllowed = ['fc27', 'fc26', 'fc25', 'fifa', 'efootball'].includes(
+      motionPayload.gameId.trim().toLowerCase(),
+    );
+    if (raw.mode === 'football' && !footballAllowed) {
+      const prompt = [motionPayload.gameName, problemQuery, activeRealm]
+        .filter(Boolean)
+        .join('. ')
+        .slice(0, 800);
+      return prompt.trim() ? { prompt } : null;
+    }
+    // Defense-in-depth (same mandate via stageGameGuard): remap/upgrade any
+    // football pitch mode that slipped through for a non-football game.
     if (raw.mode === 'football') {
       const guard = resolveSafeStagePayload({
         gameId: motionPayload.gameId,
@@ -501,10 +517,19 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
                 <iframe
                   ref={analyzFrameRef}
                   data-testid="analyz-tactical-stage"
+                  // key = gameId-topic: switching games/topics destroys the
+                  // stage's previous state entirely (no football leftovers).
+                  key={`analyz-${motionPayload.gameId}-${problemQuery}`}
                   src="/analyz/?transparent=1&autoplay=1"
                   title="Ai-petros-game-analyz tactical stage"
                   className="w-full h-[300px] sm:h-[380px] border-0"
                   allow="autoplay"
+                  // Fresh iframe after key change → re-send the current command
+                  // so the stage boots straight into THIS game/topic view.
+                  onLoad={() => {
+                    sendAnalyzCommand(analyzFrameRef.current, analyzCommand);
+                    window.setTimeout(() => sendAnalyzCommand(analyzFrameRef.current, analyzCommand), 700);
+                  }}
                 />
               ) : (
                 <div className="p-0">
