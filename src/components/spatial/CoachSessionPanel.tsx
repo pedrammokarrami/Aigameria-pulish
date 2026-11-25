@@ -129,7 +129,9 @@ export const CoachSessionPanel: React.FC<CoachSessionPanelProps> = ({
             </p>
             {session && (
               <p dir="ltr" className="text-[10px] font-mono-tabular font-bold text-white/55 text-left">
-                OVR {session.telemetry.ovr} · {session.telemetry.strongest.name} {session.telemetry.strongest.val} · {session.telemetry.weakest.name} {session.telemetry.weakest.val}
+                {/* Game-strict: OVR is football vocabulary — every other game is
+                    labeled by its own id (CS2 RATING 88 …), never "OVR". */}
+                {session.realm === 'sports' ? 'OVR' : `${session.gameId.toUpperCase()} RATING`} {session.telemetry.ovr} · {session.telemetry.strongest.name} {session.telemetry.strongest.val} · {session.telemetry.weakest.name} {session.telemetry.weakest.val}
                 {session.telemetry.lastMatch ? ` · ${session.telemetry.lastMatch.score} ${session.telemetry.lastMatch.opponent}` : ''}
               </p>
             )}
@@ -138,7 +140,7 @@ export const CoachSessionPanel: React.FC<CoachSessionPanelProps> = ({
                 <HudStatGauges
                   dataTestId="session-header-stats"
                   stats={[
-                    { label: isFa ? 'امتیاز کل' : 'OVR', value: session.telemetry.ovr, max: 100 },
+                    { label: session.realm === 'sports' ? (isFa ? 'امتیاز کل' : 'OVR') : `${session.gameId.toUpperCase()} RATING`, value: session.telemetry.ovr, max: 100 },
                     { label: session.telemetry.strongest.name, value: session.telemetry.strongest.val, max: 100 },
                     { label: session.telemetry.weakest.name, value: session.telemetry.weakest.val, max: 100 },
                   ]}

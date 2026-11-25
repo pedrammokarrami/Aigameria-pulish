@@ -133,7 +133,10 @@ export function buildAnalyzCommand(
     accentHex: string;
   },
 ): Record<string, unknown> | null {
-  const football = buildAnalyzFootballCommand(args.answerBlock, args.accentHex);
+  // Game-strict source gate: the football schema is built ONLY for sports
+  // realms. A stale/foreign answerBlock can never leak a football pitch into
+  // CS2/other games (user mandate).
+  const football = args.realm === 'sports' ? buildAnalyzFootballCommand(args.answerBlock, args.accentHex) : null;
   if (football) return football;
   const lines = [
     args.answerBlock?.titleEn,

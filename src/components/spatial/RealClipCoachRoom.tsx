@@ -799,7 +799,13 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
             data-testid="controller-trainer-slot"
             className="w-full h-[480px] sm:h-[580px] rounded-2xl overflow-hidden border border-white/10"
           >
-            <ControllerTrainerStage initialDevice="ps5" apiBaseUrl="/api/v1/controller-sequences/{device}" />
+            <ControllerTrainerStage
+              initialDevice="ps5"
+              // Game-strict: the active game flows into the trainer so the bar
+              // shows THIS game's sequence (CS2 → shooter_crosshair_peek),
+              // never a stale FC 27 / sports_pitch default.
+              apiBaseUrl={`/api/v1/controller-sequences/{device}?gameId=${encodeURIComponent(motionPayload.gameId)}&realm=${encodeURIComponent(activeRealm)}${motionPayload.gameName ? `&name=${encodeURIComponent(motionPayload.gameName)}` : ''}`}
+            />
           </div>
         </main>
 
