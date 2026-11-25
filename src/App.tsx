@@ -22,6 +22,7 @@ import {
   RealClipCoachRoom,
   type UploadedCoachMedia,
 } from './components/spatial/RealClipCoachRoom';
+import { PetrosUnifiedCoachPage, type GameId as UnifiedCoachGameId } from './components/spatial/PetrosUnifiedCoachPage';
 import { SkillCardList } from './components/spatial/SkillCardList';
 import { LiveWebAnswer } from './components/spatial/LiveWebAnswer';
 import { SkillSearchHeader } from './components/spatial/SkillSearchHeader';
@@ -1096,34 +1097,18 @@ export function App() {
             transition={{ duration: 0.2 }}
             className="absolute inset-0"
           >
-            {/* 2. Unreal 5.8 3D + Dual-Agent (ProClipAnalyzerAgent & MotionCoachAgent) AI Coach Screen */}
-            <RealClipCoachRoom
-              activeRealm={activeRealm}
-              motionPayload={activeMotionPayload}
-              proClipsData={activeProClipsData}
-              isLoadingClips={isLoadingClips}
-              isSyncingMotion={isSyncingMotion}
-              problemQuery={clipProblemQuery}
-              uploadedMedia={uploadedMedia}
-              isSpeaking={isSpeaking}
-              isListeningVoice={isListeningVoice}
-              isAnalyzingUpload={isAnalyzingUpload}
-              answerBlock={activeTopic.answerBlock}
-              onSelectGame={handleSelectCoachGame}
-              onSubmitProblemQuery={handleCoachRoomQuestion}
-              onAskCoachQuestion={handleCoachRoomQuestion}
-              onRefreshAgents={() => {
-                fetchMotionCoachAgent(selectedGame, true);
-                fetchProClipsAgent(selectedGame, clipProblemQuery, true);
-              }}
-              onUploadFile={handleUploadFile}
-              onClearUploadedMedia={() => setUploadedMedia(null)}
-              onToggleSpeak={(voiceText) =>
-                isSpeaking ? stopSpeaking() : triggerCoachSpeech(voiceText)
-              }
-              onToggleVoiceQa={handleToggleVoiceQa}
-              onOpenSocialWorld={() => setIsGtaSocialOpen(true)}
-              onBackToMenu={() => {
+            {/* 2. Unified Coach Page (PetrosUnifiedCoachPage) — per-game topic
+                packs, direct video, analyz stage with pitch-guard, gamepad layer.
+                The active app game maps into the unified catalog when available. */}
+            <PetrosUnifiedCoachPage
+              initialGameId={(
+                ['cs2', 'fc27', 'warzone', 'nba2k', 'dota2'] as UnifiedCoachGameId[]
+              ).includes(selectedGame.id as UnifiedCoachGameId)
+                ? (selectedGame.id as UnifiedCoachGameId)
+                : 'cs2'}
+              initialLang={appLang.startsWith('fa') ? 'fa' : 'en'}
+              analyzStageUrl="/analyz/"
+              onBack={() => {
                 stopSpeaking();
                 setUploadedMedia(null);
                 setClipProblemQuery('');
