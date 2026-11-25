@@ -68,6 +68,7 @@ import {
   resolveLobbyGameFromAppState,
 } from './utils/lobbySkillCatalog';
 import { LOBBY_SKILLS_BY_GAME } from './utils/lobbySkillCatalog';
+import { trackDwell, trackGameSelect, trackQuestion, trackSessionStart } from './utils/behaviorTracker';
 
 const STORAGE_REALM_KEY = 'aipetros-coach-realm-v5';
 
@@ -245,8 +246,22 @@ export function App() {
   useEffect(() => {
     let alive = true;
     loadCuratedTop().then((d) => { if (alive) setCuratedTop(d); });
+    trackSessionStart(lobbyGameId);
     return () => { alive = false; };
   }, []);
+  // Dwell beacon: report engaged time per active game to the behavior agent.
+  useEffect(() => {
+    const startedAt = Date.now();
+    const onLeave = () => {
+      const dwellMs = Date.now() - startedAt;
+      if (dwellMs > 5000) trackDwell(lobbyGameId, dwellMs);
+    };
+    window.addEventListener('pagehide', onLeave);
+    return () => {
+      window.removeEventListener('pagehide', onLeave);
+      onLeave();
+    };
+  }, [lobbyGameId]);
   const filteredLobbySkills = useMemo(
     () => mergeCuratedIntoSkills(lobbyGameId, lobbyCategoryId, filterLobbySkills(lobbyGameId, lobbyCategoryId, lobbySearchQuery), curatedTop, appLang),
     [lobbyGameId, lobbyCategoryId, lobbySearchQuery, curatedTop, appLang]
@@ -595,6 +610,7 @@ export function App() {
     (nextGameId: LobbyGameId) => {
       stopSpeaking();
       setIsGtaSocialOpen(false);
+      trackGameSelect(nextGameId);
       const tab = getLobbyGameTab(nextGameId);
       const catalogHit = findCatalogGameById(tab.catalogGameId);
       setLobbyGameId(nextGameId);
@@ -685,6 +701,7 @@ export function App() {
 
   const handleAskLobbyQuestion = useCallback(
     (question: string) => {
+      trackQuestion(lobbyGameId, question);
       setLobbySearchQuery(question);
       const matches = filterLobbySkills(lobbyGameId, lobbySearchQuery === question ? lobbySearchQuery : '', question);
       const ranked = matches.length > 0 ? matches : filterLobbySkills(lobbyGameId, question, 'all');

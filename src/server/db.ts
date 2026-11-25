@@ -176,6 +176,19 @@ const MIGRATIONS: string[] = [
   CREATE INDEX IF NOT EXISTS idx_user_devices_user ON user_devices(user_id);
   CREATE INDEX IF NOT EXISTS idx_user_devices_fcm ON user_devices(fcm_token);
   `,
+  // migration 0003 — behavioral analysis agent (first-time generic baseline,
+  // progressive personalization; user-mandated)
+  `
+  CREATE TABLE IF NOT EXISTS user_behavior (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_user_behavior_user ON user_behavior(user_id);
+  CREATE INDEX IF NOT EXISTS idx_user_behavior_kind ON user_behavior(kind);
+  `,
 ];
 
 function migrate(db: DatabaseSync): void {

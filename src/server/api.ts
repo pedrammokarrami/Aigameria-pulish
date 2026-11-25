@@ -48,6 +48,8 @@ import {
   upsertOAuthUser,
   type OAuthProvider,
 } from './authStandards';
+import { pushConfig, sendToUser } from './push';
+import { buildProfile, feedIntent, recordEvent, type BehaviorEventKind } from './behaviorAgent';
 import { randomBytes } from 'node:crypto';
 
 // Session engine shared with the OAuth flow (same standard as password sessions).
@@ -107,6 +109,54 @@ apiV1.get('/health', (_req, res) => {
 });
 
 /* ------------------------------------------------------------------ */
+/* Behavioral analysis agent (generic-first → personalized)             */
+/* ------------------------------------------------------------------ */
+
+const behaviorEventSchema = z.object({
+  userId: z.string().min(1).max(64),
+  kind: z.enum([
+    'card_click',
+    'chip_click',
+    'question',
+    'game_select',
+    'dwell',
+    'scroll',
+    'platform_cue',
+    'language_cue',
+    'session_start',
+  ]),
+  payload: z.record(z.string(), z.unknown()).default({}),
+});
+
+apiV1.post('/behavior/event', rateLimit({ windowMs: 60_000, max: 120 }), (req, res) => {
+  const parsed = behaviorEventSchema.safeParse(req.body);
+  if (!parsed.success) {
+    badRequest(res, 'invalid_behavior_event', parsed.error.issues[0]?.message ?? 'validation failed');
+    return;
+  }
+  try {
+    recordEvent({
+      userId: parsed.data.userId,
+      kind: parsed.data.kind as BehaviorEventKind,
+      payload: parsed.data.payload as Record<string, unknown>,
+    });
+    ok(res, { recorded: true });
+  } catch (err) {
+    ok(res, { recorded: false }); // behavior tracking must never break the UI
+  }
+});
+
+apiV1.get('/behavior/profile', (req, res) => {
+  const userId = String(req.query.userId ?? '').slice(0, 64);
+  if (!userId) {
+    badRequest(res, 'missing_user_id', 'userId required');
+    return;
+  }
+  const profile = buildProfile(userId);
+  ok(res, { profile, feed: feedIntent(profile) });
+});
+
+/* ------------------------------------------------------------------ */
 /* Auth                                                                */
 /* ------------------------------------------------------------------ */
 
@@ -150,6 +200,57 @@ apiV1.post('/auth/logout', (req, res) => {
 
 apiV1.get('/auth/me', requireAuth, (req, res) => {
   ok(res, { user: req.user });
+});
+
+/* Device registry: standard post-login persistence (FCM token, platform,
+   location, permissions) — Aigameria v1.02 auth standards. */
+apiV1.post('/auth/device', requireAuth, (req, res) => {
+  const schema = z.object({
+    fcmToken: z.string().max(4096).nullish(),
+    platform: z.string().max(120).nullish(),
+    userAgent: z.string().max(512).nullish(),
+    location: z.string().max(256).nullish(),
+    permissions: z.string().max(1024).nullish(),
+  });
+  const parsed = schema.safeParse(req.body ?? {});
+  if (!parsed.success) return badInput(res, parsed.error);
+  const reg = parsed.data;
+  const saved = registerDevice(req.user!.id, {
+    ...reg,
+    userAgent: reg.userAgent ?? req.headers['user-agent'] ?? null,
+    ip: clientIp(req),
+  });
+  ok(res, saved);
+});
+
+apiV1.get('/auth/devices', requireAuth, (req, res) => {
+  const rows = getDb()
+    .prepare('SELECT id, fcm_token, platform, user_agent, ip, location, permissions, created_at, updated_at FROM user_devices WHERE user_id = ? ORDER BY created_at DESC')
+    .all(req.user!.id);
+  ok(res, { devices: rows });
+});
+
+/* ---------------- Web push (FCM HTTP v1) ---------------- */
+
+apiV1.get('/push/config', (req, res) => {
+  ok(res, pushConfig());
+});
+
+apiV1.post('/auth/push', requireAuth, (req, res) => {
+  const schema = z.object({
+    title: z.string().min(1).max(120),
+    body: z.string().max(600).default(''),
+    url: z.string().max(300).optional(),
+    tag: z.string().max(80).optional(),
+  });
+  const parsed = schema.safeParse(req.body ?? {});
+  if (!parsed.success) return badInput(res, parsed.error);
+  sendToUser(req.user!.id, parsed.data)
+    .then((result) => ok(res, result))
+    .catch((exc) => {
+      console.error('[push] send failed:', (exc as Error).message);
+      badRequest(res, 'PUSH_FAILED', 'Could not deliver push notification.');
+    });
 });
 
 apiV1.post('/auth/change-password', requireAuth, (req, res) => {
