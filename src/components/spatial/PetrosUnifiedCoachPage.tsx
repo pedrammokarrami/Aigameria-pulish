@@ -7,6 +7,7 @@
  * the hard pitch-guard, and the controller layer slot.
  */
 import React, { useMemo, useState } from 'react';
+import { resolvePlayableVideoUrl, FALLBACK_VIDEO_URL, type ResolvedPlayableVideo } from '../../utils/videoPlayback';
 
 export type GameId = 'cs2' | 'fc27' | 'warzone' | 'nba2k' | 'dota2';
 export type LangCode = 'en' | 'fa';
@@ -234,6 +235,7 @@ export const PetrosUnifiedCoachPage: React.FC<PetrosUnifiedCoachPageProps> = ({
   const [stageTab, setStageTab] = useState<'video' | 'tactical'>('video');
   const [promptText, setPromptText] = useState<string>('');
   const [customNote, setCustomNote] = useState<string | null>(null);
+  const [playableVideo, setPlayableVideo] = useState<ResolvedPlayableVideo | null>(null);
 
   const activeGame = GAME_CATALOG[gameId];
 
@@ -243,6 +245,26 @@ export const PetrosUnifiedCoachPage: React.FC<PetrosUnifiedCoachPageProps> = ({
     const found = activeGame.topics.find((t) => t.id === selectedTopicId);
     return found ?? activeGame.topics[0];
   }, [activeGame, selectedTopicId]);
+
+  // Resolve the active topic's video with the 8h-cached playable resolver —
+  // a tap NEVER ends in a dead player: blocked/non-stream links fall back to
+  // a known-good direct MP4 automatically.
+  React.useEffect(() => {
+    let cancelled = false;
+    setPlayableVideo(null);
+    resolvePlayableVideoUrl(gameId, activeTopic.videoUrl, activeTopic.posterUrl)
+      .then((r) => {
+        if (!cancelled) setPlayableVideo(r);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPlayableVideo({ url: activeTopic.videoUrl, source: 'direct', resolvedAt: Date.now() });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [gameId, activeTopic.videoUrl, activeTopic.posterUrl]);
 
   // Absolute guard: no non-football game can ever take pitch mode or a
   // football formation.
@@ -261,6 +283,13 @@ export const PetrosUnifiedCoachPage: React.FC<PetrosUnifiedCoachPageProps> = ({
   const handleSelectGame = (nextGame: GameId) => {
     setGameId(nextGame);
     setSelectedTopicId(GAME_CATALOG[nextGame].topics[0].id);
+    setCustomNote(null);
+    setStageTab('video');
+  };
+
+  // Zero dead click: tapping any topic/tutorial card opens + plays video.
+  const handleSelectTopic = (topicId: string) => {
+    setSelectedTopicId(topicId);
     setCustomNote(null);
     setStageTab('video');
   };
@@ -373,10 +402,8 @@ export const PetrosUnifiedCoachPage: React.FC<PetrosUnifiedCoachPageProps> = ({
                 <button
                   key={topic.id}
                   type="button"
-                  onClick={() => {
-                    setSelectedTopicId(topic.id);
-                    setCustomNote(null);
-                  }}
+                  data-testid={`coach-topic-${topic.id}`}
+                  onClick={() => handleSelectTopic(topic.id)}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition cursor-pointer ${
                     active
                       ? 'bg-emerald-400 text-slate-950 font-semibold'
@@ -467,12 +494,22 @@ export const PetrosUnifiedCoachPage: React.FC<PetrosUnifiedCoachPageProps> = ({
           {stageTab === 'video' ? (
             <div className="w-full aspect-video rounded-2xl overflow-hidden bg-black border border-white/10">
               <video
-                key={activeTopic.videoUrl}
-                src={activeTopic.videoUrl}
+                key={playableVideo?.url ?? activeTopic.videoUrl}
+                data-testid="unified-coach-video"
+                src={playableVideo?.url ?? activeTopic.videoUrl}
                 poster={activeTopic.posterUrl}
                 controls
+                autoPlay
                 playsInline
                 preload="metadata"
+                onError={() => {
+                  // Even after resolution, if playback fails → force fallback stream.
+                  setPlayableVideo((prev) =>
+                    prev && prev.source === 'fallback' && prev.url === FALLBACK_VIDEO_URL
+                      ? prev
+                      : { url: FALLBACK_VIDEO_URL, source: 'fallback', resolvedAt: Date.now() }
+                  );
+                }}
                 className="w-full h-full object-cover"
               />
             </div>

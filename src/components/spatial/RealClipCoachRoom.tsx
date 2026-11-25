@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { buildAnalyzCommand, sendAnalyzCommand } from '../../utils/analyzBridge';
 import { resolveSafeStagePayload, type StageMode } from '../../utils/stageGameGuard';
 import { isIosLikeDevice } from '../../utils/iosPlayback';
+import { sanitizeUiText } from '../../utils/sanitizeUiText';
 import {
   ArrowRight,
   ChevronDown,
@@ -861,7 +862,12 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
             <div className="flex items-center gap-1.5">
               <ChevronUp className="w-4 h-4 text-emerald-300" />
               <span>
-                (isFa ? `کلیپ‌های یوتیوب و ردیت (${toPersianDigits(String(allClips.length || 7))})` : `YouTube & Reddit clips (${allClips.length || 7})`)
+                {sanitizeUiText(
+                  isFa
+                    ? `کلیپ‌های یوتیوب و ردیت (${toPersianDigits(String(allClips.length || 7))})`
+                    : `YouTube & Reddit clips (${allClips.length || 7})`,
+                  rcLang || 'en',
+                )}
               </span>
             </div>
             <span className="text-[10px] font-bold text-white/55">
