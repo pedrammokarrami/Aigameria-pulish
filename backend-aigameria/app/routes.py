@@ -5,7 +5,7 @@ from typing import Any
 import httpx
 from fastapi import APIRouter, HTTPException, Query
 
-from . import avatars, cache, config, isolation
+from . import avatars, cache, config, isolation, training_ingest
 from .db import get_db
 
 router = APIRouter(prefix="/api/v1")
@@ -230,6 +230,35 @@ def stage(game_id: str, topic_id: str = Query(default="")) -> dict[str, Any]:
             "topic_id": item["topic_id"],
         },
     }
+
+
+@router.get("/training/{game_id}")
+def training(game_id: str, layer: str = Query(default=""), q: str = Query(default=""), lang: str = Query(default="en")) -> dict[str, Any]:
+    """Structured training records (controls/tactics/maps/glitch/qa/links) for
+    ONE game — strict gameId isolation + EN purity; layer/keyword filters."""
+    lang = _lang(lang)
+    game = dict(_game_row(game_id))
+    sql = "SELECT game_id, layer, title, body, source, url FROM training_records WHERE game_id = ?"
+    params: list[Any] = [game["game_id"]]
+    if layer:
+        sql += " AND layer = ?"
+        params.append(layer.lower())
+    if q:
+        sql += " AND (title LIKE ? OR body LIKE ?)"
+        like = f"%{q}%"
+        params.extend([like, like])
+    sql += " ORDER BY layer, updated_at DESC LIMIT 200"
+    rows = [dict(r) for r in get_db().execute(sql, params).fetchall()]
+    items = isolation.assert_isolated(game["game_id"], rows)
+    if lang == "en":
+        items = [it for it in items if not any("؀" <= ch <= "ۿ" for ch in f"{it['title']} {it['body']}")]
+        for it in items:
+            it["title"] = isolation.sanitize_en_text(it["title"])
+            it["body"] = isolation.sanitize_en_text(it["body"])
+    counts = {}
+    for it in items:
+        counts[it["layer"]] = counts.get(it["layer"], 0) + 1
+    return {"success": True, "data": {"game_id": game["game_id"], "records": items, "counts_by_layer": counts}}
 
 
 @router.get("/gamepad/{game_id}")
