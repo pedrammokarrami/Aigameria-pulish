@@ -14,7 +14,7 @@ from typing import Any
 
 from . import config, cache as cache_mod
 from .db import get_db
-from .seed_data import MOBILE_PC_CATALOG, SEED_COMBOS, SEED_GAMES, SEED_TOPICS
+from .seed_data import MOBILE_PC_CATALOG, STORY_CATALOG, SEED_COMBOS, SEED_GAMES, SEED_TOPICS
 
 log = logging.getLogger("aigameria.sync")
 
@@ -119,6 +119,8 @@ def run_sync() -> dict[str, int]:
     changed = {"games": 0, "topics": 0, "combos": 0}
     for g in SEED_GAMES:
         changed["games"] += 1 if _upsert_game(g) else 0
+    for g in STORY_CATALOG:
+        _upsert_game(g)
     for g in MOBILE_PC_CATALOG:
         changed["games"] += 1 if _upsert_game(g) else 0
     for t in SEED_TOPICS:

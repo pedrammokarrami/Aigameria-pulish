@@ -3,9 +3,9 @@ import json
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 
-from . import avatars, cache, config, isolation, training_ingest
+from . import avatars, cache, config, isolation, puzzles, screen_analyze, training_ingest
 from .db import get_db
 
 router = APIRouter(prefix="/api/v1")
@@ -230,6 +230,89 @@ def stage(game_id: str, topic_id: str = Query(default="")) -> dict[str, Any]:
             "topic_id": item["topic_id"],
         },
     }
+
+
+@router.post("/media/analyze")
+@router.post("/stage/analyze")
+async def media_analyze(
+    file: UploadFile = File(default=None),
+    hint: str = Query(default=""),
+    lang: str = Query(default="en"),
+) -> dict[str, Any]:
+    """Screen-aware analysis of a phone photo/video-frame of a TV/monitor:
+    glare-resilient screen ROI + OCR → gameId/chapter/puzzle identification →
+    exact step-by-step solution + platform buttons + style .glb + 8h stream.
+    Upload bytes stay in memory; NO temp files and NO video files persist."""
+    lang = _lang(lang)
+    raw = await file.read() if file is not None else b""
+    if raw and len(raw) > screen_analyze.MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="upload too large")
+    vision = screen_analyze.analyze_photo(raw, {"text": hint, "platform": ""})
+    text = f"{vision['hud_text']} {hint}"
+    game_id, game_conf = puzzles.detect_game(text)
+    if not game_id:
+        return {"success": True, "data": {
+            "game_id": "", "confidence": 0.0, "puzzle": {"resolved": False},
+            "screen_roi": vision["screen_roi"], "hud_text": vision["hud_text"],
+            "platform": vision["platform"], "prompt_buttons": vision["prompt_buttons"],
+            "message": "no game recognized — send more of the screen or a hint",
+        }}
+    game = dict(_game_row(game_id))  # isolated 404 for unknown games
+    puzzle = puzzles.resolve_puzzle(game["game_id"], text)
+    av = avatars.resolve_avatar(dict(game), animation_state="speaking")
+    cache_key = f"stream::{game['game_id']}::puzzle-walkthrough"
+
+    def producer():
+        return screen_walkthrough_stream(game["game_id"])
+
+    try:
+        entry = cache.get_or_refresh(cache_key, game["game_id"], producer)
+    except cache.ControlledCacheError as err:
+        raise HTTPException(status_code=502, detail=f"stream resolve failed: {err}")
+    url, source = entry["url"], entry["source"]
+    resp = {
+        "success": True,
+        "data": {
+            "game_id": game["game_id"],
+            "genre": game.get("genre", "story"),
+            "platform": vision["platform"] or "ps5",
+            "confidence": round(min(1.0, game_conf * 0.6 + (puzzle.get("confidence", 0.5) * 0.4)), 2),
+            "puzzle": puzzle,
+            "hud_text": vision["hud_text"],
+            "screen_roi": vision["screen_roi"],
+            "prompt_buttons": vision["prompt_buttons"],
+            "avatar": av,
+            "walkthrough_stream": {"url": url, "source": source, "ttl_seconds": config.STREAM_CACHE_TTL_SECONDS,
+                                   "from_cache": entry["from_cache"]},
+            "temp_files_deleted": True,
+            "video_files_on_disk": 0,
+        },
+    }
+    items = isolation.assert_isolated(game["game_id"], [resp["data"]])
+    if not items:  # defensive — must never happen for same-game data
+        return {"success": True, "data": {"game_id": "", "puzzle": {"resolved": False}}}
+    return resp
+
+
+def screen_walkthrough_stream(game_id: str) -> tuple[str, str]:
+    """Producer for the 8h-cached walkthrough stream of the analyzed game."""
+    row = get_db().execute(
+        "SELECT video_url FROM topics WHERE game_id = ? ORDER BY topic_id LIMIT 1", (game_id,)
+    ).fetchone()
+    candidate = row["video_url"] if row else FALLBACK_STREAM
+    try:
+        with httpx.Client(timeout=8, follow_redirects=True) as client:
+            resp = client.head(candidate)
+            ctype = resp.headers.get("content-type", "")
+            if resp.status_code in (200, 206) and (ctype.startswith("video/") or ctype == ""):
+                return candidate, "direct"
+            if resp.status_code in (403, 405):
+                get_resp = client.get(candidate, headers={"Range": "bytes=0-1024"})
+                if get_resp.status_code in (200, 206) and get_resp.headers.get("content-type", "").startswith("video/"):
+                    return candidate, "direct"
+    except Exception:
+        pass
+    return _SERVER_VERIFIED_STREAMS[0], "fallback"
 
 
 @router.get("/training/{game_id}")

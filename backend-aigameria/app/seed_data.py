@@ -270,6 +270,14 @@ MOBILE_PC_CATALOG: list[dict[str, Any]] = [
     _g("starcraft", "StarCraft II", "strategy", '["pc"]'),
 ]
 
+STORY_CATALOG: list[dict[str, Any]] = [
+    _g("uncharted-4", "Uncharted 4: A Thief's End", "story", '["ps5","ps4"]'),
+    _g("god-of-war", "God of War (2018)", "story", '["pc","ps5","ps4"]'),
+    _g("the-last-of-us-2", "The Last of Us Part II", "story", '["ps5","ps4","pc"]'),
+    _g("resident-evil-4", "Resident Evil 4", "story", '["pc","ps5","xbox"]'),
+    _g("assassins-creed", "Assassin's Creed", "story", '["pc","ps5","xbox"]'),
+]
+
 SEED_COMBOS: list[dict[str, Any]] = [
     {
         "game_id": "cs2",

@@ -156,9 +156,15 @@ def ingest_source_db(limit: int = 0) -> dict[str, Any]:
 
 
 def ingest_catalog_pack(path: str) -> dict[str, Any]:
-    """Ingest a JSON training pack: [{game_id, layer, title, body, url?, platforms?, genre?}]"""
+    """Ingest a JSON training pack: [{game_id, layer, title, body, url?, platforms?, genre?}].
+    Items with layer "puzzle" (steps_en) are also upserted into puzzle_nodes."""
     ensure_schema()
     data = json.loads(Path(path).read_text(encoding="utf-8"))
+    puzzle_items = [it for it in data if it.get("layer") == "puzzle" and it.get("steps_en")]
+    if puzzle_items:
+        from . import puzzles as _puzzles
+
+        _puzzles.upsert_nodes(puzzle_items)
     added = 0
     now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     batch = []
