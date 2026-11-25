@@ -560,6 +560,20 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
                     className="w-full h-full object-contain bg-black"
                   />
                 )
+              ) : isPlaying && activeClip?.videoUrl && !iframeFailed ? (
+                /* Direct file/stream URL → native video inside the same stage
+                   container (no external player clutter). */
+                <video
+                  key={activeClip.videoUrl}
+                  data-testid="direct-video-player"
+                  src={activeClip.videoUrl}
+                  poster={activeClip.thumbnailUrl}
+                  controls
+                  autoPlay
+                  playsInline
+                  preload="metadata"
+                  className="w-full h-full object-contain bg-black"
+                />
               ) : isPlaying && embedUrl && activeClip && !iframeFailed ? (
                 <iframe
                   key={`${activeClip.youtubeId}-${activeStartSec}-${playerNonce}`}

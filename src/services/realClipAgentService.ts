@@ -21,6 +21,9 @@ export interface ClipKeyMoment {
 export interface RealCoachClip {
   id: string;
   youtubeId: string;
+  /** Optional direct file/stream URL (MP4/HLS) — when present the stage
+   *  container plays it with a native <video> instead of the YouTube iframe. */
+  videoUrl?: string;
   title: string;
   channelName: string;
   viewsLabel: string;
