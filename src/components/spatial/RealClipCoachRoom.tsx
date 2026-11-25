@@ -145,6 +145,7 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const accent = motionPayload.accentHex || '#22C55E';
   const analyzFrameRef = useRef<HTMLIFrameElement | null>(null);
+  const [analyzEnvTab, setAnalyzEnvTab] = React.useState<'stage' | 'clips'>('stage');
   const analyzCommand = useMemo(
     () =>
       buildAnalyzCommand({
@@ -427,7 +428,69 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
         {/* ================= MAIN 2-FRAME CONTENT STACK ================= */}
         <main className="flex-1 flex flex-col gap-2 min-w-0">
           {/* ---------- LAYER 2: TOP PRO CLIP FRAME — CONDITIONAL: hidden entirely when no real clip is ready ---------- */}
-          {uploadedMedia || activeClip || isLoadingClips ? (
+
+          {/* ---------- LAYER 3: CENTER 3D HOLOGRAPHIC CONTROLLER & COACHING HERO CARD ---------- */}
+          <CoachSessionPanel
+            gameId={motionPayload.gameId}
+            gameName={motionPayload.gameName}
+            realm={activeRealm}
+            problemQuery={problemQuery}
+            accentHex={accent}
+            onSubmitQuestion={(q) => {
+              if (onAskCoachQuestion) {
+                onAskCoachQuestion(q);
+              } else {
+                onSubmitProblemQuery(q);
+              }
+            }}
+          />
+          {/* Ai-petros-game-analyz tactical stage (vendored build) — coach JSON in, visuals out.
+              Sits above the joystick / controller trainer section. */}
+          {analyzCommand ? (
+            <section
+              data-testid="analyz-environment"
+              className="rounded-2xl overflow-hidden border border-white/10 bg-slate-950/40 backdrop-blur-md"
+            >
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 border-b border-white/10">
+                <button
+                  type="button"
+                  data-testid="analyz-env-tab-stage"
+                  onClick={() => setAnalyzEnvTab('stage')}
+                  className={`px-2.5 min-h-[24px] rounded-full text-[11px] font-black cursor-pointer border transition ${
+                    analyzEnvTab === 'stage'
+                      ? 'border-white/45 text-white'
+                      : 'border-white/10 text-white/50 hover:text-white/80'
+                  }`}
+                  style={analyzEnvTab === 'stage' ? { background: `${accent}22` } : undefined}
+                >
+                  {isFa ? 'استیج تحلیل' : 'Tactical stage'}
+                </button>
+                <button
+                  type="button"
+                  data-testid="analyz-env-tab-clips"
+                  onClick={() => setAnalyzEnvTab('clips')}
+                  className={`px-2.5 min-h-[24px] rounded-full text-[11px] font-black cursor-pointer border transition ${
+                    analyzEnvTab === 'clips'
+                      ? 'border-white/45 text-white'
+                      : 'border-white/10 text-white/50 hover:text-white/80'
+                  }`}
+                  style={analyzEnvTab === 'clips' ? { background: `${accent}22` } : undefined}
+                >
+                  {isFa ? 'ویدیوهای پرو' : 'Pro clips'}
+                </button>
+              </div>
+              {analyzEnvTab === 'stage' ? (
+                <iframe
+                  ref={analyzFrameRef}
+                  data-testid="analyz-tactical-stage"
+                  src="/analyz/?transparent=1&autoplay=1"
+                  title="Ai-petros-game-analyz tactical stage"
+                  className="w-full h-[300px] sm:h-[380px] border-0"
+                  allow="autoplay"
+                />
+              ) : (
+                <div className="p-0">
+                  {(uploadedMedia || activeClip || isLoadingClips) ? (
           <section
             data-testid="top-video-frame"
             className="rounded-2xl overflow-hidden bg-slate-950/40 backdrop-blur-md border border-white/15 shadow-[0_18px_45px_rgba(0,0,0,0.55)]"
@@ -704,34 +767,14 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
               </div>
             ) : null}
           </section>
-          ) : null}
-
-          {/* ---------- LAYER 3: CENTER 3D HOLOGRAPHIC CONTROLLER & COACHING HERO CARD ---------- */}
-          <CoachSessionPanel
-            gameId={motionPayload.gameId}
-            gameName={motionPayload.gameName}
-            realm={activeRealm}
-            problemQuery={problemQuery}
-            accentHex={accent}
-            onSubmitQuestion={(q) => {
-              if (onAskCoachQuestion) {
-                onAskCoachQuestion(q);
-              } else {
-                onSubmitProblemQuery(q);
-              }
-            }}
-          />
-          {/* Ai-petros-game-analyz tactical stage (vendored build) — coach JSON in, visuals out.
-              Sits above the joystick / controller trainer section. */}
-          {analyzCommand ? (
-            <iframe
-              ref={analyzFrameRef}
-              data-testid="analyz-tactical-stage"
-              src="/analyz/?transparent=1&autoplay=1"
-              title="Ai-petros-game-analyz tactical stage"
-              className="w-full h-[300px] sm:h-[380px] rounded-2xl overflow-hidden border border-white/10 bg-transparent"
-              allow="autoplay"
-            />
+                  ) : (
+                    <div className="p-6 text-center text-[12px] font-bold text-white/55">
+                      {isFa ? 'ویدیویی برای این جلسه نیست' : 'No clip for this session yet'}
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
           ) : null}
           {/* Bottom-of-coach-page REAL 3D controller trainer stage (Petros-gamepad engine, verbatim) */}
           <div
