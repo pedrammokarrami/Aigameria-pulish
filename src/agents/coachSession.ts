@@ -65,7 +65,9 @@ export interface CoachSession {
   modules: CoachSessionModule[];
 }
 
-const CLIP_CACHE_TTL_MS = 10 * 60 * 1000;
+// 8-hour cache mandate: resolved clips/bundles serve from cache with zero
+// external calls until the TTL (28800s) expires.
+const CLIP_CACHE_TTL_MS = 8 * 60 * 60 * 1000;
 const sessionCache = new Map<string, { at: number; session: CoachSession }>();
 
 export function clearCoachSessionCache(): void {
@@ -306,6 +308,25 @@ function fmtPatchLines(intel: LiveIntelResult, isFa: boolean): string[] {
     .map((s) => `${s.title} — ${s.snippet.slice(0, 110)}`);
 }
 
+/* ---------------- Topic lock (true intelligence mandate) ---------------- */
+
+/** An active chip/question is classified into exactly ONE module cluster; the
+ *  same regex is the strict relevance filter — tips/clips under the active
+ *  topic must be 100% on-topic (zero economy/generic mixing). */
+const TOPIC_MODULE_MATCHERS: Array<{ id: string; re: RegExp }> = [
+  { id: 'finishing', re: /crosshair|aim|aiming|flick|headshot|pre[- ]?aim|shoot|shooting|finishing|finesse|\u06a9\u0631\u0648\u0633|\u0627\u06cc\u0645|\u0634\u0648\u062a|\u0641\u06cc\u0646\u0633|\u0645\u0627\u0631/i },
+  { id: 'formation', re: /formation|tactic|role|position|setup|execute|\u062a\u0631\u06a9\u06cc\u0628|\u062a\u0627\u06a9\u062a\u06cc\u06a9|\u0646\u0642\u0634/i },
+  { id: 'updates', re: /patch|update|meta|nerf|buff|price|\u067e\u0686|\u0622\u067e\u062f\u06cc\u062a|\u0645\u062a\u0627/i },
+  { id: 'training', re: /train|drill|practice|improve|\u062a\u0645\u0631\u06cc\u0646|\u062f\u0631\u06cc\u0644/i },
+  { id: 'mistakes', re: /mistake|review|loss|analysis|\u0627\u0634\u062a\u0628\u0627\u0647|\u0628\u0631\u0631\u0633\u06cc/i },
+];
+
+function classifyTopic(query: string): { id: string; filter: RegExp } | null {
+  if (!query) return null;
+  for (const t of TOPIC_MODULE_MATCHERS) if (t.re.test(query)) return { id: t.id, filter: t.re };
+  return null;
+}
+
 /* ---------------- Main session builder ---------------- */
 
 export async function buildCoachSession(
@@ -374,11 +395,26 @@ export async function buildCoachSession(
     training: moduleCardLines(gameCards, 'training', false),
   };
 
-  // Live intel + per-module clips, all in parallel
+  // Topic lock: with an active chip/question, the active module's knowledge
+  // lines are filtered strictly to that topic — never a mixed generic dump.
+  const topicLock = classifyTopic(query);
+  const finLock = topicLock?.id === 'finishing' ? topicLock.filter : null;
+  const finCardsFa = finLock ? cardLines.finishing.filter((l) => finLock.test(l)) : cardLines.finishing;
+  const finCardsEn = finLock ? cardLinesEn.finishing.filter((l) => finLock.test(l)) : cardLinesEn.finishing;
+
+  // Live intel + per-module clips, all in parallel.
+  // Clip queries are realm- AND topic-aware: CS2 aim never searches for
+  // "shooting timing green window" (football phrasing) and an active topic
+  // overrides the module default so videos match exactly what was asked.
+  const finClipQuery = topicLock?.id === 'finishing'
+    ? `${gameName} ${queryEn || query} tutorial`
+    : isSportsRealm
+      ? `${gameName} shooting timing green window tutorial`
+      : `${gameName} crosshair placement aim guide tutorial`;
   const [intel, finishingClips, formationClips, updatesClips, mistakesClips, trainingClips] =
     await Promise.all([
       gatherLiveWebIntel(`${query || gameName} update meta players`, { gameName: realm === 'sports' ? 'EA SPORTS FC 27' : gameName, fetcher }),
-      discoverModuleClips(gameId, gameName, realm, `${gameName} shooting timing green window tutorial`, fetcher),
+      discoverModuleClips(gameId, gameName, realm, finClipQuery, fetcher),
       discoverModuleClips(gameId, gameName, realm, `${gameName} best formation custom tactics guide`, fetcher),
       discoverModuleClips(gameId, gameName, realm, `${gameName} best players meta after update`, fetcher),
       discoverModuleClips(gameId, gameName, realm, `${gameName} common mistakes beginners avoid`, fetcher),
@@ -387,7 +423,7 @@ export async function buildCoachSession(
 
   const patchLines = fmtPatchLines(intel, isFa);
   const mistakeReview = buildMistakeReview(state, isFa, realm);
-  const finishingTopics = kbTopics.filter((t) => /finish|shot|finishing|sp-finishing/.test(t.id) || t.keywords.some((k) => /شوت|فینس/.test(k)));
+  const finishingTopics = kbTopics.filter((t) => /finish|shot|finishing|sp-finishing/.test(t.id) || (isSportsRealm ? t.keywords.some((k) => /شوت|فینس/.test(k)) : /aim|crosshair/i.test(t.id)));
   const formationTopics = kbTopics.filter((t) => /formation|tactic|press/.test(t.id));
   const trainingTopics = kbTopics.filter((t) => t.drills.length > 0).slice(0, 2);
 
@@ -397,16 +433,23 @@ export async function buildCoachSession(
       titleFa: isSportsRealm ? '⚽ شوت‌زنی حرفه‌ای — کی و چطور' : '🎯 ایم و کروس‌هیر حرفه‌ای — کی و چطور',
       titleEn: isSportsRealm ? '⚽ Pro finishing — when & how' : '🎯 Crosshair & aim — when & how',
       linesFa: [
-        ...(cardLines.finishing.length ? cardLines.finishing : []),
+        ...(finCardsFa.length ? finCardsFa : []),
         ...(finishingTopics.length ? finishingTopics.flatMap((t) => t.lessonsFa.slice(0, 2)) : kbLines(kbTopics.slice(0, 1), isFa).linesFa),
-        'قدرت شوت: نوار ۲-۳ سلول کافیه؛ پرکردن کامل = توپ بلند و بی‌دقت.',
-        'فینس شوت: زاویه ۴۵ درجه داخل محوطه + زمان‌بندی سبز = بالاترین تبدیل.',
-        'اولین تاچ رو کنترل کن، تاچ دوم شوت — شوت با اولین تاچ فقط وقتی دروازه‌باز باشه.',
-        'هریک (سرزنی): سنجاق با B رو تا سبز نگه‌دار، به‌جای پرش زودهنگام موقعیت بگیر پشت مدافع؛ بازیکن با ریتینگ هریک بالای ۸۵ انتخاب کن.',
-        'ضرب ایستگاهی: هریک رو به نقطه پنج‌متری نزدیک کاد نده؛ درِوازه‌بان خروج قوی داره — نقطه دوم یا پس‌کش به لبه محوطه.',
+        ...(isSportsRealm ? [
+          'قدرت شوت: نوار ۲-۳ سلول کافیه؛ پرکردن کامل = توپ بلند و بی‌دقت.',
+          'فینس شوت: زاویه ۴۵ درجه داخل محوطه + زمان‌بندی سبز = بالاترین تبدیل.',
+          'اولین تاچ رو کنترل کن، تاچ دوم شوت — شوت با اولین تاچ فقط وقتی دروازه‌باز باشه.',
+          'هریک (سرزنی): سنجاق با B رو تا سبز نگه‌دار، به‌جای پرش زودهنگام موقعیت بگیر پشت مدافع؛ بازیکن با ریتینگ هریک بالای ۸۵ انتخاب کن.',
+          'ضرب ایستگاهی: هریک رو به نقطه پنج‌متری نزدیک کاد نده؛ درِوازه‌بان خروج قوی داره — نقطه دوم یا پس‌کش به لبه محوطه.',
+        ] : [
+          'کروس‌هیر همیشه هم‌سطح سر می‌مونه — زاویه رو قبل از ورود pre-aim کن، نه با فلیک.',
+          'ضداستراف (A+D) قبل هر شات: دقت گلوله اول در توقف کامل تعیین می‌شه.',
+          'زاویه‌های معروف رو prefire کن: کروس‌هیر قبل از پیک سر جای خودشه.',
+          'وضعیت اسپری: ۴-۵ گلوله اول دقیق‌ترینه؛ بعدش کلاچ یا مکث.',
+        ]),
       ],
       linesEn: [
-        ...(cardLinesEn.finishing.length ? cardLinesEn.finishing : []),
+        ...(finCardsEn.length ? finCardsEn : []),
         ...(isSportsRealm ? [
           'Power: 2-3 bars is enough; full power = wild miss.',
           'Finesse: 45° inside the box + green timing = best conversion.',
@@ -415,13 +458,13 @@ export async function buildCoachSession(
         ] : [
           'Crosshair stays at head level through every rotation — pre-aim the angle, don\'t flick to it.',
           'Counter-strafe (A+D tap) before every shot: first bullet accuracy is won or lost in the stop.',
-          'One smoke, one flash per entry: utility beats raw aim — buy rounds are won by economy discipline.',
-          'Entry fragger opens, second man trades within 0.5s — never peek without a trade partner.',
+          'Prefire the common angles: your crosshair is placed before the peek, not after.',
+          'Spray control: the first 4-5 bullets are the accurate ones — re-aim or reset beyond that.',
         ]),
       ],
       stats: [{ labelFa: 'دقت فینیش تو', labelEn: 'Your finishing', value: dna.trapAnticipation, max: 100 }],
       clips: finishingClips,
-      sources: intel.sources.filter((s) => /shoot|finish|goal/i.test(s.title)).slice(0, 2),
+      sources: intel.sources.filter((s) => isSportsRealm ? /shoot|finish|goal/i.test(s.title) : /aim|crosshair|sens|guide/i.test(s.title)).slice(0, 2),
     },
     {
       id: 'formation',

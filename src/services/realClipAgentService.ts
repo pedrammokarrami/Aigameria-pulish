@@ -58,7 +58,9 @@ interface RawYoutubeItem {
   chapters: Array<{ title: string; sec: number }>;
 }
 
-const CLIP_CACHE_TTL_MS = 10 * 60 * 1000;
+// 8-hour cache mandate: resolved clips/bundles serve from cache with zero
+// external calls until the TTL (28800s) expires.
+const CLIP_CACHE_TTL_MS = 8 * 60 * 60 * 1000;
 const clipCache = new Map<string, { data: RealClipDiscoveryResponse; fetchedAtMs: number }>();
 
 export function clearClipAgentCache(): void {

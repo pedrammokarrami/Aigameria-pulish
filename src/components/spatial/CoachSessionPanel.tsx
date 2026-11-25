@@ -56,16 +56,30 @@ export const CoachSessionPanel: React.FC<CoachSessionPanelProps> = ({
   const [session, setSession] = useState<CoachSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeModuleId, setActiveModuleId] = useState('finishing');
+  const [chipQuery, setChipQuery] = useState('');
   const [draft, setDraft] = useState('');
   const [playingClipId, setPlayingClipId] = useState<string | null>(null);
 
-  const requestKey = `${gameId}|${realm}|${problemQuery}`;
+  // Topic-lock: clicking a chip re-queries the session with THAT topic so the
+  // backend returns strictly on-topic tips + clips for the active module.
+  const moduleTopicQuery = (moduleId: string): string => {
+    switch (moduleId) {
+      case 'finishing': return realm === 'sports' ? 'finishing shooting timing' : 'crosshair aim';
+      case 'formation': return realm === 'sports' ? 'best formation roles' : 'best tactics roles';
+      case 'player-updates': return 'meta update patch';
+      case 'mistakes': return 'mistake review';
+      case 'training': return 'training drills';
+      default: return '';
+    }
+  };
+
+  const requestKey = `${gameId}|${realm}|${problemQuery}|${chipQuery}`;
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setPlayingClipId(null);
-    const params = new URLSearchParams({ gameId, realm, name: gameName, q: problemQuery });
+    const params = new URLSearchParams({ gameId, realm, name: gameName, q: chipQuery || problemQuery });
     // Coach session language follows the app UI language (English UI → English coach page)
     if (sessionLang) params.set('lang', sessionLang.slice(0, 2));
     fetch(`/api/ai/coach-session?${params.toString()}`)
@@ -73,7 +87,9 @@ export const CoachSessionPanel: React.FC<CoachSessionPanelProps> = ({
       .then((body: SessionData) => {
         if (!cancelled && body?.session) {
           setSession(body.session);
-          setActiveModuleId(body.session.modules[0]?.id ?? '');
+          // Keep the selected chip selected across refetches (topic change/game
+          // switch), only falling back to the first module when it's gone.
+          setActiveModuleId((prev) => body.session!.modules.some((m) => m.id === prev) ? prev : body.session!.modules[0]?.id ?? '');
         }
       })
       .catch(() => undefined)
@@ -83,7 +99,7 @@ export const CoachSessionPanel: React.FC<CoachSessionPanelProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [requestKey, gameId, realm, gameName, problemQuery]);
+  }, [requestKey, gameId, realm, gameName, problemQuery, chipQuery]);
 
   const activeModule: CoachSessionModule | undefined = useMemo(
     () => session?.modules.find((m) => m.id === activeModuleId) ?? session?.modules[0],
@@ -210,6 +226,7 @@ export const CoachSessionPanel: React.FC<CoachSessionPanelProps> = ({
               onClick={() => {
                 setActiveModuleId(m.id);
                 setPlayingClipId(null);
+                setChipQuery(moduleTopicQuery(m.id));
               }}
               className="px-3 py-1.5 rounded-full text-[11px] font-black whitespace-nowrap transition cursor-pointer border"
               style={{

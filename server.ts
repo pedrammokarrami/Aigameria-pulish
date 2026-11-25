@@ -1504,6 +1504,35 @@ document.getElementById('r').innerHTML=rows.join('');
     }
   });
 
+  // 24. 8h-cached media resolver — the projector/stage loads topic-matched
+  // video URLs from the backend cache (TTL 28800s) with zero external calls
+  // while fresh. Reuses the real clip agent's own 8h cache underneath.
+  app.get('/api/agents/media-resolve', async (req, res) => {
+    try {
+      const gameId = normalizeCoachGameId(req.query.gameId);
+      const gameName = typeof req.query.name === 'string' ? req.query.name.trim() : undefined;
+      const userQuery = typeof req.query.topic === 'string' ? req.query.topic.trim() : '';
+      const rawRealm = String(req.query.realm ?? '');
+      const realm =
+        rawRealm === 'sports' || rawRealm === 'shooter' || rawRealm === 'strategy' || rawRealm === 'story'
+          ? (rawRealm as RealmId)
+          : undefined;
+      const result = await discoverRealCoachClips(
+        { gameId, gameName, realm, userQuery },
+        { force: req.query.force === '1' || req.query.force === 'true' }
+      );
+      res.json({
+        gameId,
+        topic: userQuery,
+        kind: 'clips',
+        cachedForSeconds: 28800,
+        clips: result.clips ?? [],
+      });
+    } catch (err) {
+      res.status(500).json({ error: err instanceof Error ? err.message : 'media resolve failed' });
+    }
+  });
+
   // 23. Internal Hologram Agent (deterministic dialogue + emotion/gesture + locally synthesized WAV)
   app.post('/api/hologram/interact', async (req, res) => {
     try {
