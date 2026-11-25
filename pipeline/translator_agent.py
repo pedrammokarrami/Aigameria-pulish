@@ -45,6 +45,22 @@ import urllib.request
 from typing import Any
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
+def _load_env():
+    """Load .env from repo root (stdlib-only)."""
+    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.env')
+    try:
+        with open(env_path, encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    k, v = line.split('=', 1)
+                    os.environ.setdefault(k.strip(), v.strip())
+    except Exception:
+        pass
+
+_load_env()
+
+
 CORE_FILE = os.path.join(ROOT, "data", "live", "data.json")
 I18N_DIR = os.path.join(ROOT, "data", "i18n")
 APP_I18N_DIR = os.path.join(
@@ -149,9 +165,46 @@ def gtx_translate(text: str, target: str) -> str:
     return ""
 
 
+
+
+def cloudflare_translate(text: str, target: str) -> str:
+    """Cloudflare Workers AI (free quota) — llama-3.2-3b via REST, no Worker proxy needed."""
+    import os as _os
+    token = _os.environ.get("CLOUDFLARE_AI_TOKEN")
+    account = _os.environ.get("CLOUDFLARE_ACCOUNT_ID")
+    if not token or not account:
+        return ""
+    protected, mapping = protect_tokens(text)
+    body = json.dumps({
+        "messages": [
+            {"role": "system", "content": "You translate gaming UI text. Keep placeholders like ⁣0⁣ unchanged. Output ONLY the translation."},
+            {"role": "user", "content": protected},
+        ],
+        "max_tokens": 400,
+    }).encode("utf-8")
+    for attempt in range(2):
+        try:
+            req = urllib.request.Request(
+                f"https://api.cloudflare.com/client/v4/accounts/{account}/ai/run/@cf/meta/llama-3.2-3b-instruct",
+                data=body,
+                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json", "User-Agent": USER_AGENT},
+            )
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                data = json.loads(resp.read().decode("utf-8", "replace"))
+            out = (data.get("result", {}) or {}).get("choices", [{}])[0].get("message", {}).get("content", "")
+            if out:
+                return fix_rtl_punctuation(restore_tokens(out.strip(), mapping), target)
+        except Exception:
+            pass
+    return ""
+
+
 def freeweb_translate(text: str, target: str) -> str:
-    """Free web translation with graceful chain: gtx → MyMemory → ''."""
+    """Free translation chain: gtx → Cloudflare Workers AI → MyMemory → ''."""
     out = gtx_translate(text, target)
+    if out:
+        return out
+    out = cloudflare_translate(text, target)
     if out:
         return out
     protected, mapping = protect_tokens(text)

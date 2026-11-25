@@ -48,6 +48,22 @@ from typing import Any
 
 # ── paths ────────────────────────────────────────────────────────────────────
 ROOT = os.path.dirname(os.path.abspath(__file__))
+def _load_env():
+    """Load .env from repo root (stdlib-only)."""
+    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.env')
+    try:
+        with open(env_path, encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    k, v = line.split('=', 1)
+                    os.environ.setdefault(k.strip(), v.strip())
+    except Exception:
+        pass
+
+_load_env()
+
+
 LIVE_DIR = os.path.join(ROOT, "data", "live")
 LIVE_FILE = os.path.join(LIVE_DIR, "data.json")
 BAK_FILE = LIVE_FILE + ".bak"
