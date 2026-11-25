@@ -31,6 +31,9 @@ CREATE TABLE IF NOT EXISTS games (
   name_en TEXT NOT NULL,
   name_fa TEXT NOT NULL,
   realm TEXT NOT NULL,
+  genre TEXT NOT NULL DEFAULT 'unknown',
+  platforms TEXT NOT NULL DEFAULT '["pc"]',   -- JSON array: pc/ps5/xbox/ios/android/switch
+  avatar_override TEXT,                        -- optional per-game .glb override
   is_football INTEGER NOT NULL DEFAULT 0,
   rating_label_en TEXT NOT NULL,
   rating_value INTEGER NOT NULL,
@@ -77,11 +80,31 @@ CREATE TABLE IF NOT EXISTS combo_moves (
 CREATE INDEX IF NOT EXISTS idx_topics_game ON topics(game_id);
 CREATE INDEX IF NOT EXISTS idx_combo_game ON combo_moves(game_id);
 CREATE INDEX IF NOT EXISTS idx_stream_game ON stream_cache(game_id);
+CREATE INDEX IF NOT EXISTS idx_games_genre ON games(genre);
+CREATE INDEX IF NOT EXISTS idx_games_realm ON games(realm);
 """
 
 
 def init_db() -> None:
     get_db().executescript(SCHEMA)
+    get_db().commit()
+    migrate_schema()
+
+
+def migrate_schema() -> None:
+    """Additive column migrations for already-deployed databases."""
+    cols = {r[1] for r in get_db().execute("PRAGMA table_info(games)").fetchall()}
+    migrations = {
+        "genre": "ALTER TABLE games ADD COLUMN genre TEXT NOT NULL DEFAULT 'unknown'",
+        "platforms": "ALTER TABLE games ADD COLUMN platforms TEXT NOT NULL DEFAULT '[\"pc\"]'",
+        "avatar_override": "ALTER TABLE games ADD COLUMN avatar_override TEXT",
+    }
+    for name, stmt in migrations.items():
+        if name not in cols:
+            try:
+                get_db().execute(stmt)
+            except Exception:
+                pass  # raced by a concurrent worker; columns ensured below
     get_db().commit()
 
 

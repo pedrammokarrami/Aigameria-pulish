@@ -19,7 +19,7 @@ def isolated_db(tmp_path, monkeypatch):
 
 def test_initial_sync_inserts_all(isolated_db):
     changed = run_sync()
-    assert changed["games"] == 5
+    assert changed["games"] == 25  # 5 deep packs + 20 catalog expansion titles
     assert changed["topics"] == len(SEED_TOPICS)
     count = isolated_db.execute("SELECT COUNT(*) c FROM topics").fetchone()["c"]
     assert count == len(SEED_TOPICS)

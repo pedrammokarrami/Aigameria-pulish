@@ -14,7 +14,7 @@ from typing import Any
 
 from . import config, cache as cache_mod
 from .db import get_db
-from .seed_data import SEED_COMBOS, SEED_GAMES, SEED_TOPICS
+from .seed_data import MOBILE_PC_CATALOG, SEED_COMBOS, SEED_GAMES, SEED_TOPICS
 
 log = logging.getLogger("aigameria.sync")
 
@@ -23,28 +23,34 @@ def _upsert_game(g: dict[str, Any]) -> bool:
     cur = get_db().execute(
         "SELECT 1 FROM games WHERE game_id = ?", (g["game_id"],)
     ).fetchone()
+    platforms_raw = g.get("platforms", ["pc"])
+    platforms = platforms_raw if isinstance(platforms_raw, str) else json.dumps(platforms_raw, ensure_ascii=False)
     if cur:
         get_db().execute(
             "UPDATE games SET name_en=?, name_fa=?, realm=?, is_football=?, rating_label_en=?, "
             "rating_value=?, stat_one_label_en=?, stat_one_value=?, stat_two_label_en=?, "
-            "stat_two_value=?, accent_color=? WHERE game_id=?",
+            "stat_two_value=?, accent_color=?, genre=COALESCE(NULLIF(?, ''), genre), "
+            "platforms=COALESCE(NULLIF(?, '[]'), platforms), "
+            "avatar_override=COALESCE(?, avatar_override) WHERE game_id=?",
             (
                 g["name_en"], g["name_fa"], g["realm"], g["is_football"],
                 g["rating_label_en"], g["rating_value"], g["stat_one_label_en"],
                 g["stat_one_value"], g["stat_two_label_en"], g["stat_two_value"],
-                g["accent_color"], g["game_id"],
+                g["accent_color"], g.get("genre", ""), platforms,
+                g.get("avatar_override"), g["game_id"],
             ),
         )
         return False
     get_db().execute(
         "INSERT INTO games (game_id, name_en, name_fa, realm, is_football, rating_label_en, "
         "rating_value, stat_one_label_en, stat_one_value, stat_two_label_en, stat_two_value, "
-        "accent_color) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+        "accent_color, genre, platforms, avatar_override) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (
             g["game_id"], g["name_en"], g["name_fa"], g["realm"], g["is_football"],
             g["rating_label_en"], g["rating_value"], g["stat_one_label_en"],
             g["stat_one_value"], g["stat_two_label_en"], g["stat_two_value"],
-            g["accent_color"],
+            g["accent_color"], g.get("genre", "unknown"), platforms,
+            g.get("avatar_override"),
         ),
     )
     return True
@@ -112,6 +118,8 @@ def run_sync() -> dict[str, int]:
     db = get_db()
     changed = {"games": 0, "topics": 0, "combos": 0}
     for g in SEED_GAMES:
+        changed["games"] += 1 if _upsert_game(g) else 0
+    for g in MOBILE_PC_CATALOG:
         changed["games"] += 1 if _upsert_game(g) else 0
     for t in SEED_TOPICS:
         changed["topics"] += 1 if _upsert_topic(t) else 0

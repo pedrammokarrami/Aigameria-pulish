@@ -8,6 +8,8 @@ from typing import Any
 SEED_GAMES: list[dict[str, Any]] = [
     {
         "game_id": "cs2",
+        "genre": "shooter",
+        "platforms": ["pc","xbox","ps5"],
         "name_en": "CS2",
         "name_fa": "CS2",
         "realm": "shooter",
@@ -22,6 +24,8 @@ SEED_GAMES: list[dict[str, Any]] = [
     },
     {
         "game_id": "fc27",
+        "genre": "sports",
+        "platforms": ["pc","ps5","xbox","switch","ios","android"],
         "name_en": "FC 27",
         "name_fa": "FC 27",
         "realm": "sports",
@@ -36,6 +40,8 @@ SEED_GAMES: list[dict[str, Any]] = [
     },
     {
         "game_id": "warzone",
+        "genre": "battle_royale",
+        "platforms": ["pc","ps5","xbox","ios","android"],
         "name_en": "Warzone",
         "name_fa": "Warzone",
         "realm": "shooter",
@@ -50,6 +56,8 @@ SEED_GAMES: list[dict[str, Any]] = [
     },
     {
         "game_id": "nba2k",
+        "genre": "sports_court",
+        "platforms": ["pc","ps5","xbox","switch","ios","android"],
         "name_en": "NBA 2K",
         "name_fa": "NBA 2K",
         "realm": "sports_court",
@@ -64,6 +72,8 @@ SEED_GAMES: list[dict[str, Any]] = [
     },
     {
         "game_id": "dota2",
+        "genre": "moba",
+        "platforms": ["pc"],
         "name_en": "Dota 2",
         "name_fa": "Dota 2",
         "realm": "strategy",
@@ -216,6 +226,48 @@ SEED_TOPICS: list[dict[str, Any]] = [
         "stage_subtitle": "Vision control, wave push & initiation timing",
         "stage_markers": ["Mid Tempo", "River Vision", "Objective Push"],
     },
+]
+
+
+# ---- Catalog expansion (mobile / console / PC) — metadata-only entries; deep
+# topic packs arrive via the knowledge ingest pipeline per game. Games without
+# topics return isolated empty responses (never another game's data).
+def _g(game_id, name, genre, platforms, is_football=0):
+    return {
+        "game_id": game_id, "name_en": name, "name_fa": name,
+        "realm": {"shooter": "shooter", "battle_royale": "shooter", "sports": "sports",
+                  "sports_court": "sports_court", "moba": "strategy", "strategy": "strategy",
+                  "story": "story", "racing": "story", "mobile_competitive": "shooter",
+                  "br": "shooter", "sandbox": "story", "survival": "story",
+                  "fighting": "story", "tactical": "shooter"}.get(genre, "story"),
+        "genre": genre, "platforms": platforms, "avatar_override": None,
+        "is_football": is_football, "rating_label_en": "RATING", "rating_value": 70,
+        "stat_one_label_en": "Skill", "stat_one_value": 70,
+        "stat_two_label_en": "Awareness", "stat_two_value": 65,
+        "accent_color": "#64748b",
+    }
+
+MOBILE_PC_CATALOG: list[dict[str, Any]] = [
+    _g("cod-mobile", "Call of Duty Mobile", "mobile_competitive", '["ios","android"]'),
+    _g("wz-mobile", "Warzone Mobile", "battle_royale", '["ios","android"]'),
+    _g("pubg-mobile", "PUBG Mobile", "battle_royale", '["ios","android"]'),
+    _g("mlbb", "Mobile Legends: Bang Bang", "moba", '["ios","android"]'),
+    _g("efootball", "eFootball", "sports", '["pc","ps5","xbox","ios","android"]', 1),
+    _g("free-fire", "Free Fire", "battle_royale", '["ios","android"]'),
+    _g("fortnite", "Fortnite", "battle_royale", '["pc","ps5","xbox","switch","android","ios"]'),
+    _g("valorant", "VALORANT", "shooter", '["pc"]'),
+    _g("apex", "Apex Legends", "battle_royale", '["pc","ps5","xbox"]'),
+    _g("lol", "League of Legends", "moba", '["pc"]'),
+    _g("rocket-league", "Rocket League", "racing", '["pc","ps5","xbox","switch"]'),
+    _g("gta-v", "Grand Theft Auto V", "sandbox", '["pc","ps5","xbox"]'),
+    _g("elden-ring", "Elden Ring", "rpg", '["pc","ps5","xbox"]'),
+    _g("genshin", "Genshin Impact", "rpg", '["pc","ps5","ios","android"]'),
+    _g("pubg", "PUBG: Battlegrounds", "battle_royale", '["pc","ps5","xbox"]'),
+    _g("cyberpunk", "Cyberpunk 2077", "rpg", '["pc","ps5","xbox"]'),
+    _g("red-dead", "Red Dead Redemption 2", "story", '["pc","ps5","xbox"]'),
+    _g("cod", "Call of Duty (HQ)", "shooter", '["pc","ps5","xbox"]'),
+    _g("fifa", "EA SPORTS FIFA", "sports", '["pc","ps5","xbox"]', 1),
+    _g("starcraft", "StarCraft II", "strategy", '["pc"]'),
 ]
 
 SEED_COMBOS: list[dict[str, Any]] = [

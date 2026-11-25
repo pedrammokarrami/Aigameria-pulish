@@ -5,7 +5,7 @@ from typing import Any
 import httpx
 from fastapi import APIRouter, HTTPException, Query
 
-from . import cache, config, isolation
+from . import avatars, cache, config, isolation
 from .db import get_db
 
 router = APIRouter(prefix="/api/v1")
@@ -58,22 +58,34 @@ def health() -> dict[str, Any]:
 
 
 @router.get("/games")
-def list_games(lang: str = Query(default="en")) -> dict[str, Any]:
+def list_games(
+    lang: str = Query(default="en"),
+    genre: str = Query(default=""),
+    platform: str = Query(default=""),
+) -> dict[str, Any]:
+    """Catalog with genre/platform filters — scales to 500+ games (indexed)."""
     lang = _lang(lang)
     rows = get_db().execute("SELECT * FROM games ORDER BY game_id").fetchall()
     items = []
     for row in rows:
         d = dict(row)
+        platforms = json.loads(d.get("platforms") or '["pc"]')
+        if genre and d.get("genre", "unknown") != genre.lower():
+            continue
+        if platform and platform.lower() not in platforms:
+            continue
         name = d["name_en"] if lang == "en" else d["name_fa"]
         items.append({
             "game_id": d["game_id"],
             "name": name,
             "realm": d["realm"],
+            "genre": d.get("genre", "unknown"),
+            "platforms": json.loads(d.get("platforms") or '["pc"]') if isinstance(d.get("platforms"), str) else (d.get("platforms") or ["pc"]),
             "rating_label": d["rating_label_en"] if lang == "en" else isolation.sanitize_en_text(d["rating_label_en"]),
             "rating_value": d["rating_value"],
             "accent_color": d["accent_color"],
         })
-    return {"success": True, "data": {"games": items}}
+    return {"success": True, "data": {"games": items, "count": len(items)}}
 
 
 @router.get("/games/{game_id}")
@@ -240,10 +252,22 @@ def gamepad(game_id: str, lang: str = Query(default="en")) -> dict[str, Any]:
 
 
 @router.get("/ava/{game_id}")
-def ava(game_id: str, topic_id: str = Query(default=""), lang: str = Query(default="en")) -> dict[str, Any]:
-    """AVA hologram coach text/state, synced with game + topic + language."""
+def ava(
+    game_id: str,
+    topic_id: str = Query(default=""),
+    lang: str = Query(default="en"),
+    voice: str = Query(default="false"),
+    animation: str = Query(default="idle"),
+) -> dict[str, Any]:
+    """AVA hologram coach: text/state + style-matched .glb avatar during
+    voice/speech playback (style follows the game's genre; per-game override
+    wins; fallback is always a valid model — never a broken path)."""
     lang = _lang(lang)
     game = dict(_game_row(game_id))
+    voice_active = voice.lower() in ("1", "true", "yes")
+    animation_state = "speaking" if voice_active else (
+        animation if animation in ("listening", "idle") else "idle"
+    )
     row = get_db().execute(
         "SELECT * FROM topics WHERE game_id = ? AND topic_id = ?",
         (game["game_id"], topic_id),
@@ -253,12 +277,17 @@ def ava(game_id: str, topic_id: str = Query(default=""), lang: str = Query(defau
     )
     if lang == "en":
         headline = isolation.sanitize_en_text(str(headline))
+    avatar = avatars.resolve_avatar(game, animation_state)
     return {
         "success": True,
         "data": {
             "game_id": game["game_id"],
             "lang": lang,
+            "voice_active": voice_active,
             "state": "coaching",
             "text": headline,
+            "style_key": avatar["style_key"],
+            "glb_url": avatar["glb_url"],
+            "animation_state": avatar["animation_state"],
         },
     }
