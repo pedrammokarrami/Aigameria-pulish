@@ -373,8 +373,9 @@ def extract_json_object(text: str) -> dict[str, Any] | None:
 
 
 # ── local knowledge store (SQLite, zero network) ─────────────────────────────
-def knowledge_cards(game_key: str, limit: int = 40) -> list[dict[str, Any]]:
-    """Read the app's own knowledge_cards store — real harvested content."""
+def knowledge_cards(game_key: str, limit: int = 40, english_only: bool = True) -> list[dict[str, Any]]:
+    """Read the app's own knowledge_cards store — real harvested content.
+    english_only=True drops Persian/mixed legacy cards at the source."""
     db_path = os.environ.get(
         "AIGAMERIA_KB",
         os.path.join(os.path.dirname(ROOT), ".data", "aipetros.sqlite"),
@@ -390,10 +391,14 @@ def knowledge_cards(game_key: str, limit: int = 40) -> list[dict[str, Any]]:
         ).fetchall()
         con.close()
         for kind, title, body, url in rows:
+            t_clean = clean_text(title, 140)
+            s_clean = clean_text(body or title, 200)
+            if english_only and not (looks_language_clean(t_clean, "en") and looks_language_clean(s_clean, "en")):
+                continue  # Persian/mixed legacy scraps never enter the core
             out.append(
                 {
-                    "title": clean_text(title, 140),
-                    "summary": clean_text(body or title, 200),
+                    "title": t_clean,
+                    "summary": s_clean,
                     "url": url or "",
                     "source": f"kb:{kind}",
                     "ts": time.time(),
@@ -409,12 +414,18 @@ def _card_id(game: str, i: int) -> str:
     return f"{game}-card-{i + 1:02d}"
 
 
-def build_cards(game_key: str, snippets: list[dict[str, Any]], lang: str) -> list[dict[str, Any]]:
-    """cards: id, category, source_tag, title, summary, language."""
+def build_cards(game_key: str, snippets: list[dict[str, Any]], lang: str = "en") -> list[dict[str, Any]]:
+    """cards: id, category, source_tag, title, summary, language.
+
+    STRICT ENGLISH-ONLY CORE: any snippet that is not clean natural English
+    (Persian scraps, mixed RTL/LTR legacy data) is excluded here. Target
+    languages are handled by pipeline/translator_agent.py, never inline.
+    """
+    assert lang == "en", "canonical pipeline is English-only; use translator_agent for locales"
     cat_map = [
-        ("update", re.compile(r"patch|update|note|نiod|آپدیت|پچ|balance|title update", re.I)),
-        ("meta", re.compile(r"meta|best|tier|formation|build|استراتژی|متا", re.I)),
-        ("trick", re.compile(r"trick|glitch|exploit|tutorial|timing|timing window|ترفند|آموزش", re.I)),
+        ("update", re.compile(r"patch|update|note|balance|title update|hotfix", re.I)),
+        ("meta", re.compile(r"meta|best|tier|formation|build|strategy|loadout", re.I)),
+        ("trick", re.compile(r"trick|glitch|exploit|tutorial|timing|timing window|guide", re.I)),
     ]
     cards: list[dict[str, Any]] = []
     used_titles: set[str] = set()
@@ -422,7 +433,13 @@ def build_cards(game_key: str, snippets: list[dict[str, Any]], lang: str) -> lis
         title = snip["title"]
         if title.lower() in used_titles:
             continue
-        blob = f"{title} {snip['summary']}"
+        # English purity gate — non-English scraps are dropped, not kept mixed
+        if not looks_language_clean(title, "en"):
+            continue
+        summary = snip["summary"] or title
+        if not looks_language_clean(summary, "en"):
+            continue
+        blob = f"{title} {summary}"
         category = "general"
         for name, rx in cat_map:
             if rx.search(blob):
@@ -439,7 +456,7 @@ def build_cards(game_key: str, snippets: list[dict[str, Any]], lang: str) -> lis
                 "source_tag": snip["source"],
                 "title": title,
                 "summary": summary,
-                "language": "en" if lang != "fa" else "fa",
+                "language": "en",
                 "url": snip.get("url", ""),
                 "fetched_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             }
@@ -447,23 +464,45 @@ def build_cards(game_key: str, snippets: list[dict[str, Any]], lang: str) -> lis
         used_titles.add(title.lower())
         if len(cards) >= 10:
             break
+    if not cards:
+        # deterministic evergreen fallback (English-only, honest about source)
+        evergreen = [
+            ("meta", "Check this week's official patch notes before queueing", "Balance changes rotate the meta every patch — verify your custom tactics against the latest notes."),
+            ("training", "Green-window timing drill", "Practice 15 minutes daily on green timing windows; consistency beats full power."),
+            ("meta", "Current formation meta snapshot", "Builds and formations shift with each patch — keep one flexible setup."),
+        ]
+        for cat, t, s in evergreen:
+            cards.append(
+                {
+                    "id": _card_id(game_key, len(cards)),
+                    "category": cat,
+                    "source_tag": "evergreen",
+                    "title": t,
+                    "summary": s,
+                    "language": "en",
+                    "url": "",
+                    "fetched_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                }
+            )
     return cards
 
 
-def build_coach_session(game_key: str, snippets: list[dict[str, Any]], lang: str) -> dict[str, Any]:
+def build_coach_session(game_key: str, snippets: list[dict[str, Any]], lang: str = "en") -> dict[str, Any]:
+    """English-only canonical coach session (locales via translator_agent)."""
+    assert lang == "en", "canonical pipeline is English-only"
     g = GAMES[game_key]
     tips: list[str] = []
     timing_rx = re.compile(r"\b(timing|window|ms|second|bars?|45|angle|position)\b", re.I)
     for snip in snippets:
         s = snip["summary"]
-        if timing_rx.search(s) and len(s) > 40:
+        if timing_rx.search(s) and len(s) > 40 and looks_language_clean(s, "en"):
             tips.append(s)
         if len(tips) >= 5:
             break
     if not tips:
-        # deterministic, sourced-from-KB or generic concrete fallbacks
+        # deterministic, sourced-from-KB or generic concrete fallbacks (EN only)
         kb = knowledge_cards(game_key)
-        tips = [s["summary"] for s in kb[:5] if s["summary"]]
+        tips = [s["summary"] for s in kb[:8] if s["summary"] and looks_language_clean(s["summary"], "en")][:5]
     if not tips:
         tips = [
             "Green timing window beats full power on every shot type.",
@@ -706,6 +745,9 @@ def validate_bundle(bundle: dict[str, Any]) -> tuple[bool, str]:
 
 # ── pipeline ─────────────────────────────────────────────────────────────────
 def build_bundle(game_keys: list[str], lang: str = "en") -> tuple[dict[str, Any], list[str]]:
+    """Canonical bundle is ALWAYS English (lang param kept for CLI compat).
+    Locale bundles are produced by pipeline/translator_agent.py."""
+    lang = "en"
     ollama_model = ollama_available()
     host = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
     errors: list[str] = []
