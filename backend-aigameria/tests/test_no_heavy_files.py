@@ -12,6 +12,8 @@ def client(tmp_path_factory):
     # Isolated DB per test module run.
     tmp = tmp_path_factory.mktemp("data")
     config.DB_PATH = str(tmp / "media.sqlite")
+    from app import db as db_mod
+    db_mod.reset_db()
     from app.main import app
 
     with TestClient(app) as c:

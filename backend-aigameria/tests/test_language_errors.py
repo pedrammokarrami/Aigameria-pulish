@@ -12,6 +12,8 @@ PERSIAN_RX = re.compile(r"[\u0600-\u06FF\uFB50-\uFEFF]")
 def client(tmp_path_factory):
     tmp = tmp_path_factory.mktemp("lang")
     config.DB_PATH = str(tmp / "lang.sqlite")
+    from app import db as db_mod
+    db_mod.reset_db()
     from app.main import app
 
     with TestClient(app) as c:

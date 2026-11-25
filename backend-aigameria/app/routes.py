@@ -10,7 +10,12 @@ from .db import get_db
 
 router = APIRouter(prefix="/api/v1")
 
-FALLBACK_STREAM = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+FALLBACK_STREAM = "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4"
+# Verified 200/video-mp4 from the live server (googleapis is geo-403 there).
+_SERVER_VERIFIED_STREAMS = [
+    "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4",
+    "https://media.w3.org/2010/05/sintel/trailer.mp4",
+]
 
 
 def _lang(value: str) -> str:
@@ -135,15 +140,30 @@ def media_stream(game_id: str, topic_id: str = Query(default="")) -> dict[str, A
                 (game["game_id"], topic_id),
             ).fetchone()
         candidate = row["video_url"] if row else FALLBACK_STREAM
-        # HEAD probe: 200 + video/* → direct; anything else → known-good fallback.
+        # HEAD probe: 200 + video/* → direct; anything else → verified fallback.
         try:
             with httpx.Client(timeout=8, follow_redirects=True) as client:
                 resp = client.head(candidate)
                 ctype = resp.headers.get("content-type", "")
-                if resp.status_code == 200 and (ctype.startswith("video/") or ctype == ""):
+                if resp.status_code in (200, 206) and (ctype.startswith("video/") or ctype == ""):
                     return candidate, "direct"
+                # Some CDNs reject HEAD but serve ranged GETs — try once.
+                if resp.status_code in (403, 405):
+                    get_resp = client.get(candidate, headers={"Range": "bytes=0-1024"})
+                    ctype = get_resp.headers.get("content-type", "")
+                    if get_resp.status_code in (200, 206) and ctype.startswith("video/"):
+                        return candidate, "direct"
         except Exception:
             pass
+        # Last resort: first server-verified direct stream.
+        for url in _SERVER_VERIFIED_STREAMS:
+            try:
+                with httpx.Client(timeout=8, follow_redirects=True) as client:
+                    resp = client.head(url)
+                    if resp.status_code in (200, 206):
+                        return url, "fallback"
+            except Exception:
+                continue
         return FALLBACK_STREAM, "fallback"
 
     try:
