@@ -911,7 +911,7 @@ const MENU_EN: Record<string, { title: string; subtitle: string; badge?: string 
     badge: 'Map',
   },
   store: {
-    title: 'AIPETROS Store',
+    title: 'AIGAMERIA Store',
     subtitle: 'Gear, collections & gaming goods',
     badge: 'Store',
   },
@@ -921,7 +921,7 @@ const MENU_EN: Record<string, { title: string; subtitle: string; badge?: string 
     badge: 'Map',
   },
   'audio-store': {
-    title: 'AIPETROS Store',
+    title: 'AIGAMERIA Store',
     subtitle: 'Gear, collections & gaming goods',
     badge: 'Store',
   },
@@ -931,7 +931,7 @@ const MENU_EN: Record<string, { title: string; subtitle: string; badge?: string 
     badge: 'Map',
   },
   'cinema-store': {
-    title: 'AIPETROS Store',
+    title: 'AIGAMERIA Store',
     subtitle: 'Gear, collections & gaming goods',
     badge: 'Store',
   },

@@ -23,6 +23,7 @@ import {
   type UploadedCoachMedia,
 } from './components/spatial/RealClipCoachRoom';
 import { PetrosUnifiedCoachPage, type GameId as UnifiedCoachGameId } from './components/spatial/PetrosUnifiedCoachPage';
+import { PetrosCleanLobby } from './components/spatial/PetrosCleanLobby';
 import { SkillCardList } from './components/spatial/SkillCardList';
 import { LiveWebAnswer } from './components/spatial/LiveWebAnswer';
 import { SkillSearchHeader } from './components/spatial/SkillSearchHeader';
@@ -1125,112 +1126,34 @@ export function App() {
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0"
           >
-            {/* 3. Clean Frosted-Glass Mobile-First Lobby Over Unreal Engine 5.8 Stadium-Tunnel Backdrop */}
-            <CoachStage3D
+            {/* 3. Clean Raw First Page — wordmark over the stadium-tunnel
+                backdrop, zero data; only the left quick-menu button remains
+                (PlayStation 5 Control Center style). */}
+            <PetrosCleanLobby
               realm={activeRealm}
               manifest={manifest}
-              isSpeaking={isSpeaking}
               useVideoBackdrop={useVideoBackdrop}
-              customBackdropUrl={null}
-              customAccentHex={null}
-              customSecondaryHex={null}
-            />
-
-            <div
-              data-testid="lobby-foreground-shell"
-              className="relative z-20 max-w-md mx-auto w-full h-dvh min-h-dvh overflow-x-hidden px-4 pt-2.5 pb-4 flex flex-col justify-between gap-2"
-            >
-              <div className="w-full flex flex-col gap-2 shrink-0">
-                <div className="flex justify-center pl-12 sm:pl-0">
-                  <MasterHubSwitcher
-                    activeHub={activeMasterHub}
-                    onSelectHub={selectHub}
-                  />
-                </div>
-
-                <div className="pl-11 sm:pl-0">
-                  <GameSwitcherBar
-                    activeGameId={lobbyGameId}
-                    activeStyleId={lobbyStyleId}
-                    onSelectGame={handleLobbyGameSwitch}
-                    onSelectStyle={(styleId) => {
-                      setLobbyStyleId(styleId);
-                      const target = defaultGameForStyle(styleId);
-                      handleLobbyGameSwitch(target);
-                    }}
-                    onOpenTournamentHub={() => {
-                      setTournamentInitialGame(resolveTournamentGameFromLobby(lobbyGameId));
-                      setIsTournamentHubOpen(true);
-                    }}
-                    onOpenSocialClub={() => setIsGtaSocialOpen(true)}
-                    onOpenIdentityProfile={() => setIsIdentityProfileOpen(true)}
-                  />
-                </div>
-
-              <SkillSearchHeader
-                searchQuery={lobbySearchQuery}
-                onSearchChange={setLobbySearchQuery}
-                categories={lobbyCategories}
-                activeCategoryId={lobbyCategoryId}
-                onSelectCategory={setLobbyCategoryId}
-                isListeningVoice={isListeningSearchVoice}
-                onToggleVoiceSearch={handleToggleLobbyVoiceSearch}
-              />
-              <QuestionSuggestions
-                gameId={lobbyGameId}
-                query={lobbySearchQuery}
-                accentHex={getLobbyGameTab(lobbyGameId).accentHex}
-                onSelectQuestion={handleAskLobbyQuestion}
-              />
-            </div>
-
-            {/* Full-width live coach answer + game-choice chips (mobile-first: sits above the
-                narrow skill column so it is never pushed off-screen) */}
-            {lobbySearchQuery.trim().length >= 3 && (
-              <div className="w-full shrink-0">
-                <LiveWebAnswer gameId={lobbyGameId} searchQuery={lobbySearchQuery} />
-              </div>
-            )}
-
-            <SkillCardList
-              skills={filteredLobbySkills}
-              gameId={lobbyGameId}
-              searchQuery={lobbySearchQuery}
-              onSelectSkill={handleSelectLobbySkill}
-              onResetFilters={() => {
-                setLobbyCategoryId('all');
-                setLobbySearchQuery('');
+              onToggleBackdropMode={() => setUseVideoBackdrop((v) => !v)}
+              onOpenQuickDemo={() => {
+                const firstSkill = filteredLobbySkills[0];
+                if (firstSkill) {
+                  handleSelectLobbySkill(firstSkill);
+                } else {
+                  launchTopicSearch(realmTopics[0].id, 22, 74);
+                }
+              }}
+              onOpenTournamentHub={() => {
+                setTournamentInitialGame(resolveTournamentGameFromLobby(lobbyGameId));
+                setIsTournamentHubOpen(true);
+              }}
+              onOpenSocialClub={() => setIsGtaSocialOpen(true)}
+              onOpenIdentityProfile={() => setIsIdentityProfileOpen(true)}
+              onOpenMap={() => setActiveLeftOverlay('map')}
+              onOpenStore={() => {
+                setStoreInitialCollectionId(null);
+                setActiveLeftOverlay('store');
               }}
             />
-
-              <LobbyBottomDock
-                isListeningVoice={isListeningVoice}
-                hasVideoBackdrop={Boolean(manifest.lobbyVideoUrl)}
-                useVideoBackdrop={useVideoBackdrop}
-                onUploadFile={handleUploadFile}
-                onToggleVoice={handleToggleVoiceQa}
-                onOpenQuickDemo={() => {
-                  const firstSkill = filteredLobbySkills[0];
-                  if (firstSkill) {
-                    handleSelectLobbySkill(firstSkill);
-                  } else {
-                    launchTopicSearch(realmTopics[0].id, 22, 74);
-                  }
-                }}
-                onOpenTournamentHub={() => {
-                  setTournamentInitialGame(resolveTournamentGameFromLobby(lobbyGameId));
-                  setIsTournamentHubOpen(true);
-                }}
-                onOpenSocialClub={() => setIsGtaSocialOpen(true)}
-                onOpenIdentityProfile={() => setIsIdentityProfileOpen(true)}
-                onOpenMap={() => setActiveLeftOverlay('map')}
-                onOpenStore={() => {
-                  setStoreInitialCollectionId(null);
-                  setActiveLeftOverlay('store');
-                }}
-                onToggleBackdropMode={() => setUseVideoBackdrop((v) => !v)}
-              />
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
