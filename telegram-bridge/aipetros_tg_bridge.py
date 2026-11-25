@@ -259,8 +259,8 @@ async def on_saved(event):
 async def on_any_message(event):
     """Direct messages to this account also count as prompts."""
     global last_chat_id
-    if event.chat_id == 'me':
-        return  # already handled above
+    if event.chat_id == 'me' or event.chat_id == OWNER_CHAT_ID:
+        return  # Saved Messages — already handled by on_saved above
     text = (event.message.message or '').strip()
     if not text or text.startswith('\U0001F916'):
         return

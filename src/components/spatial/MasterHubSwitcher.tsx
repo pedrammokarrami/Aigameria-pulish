@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Film, Gamepad2, Headphones } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { allowedMasterHubs } from '../../utils/hostBrand';
 
 export type MasterHubId = 'game' | 'cinema' | 'audio';
 
@@ -18,7 +19,7 @@ export const MasterHubSwitcher: React.FC<MasterHubSwitcherProps> = ({
 }) => {
   const { copy, isRtl } = useLanguage();
 
-  const hubItems: Array<{
+  const allHubItems: Array<{
     id: MasterHubId;
     label: string;
     Icon: React.ComponentType<{ className?: string }>;
@@ -28,6 +29,8 @@ export const MasterHubSwitcher: React.FC<MasterHubSwitcherProps> = ({
     { id: 'cinema', label: copy.hubCinema, Icon: Film, defaultGlow: '#F59E0B' },
     { id: 'audio', label: copy.hubAudio, Icon: Headphones, defaultGlow: '#38BDF8' },
   ];
+  const allowed = allowedMasterHubs();
+  const hubItems = allHubItems.filter(({ id }) => allowed.includes(id));
 
   return (
     <div

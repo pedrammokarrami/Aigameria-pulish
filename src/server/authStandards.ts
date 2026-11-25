@@ -101,7 +101,8 @@ export function configuredProviders(): Array<{ id: OAuthProvider; label: string;
     { id: 'google', label: 'Google', configured: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) },
     { id: 'apple', label: 'Apple', configured: Boolean(process.env.APPLE_CLIENT_ID && process.env.APPLE_PRIVATE_KEY) },
     { id: 'epic', label: 'Epic Games', configured: Boolean(process.env.EPIC_CLIENT_ID && process.env.EPIC_CLIENT_SECRET) },
-    { id: 'steam', label: 'Steam', configured: Boolean(process.env.STEAM_API_KEY) },
+    // Steam uses OpenID 2.0 — no key required to sign in (key only enriches profile).
+    { id: 'steam', label: 'Steam', configured: true },
     { id: 'microsoft', label: 'Microsoft', configured: Boolean(process.env.MS_CLIENT_ID && process.env.MS_CLIENT_SECRET) },
   ];
 }
