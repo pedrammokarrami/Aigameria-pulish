@@ -66,6 +66,7 @@ import {
   syncLatestGameMeta,
 } from './src/services/liveMetaSyncService.ts';
 import { discoverRealCoachClips } from './src/services/realClipAgentService.ts';
+import { getOrSetEightHourCache, makeCacheKey } from './src/server/eightHourCache';
 import { runProClipAnalyzerAgent } from './src/agents/proClipAnalyzerAgent.ts';
 import { runMotionCoachAgent } from './src/agents/motionCoachAgent.ts';
 import {
@@ -1316,11 +1317,11 @@ document.getElementById('r').innerHTML=rows.join('');
           ? rawRealm
           : undefined;
 
-      const result = await runProClipAnalyzerAgent(
-        { gameId, gameName, realm, userQuery },
-        { force }
+      const result = await getOrSetEightHourCache(
+        makeCacheKey(['pro-clips', gameId, realm, userQuery]),
+        () => runProClipAnalyzerAgent({ gameId, gameName, realm, userQuery }, { force })
       );
-      res.json(result);
+      res.json({ ...result.data, fromCache: result.fromCache });
     } catch (err) {
       res.status(500).json({
         error: err instanceof Error ? err.message : 'ProClipAnalyzerAgent failed.',
@@ -1459,11 +1460,19 @@ document.getElementById('r').innerHTML=rows.join('');
       const force = req.query.force === '1' || req.query.force === 'true';
       const langParam = String(req.query.lang ?? '').toLowerCase().slice(0, 2);
       const forceLang = langParam === 'fa' || langParam === 'en' ? (langParam as 'fa' | 'en') : undefined;
-      const session = await buildCoachSession(
-        { gameId, gameName, realm, query: userQuery },
-        { state: getEcosystemState(), force, forceLang }
-      );
-      res.json({ session });
+      const sessionCall = force
+        ? { data: await buildCoachSession(
+            { gameId, gameName, realm, query: userQuery },
+            { state: getEcosystemState(), force, forceLang }
+          ), fromCache: false }
+        : await getOrSetEightHourCache(
+            makeCacheKey(['coach-session', gameId, realm, userQuery, forceLang ?? 'auto']),
+            () => buildCoachSession(
+              { gameId, gameName, realm, query: userQuery },
+              { state: getEcosystemState(), forceLang }
+            )
+          );
+      res.json({ session: sessionCall.data, fromCache: sessionCall.fromCache });
     } catch (err) {
       res.status(500).json({
         error: err instanceof Error ? err.message : 'Coach session failed.',
@@ -1517,16 +1526,20 @@ document.getElementById('r').innerHTML=rows.join('');
         rawRealm === 'sports' || rawRealm === 'shooter' || rawRealm === 'strategy' || rawRealm === 'story'
           ? (rawRealm as RealmId)
           : undefined;
-      const result = await discoverRealCoachClips(
-        { gameId, gameName, realm, userQuery },
-        { force: req.query.force === '1' || req.query.force === 'true' }
+      const resolveCall = await getOrSetEightHourCache(
+        makeCacheKey(['media-resolve', gameId, realm, userQuery]),
+        () => discoverRealCoachClips(
+          { gameId, gameName, realm, userQuery },
+          { force: req.query.force === '1' || req.query.force === 'true' }
+        )
       );
       res.json({
         gameId,
         topic: userQuery,
         kind: 'clips',
         cachedForSeconds: 28800,
-        clips: result.clips ?? [],
+        fromCache: resolveCall.fromCache,
+        clips: resolveCall.data.clips ?? [],
       });
     } catch (err) {
       res.status(500).json({ error: err instanceof Error ? err.message : 'media resolve failed' });

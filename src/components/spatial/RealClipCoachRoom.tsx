@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { buildAnalyzCommand, sendAnalyzCommand } from '../../utils/analyzBridge';
+import { resolveSafeStagePayload, type StageMode } from '../../utils/stageGameGuard';
 import { isIosLikeDevice } from '../../utils/iosPlayback';
 import {
   ArrowRight,
@@ -146,18 +147,35 @@ export const RealClipCoachRoom: React.FC<RealClipCoachRoomProps> = ({
   const accent = motionPayload.accentHex || '#22C55E';
   const analyzFrameRef = useRef<HTMLIFrameElement | null>(null);
   const [analyzEnvTab, setAnalyzEnvTab] = React.useState<'stage' | 'clips'>('stage');
-  const analyzCommand = useMemo(
-    () =>
-      buildAnalyzCommand({
+  const analyzCommand = useMemo(() => {
+    const raw = buildAnalyzCommand({
+      gameId: motionPayload.gameId,
+      gameName: motionPayload.gameName,
+      realm: activeRealm,
+      query: problemQuery,
+      answerBlock,
+      accentHex: accent,
+    });
+    if (!raw) return null;
+    // Game-strict stage guard: a non-football game NEVER renders a football
+    // pitch or football formation — the guard remaps or downgrades the stage.
+    if (raw.mode === 'football') {
+      const guard = resolveSafeStagePayload({
         gameId: motionPayload.gameId,
-        gameName: motionPayload.gameName,
-        realm: activeRealm,
-        query: problemQuery,
-        answerBlock,
-        accentHex: accent,
-      }),
-    [motionPayload.gameId, motionPayload.gameName, activeRealm, problemQuery, answerBlock, accent],
-  );
+        mode: 'pitch' as StageMode,
+        topic: problemQuery,
+        title: typeof raw.title === 'string' ? raw.title : undefined,
+      });
+      if (guard.mode !== 'pitch') {
+        const prompt = [motionPayload.gameName, problemQuery, guard.title]
+          .filter(Boolean)
+          .join('. ')
+          .slice(0, 800);
+        return prompt.trim() ? { prompt } : null;
+      }
+    }
+    return raw;
+  }, [motionPayload.gameId, motionPayload.gameName, activeRealm, problemQuery, answerBlock, accent]);
   useEffect(() => {
     sendAnalyzCommand(analyzFrameRef.current, analyzCommand);
   }, [analyzCommand]);
