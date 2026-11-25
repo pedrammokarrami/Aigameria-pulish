@@ -23,6 +23,8 @@ export interface ScrubberChapterDot {
 export interface ProClipAnalyzerItem {
   id: string;
   youtubeId: string;
+  /** Optional direct file/stream URL — native <video> playback when present. */
+  videoUrl?: string;
   title: string;
   channelName: string;
   viewsLabel: string;
