@@ -1,0 +1,155 @@
+{
+ "startedAt": "2026-11-22T04:38:00Z",
+ "crashedAt": "2026-11-22T08:47:36.919Z",
+ "crashReason": "AbortError escaped userLoop promise (unhandled fetch abort after server hiccup) \u2014 activity phase ran 7.09h of the planned 8h",
+ "registered": 1000,
+ "actions": {
+  "total": 11220,
+  "ok": 10085,
+  "fail": 1135
+ },
+ "coachQuestions": {
+  "asked": 997,
+  "answered": 997,
+  "withLiveSources": 894,
+  "avgLatencyMs": 1184,
+  "latencySum": 1180792
+ },
+ "statusCodes": {
+  "201": 3050,
+  "404": 2046,
+  "200": 4994,
+  "exception": 118,
+  "400": 1012
+ },
+ "bySection": {
+  "register": {
+   "total": 1000,
+   "ok": 1000,
+   "fail": 0
+  },
+  "security": {
+   "total": 2067,
+   "ok": 2041,
+   "fail": 26
+  },
+  "profile": {
+   "total": 1978,
+   "ok": 1945,
+   "fail": 33
+  },
+  "accounts": {
+   "total": 996,
+   "ok": 991,
+   "fail": 5
+  },
+  "hologram": {
+   "total": 1045,
+   "ok": 1043,
+   "fail": 2
+  },
+  "ingest": {
+   "total": 1070,
+   "ok": 1059,
+   "fail": 11
+  },
+  "chat": {
+   "total": 1042,
+   "ok": 0,
+   "fail": 1042
+  },
+  "coach": {
+   "total": 2022,
+   "ok": 2006,
+   "fail": 16
+  }
+ },
+ "errors": {
+  "fetch failed": 103,
+  "http_404": 1017,
+  "This operation was aborted": 15
+ },
+ "headline": {
+  "registered": 1000,
+  "totalActions": 11220,
+  "ok": 10085,
+  "fail": 1135,
+  "passRatePct": 89.9,
+  "coachAsked": 1013,
+  "coachAnsweredPct": 98.4,
+  "topErrors": [
+   [
+    "http_404",
+    1017
+   ],
+   [
+    "fetch failed",
+    103
+   ],
+   [
+    "This operation was aborted",
+    15
+   ]
+  ],
+  "topSections": [
+   {
+    "section": "security",
+    "total": 2067,
+    "ok": 2041,
+    "fail": 26,
+    "passRate": 98.7
+   },
+   {
+    "section": "coach",
+    "total": 2022,
+    "ok": 2006,
+    "fail": 16,
+    "passRate": 99.2
+   },
+   {
+    "section": "profile",
+    "total": 1978,
+    "ok": 1945,
+    "fail": 33,
+    "passRate": 98.3
+   },
+   {
+    "section": "ingest",
+    "total": 1070,
+    "ok": 1059,
+    "fail": 11,
+    "passRate": 99.0
+   },
+   {
+    "section": "hologram",
+    "total": 1045,
+    "ok": 1043,
+    "fail": 2,
+    "passRate": 99.8
+   },
+   {
+    "section": "chat",
+    "total": 1042,
+    "ok": 0,
+    "fail": 1042,
+    "passRate": 0.0
+   },
+   {
+    "section": "register",
+    "total": 1000,
+    "ok": 1000,
+    "fail": 0,
+    "passRate": 100.0
+   },
+   {
+    "section": "accounts",
+    "total": 996,
+    "ok": 991,
+    "fail": 5,
+    "passRate": 99.5
+   }
+  ],
+  "coachWithLiveSourcesPct": 89.7,
+  "avgCoachLatencyMs": 1184
+ }
+}

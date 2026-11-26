@@ -43,6 +43,8 @@ import { getMenuDescriptor } from '../../utils/i18nEngine';
  * ========================================================================== */
 
 interface Ps5GameControlCenterProps {
+  /** API-driven menu tiles (from /api/v1/menu) — when provided, replaces hardcoded items */
+  apiMenuItems?: import('../../utils/hubQuickMenu').HubMenuDescriptor[] | null;
   open: boolean;
   hasVideoBackdrop: boolean;
   useVideoBackdrop: boolean;
@@ -93,6 +95,7 @@ const PlayStationGlyphs: React.FC = () => (
 );
 
 export const Ps5GameControlCenter: React.FC<Ps5GameControlCenterProps> = ({
+  apiMenuItems,
   open,
   hasVideoBackdrop,
   useVideoBackdrop,
@@ -109,7 +112,9 @@ export const Ps5GameControlCenter: React.FC<Ps5GameControlCenterProps> = ({
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [muted, setMuted] = useState(() => isHubMenuSoundMuted());
 
-  const rawItems = getGamePs5MenuItems({ hasVideoBackdrop, useVideoBackdrop });
+  const rawItems = apiMenuItems && apiMenuItems.length > 0
+    ? apiMenuItems
+    : getGamePs5MenuItems({ hasVideoBackdrop, useVideoBackdrop });
   const items = onOpenIdentityProfile
     ? rawItems
     : rawItems.filter((item) => item.id !== 'identity');
@@ -297,14 +302,16 @@ export const Ps5GameControlCenter: React.FC<Ps5GameControlCenterProps> = ({
             >
               {items.map((item, idx) => {
                 const isFocused = focusedIndex === idx;
-                const desc = getMenuDescriptor(
-                  'game',
-                  item.id,
-                  item.titleFa,
-                  item.subtitleFa,
-                  item.badgeText,
-                  languageCode
-                );
+                const desc = apiMenuItems
+                  ? { title: item.titleFa, subtitle: item.subtitleFa, badge: item.badgeText }
+                  : getMenuDescriptor(
+                      'game',
+                      item.id,
+                      item.titleFa,
+                      item.subtitleFa,
+                      item.badgeText,
+                      languageCode
+                    );
                 return (
                   <motion.button
                     key={item.id}

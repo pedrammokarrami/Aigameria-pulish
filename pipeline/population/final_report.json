@@ -1,0 +1,108 @@
+{
+  "generated_at": "2026-11-25T09:29:06+00:00",
+  "population": 500,
+  "api_errors": 0,
+  "scenarios": {
+    "focused": 77,
+    "baseline": 413,
+    "engaged": 10
+  },
+  "top_games": [
+    [
+      "cod",
+      11
+    ],
+    [
+      "efootball",
+      10
+    ],
+    [
+      "gta",
+      10
+    ],
+    [
+      "elden-ring",
+      10
+    ],
+    [
+      "dota2",
+      9
+    ],
+    [
+      "civ",
+      8
+    ],
+    [
+      "valorant",
+      8
+    ],
+    [
+      "fc27",
+      6
+    ],
+    [
+      "cyberpunk",
+      6
+    ],
+    [
+      "cs2",
+      5
+    ]
+  ],
+  "top_categories": [
+    [
+      "story",
+      26
+    ],
+    [
+      "shooter",
+      25
+    ],
+    [
+      "sports",
+      20
+    ],
+    [
+      "strategy",
+      17
+    ]
+  ],
+  "playstyles": {
+    "hardcore": 29,
+    "regular": 34,
+    "unknown": 423,
+    "casual": 14
+  },
+  "search_patterns": {
+    "meta": 66,
+    "unknown": 428,
+    "vague": 6
+  },
+  "avg_confidence": 0.128,
+  "language_mix": {
+    "fr": 66,
+    "ru": 66,
+    "tr": 71,
+    "es": 56,
+    "de": 55,
+    "en": 54,
+    "ar": 66,
+    "fa": 66
+  },
+  "region_mix": {
+    "LATAM": 77,
+    "EU": 85,
+    "TR": 78,
+    "APAC": 88,
+    "MENA": 82,
+    "NA": 90
+  },
+  "platform_mix": {
+    "console": 136,
+    "mobile": 130,
+    "pc": 123,
+    "tablet": 111
+  },
+  "live_api_ok": false,
+  "chunks_run": 8
+}

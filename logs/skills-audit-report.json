@@ -1,0 +1,247 @@
+{
+ "auditedAt": "2026-11-22T11:02:47.461Z",
+ "method": "local KB introspection + keyless GitHub repo search (skills/glitch/cheat) + Wikipedia",
+ "games": [
+  {
+   "gameId": "fc27",
+   "game": "EA Sports FC 27",
+   "local": {
+    "interactiveLessons": 6,
+    "kbTopicsShared": 7,
+    "skillCategories": [
+     "formation",
+     "SBC",
+     "shooting",
+     "meta players",
+     "defense",
+     "passing"
+    ],
+    "canAnswerFreeQuestions": true
+   },
+   "internet": {
+    "skillGuideRepos": 0,
+    "glitchExploitRepos": 6,
+    "cheatTrainerRepos": 25,
+    "wikipedia": {
+     "title": "EA Sports FC",
+     "extract": "EA Sports FC is an association football simulation video game franchise developed by EA Vancouver and EA Romania and published by EA Sports. It serves as the direct successor to their former FIFA seri"
+    }
+   },
+   "verdict": "FULL COACH — real lessons + free-question engine"
+  },
+  {
+   "gameId": "efootball",
+   "game": "eFootball",
+   "local": {
+    "interactiveLessons": 0,
+    "kbTopicsShared": 7,
+    "skillCategories": [],
+    "canAnswerFreeQuestions": false
+   },
+   "internet": {
+    "skillGuideRepos": 1,
+    "glitchExploitRepos": 0,
+    "cheatTrainerRepos": 8,
+    "wikipedia": {
+     "title": "EFootball",
+     "extract": "eFootball is a 2021 association football video game developed, published, and updated annually by Konami. It is the revamped successor to the Pro Evolution Soccer franchise, known as Winning Eleven in"
+    }
+   },
+   "verdict": "SHARED REALM KB ONLY — general tips, no game-specific lessons yet"
+  },
+  {
+   "gameId": "nba2k",
+   "game": "NBA 2K",
+   "local": {
+    "interactiveLessons": 0,
+    "kbTopicsShared": 7,
+    "skillCategories": [],
+    "canAnswerFreeQuestions": false
+   },
+   "internet": {
+    "skillGuideRepos": 1,
+    "glitchExploitRepos": 1,
+    "cheatTrainerRepos": 28,
+    "wikipedia": {
+     "title": "NBA 2K",
+     "extract": "NBA 2K is an American series of basketball sports simulation video games developed by Visual Concepts and released annually since 1999. The premise of the series is to emulate the sport of basketball "
+    }
+   },
+   "verdict": "SHARED REALM KB ONLY — general tips, no game-specific lessons yet"
+  },
+  {
+   "gameId": "mlb",
+   "game": "MLB The Show",
+   "local": {
+    "interactiveLessons": 0,
+    "kbTopicsShared": 7,
+    "skillCategories": [],
+    "canAnswerFreeQuestions": false
+   },
+   "internet": {
+    "skillGuideRepos": 0,
+    "glitchExploitRepos": 0,
+    "cheatTrainerRepos": 2,
+    "wikipedia": {
+     "title": "MLB: The Show",
+     "extract": "MLB: The Show is an American baseball video game series created and developed by San Diego Studio and published by Sony Interactive Entertainment. The series has received critical and commercial accla"
+    }
+   },
+   "verdict": "SHARED REALM KB ONLY — general tips, no game-specific lessons yet"
+  },
+  {
+   "gameId": "cs2",
+   "game": "Counter-Strike 2",
+   "local": {
+    "interactiveLessons": 4,
+    "kbTopicsShared": 6,
+    "skillCategories": [
+     "aim",
+     "smokes",
+     "peeking",
+     "clutch",
+     "economy"
+    ],
+    "canAnswerFreeQuestions": true
+   },
+   "internet": {
+    "skillGuideRepos": 0,
+    "glitchExploitRepos": 2,
+    "cheatTrainerRepos": 1334,
+    "wikipedia": {
+     "title": "Counter-Strike 2",
+     "extract": "Counter-Strike 2 is a 2023 free-to-play first-person shooter video game developed and published by Valve. It is the fifth main entry in the Counter-Strike series, produced as an updated version of the"
+    }
+   },
+   "verdict": "FULL COACH — real lessons + free-question engine"
+  },
+  {
+   "gameId": "valorant",
+   "game": "Valorant",
+   "local": {
+    "interactiveLessons": 4,
+    "kbTopicsShared": 6,
+    "skillCategories": [
+     "aim",
+     "utility",
+     "site executes",
+     "economy"
+    ],
+    "canAnswerFreeQuestions": true
+   },
+   "internet": {
+    "skillGuideRepos": 1,
+    "glitchExploitRepos": 10,
+    "cheatTrainerRepos": null,
+    "wikipedia": null
+   },
+   "verdict": "FULL COACH — real lessons + free-question engine"
+  },
+  {
+   "gameId": "cod",
+   "game": "Call of Duty",
+   "local": {
+    "interactiveLessons": 0,
+    "kbTopicsShared": 6,
+    "skillCategories": [],
+    "canAnswerFreeQuestions": false
+   },
+   "internet": {
+    "skillGuideRepos": 1,
+    "glitchExploitRepos": 4,
+    "cheatTrainerRepos": 355,
+    "wikipedia": {
+     "title": "Call of Duty",
+     "extract": "Call of Duty (CoD) is a first-person shooter video game series and media franchise published by Activision, starting in 2003. The games were first developed by Infinity Ward, then by Treyarch, Sledgeh"
+    }
+   },
+   "verdict": "SHARED REALM KB ONLY — general tips, no game-specific lessons yet"
+  },
+  {
+   "gameId": "f1-25",
+   "game": "F1 25",
+   "local": {
+    "interactiveLessons": 0,
+    "kbTopicsShared": 4,
+    "skillCategories": [],
+    "canAnswerFreeQuestions": false
+   },
+   "internet": {
+    "skillGuideRepos": 0,
+    "glitchExploitRepos": 0,
+    "cheatTrainerRepos": 12,
+    "wikipedia": {
+     "title": "F1 25",
+     "extract": "F1 25 is a racing video game developed by Codemasters and published by EA Sports. It is the eighteenth entry in the F1 series and holds the license for the 2025 Formula One and Formula 2 championships"
+    }
+   },
+   "verdict": "SHARED REALM KB ONLY — general tips, no game-specific lessons yet"
+  },
+  {
+   "gameId": "dota2",
+   "game": "Dota 2",
+   "local": {
+    "interactiveLessons": 0,
+    "kbTopicsShared": 4,
+    "skillCategories": [],
+    "canAnswerFreeQuestions": false
+   },
+   "internet": {
+    "skillGuideRepos": null,
+    "glitchExploitRepos": 19,
+    "cheatTrainerRepos": 57,
+    "wikipedia": {
+     "title": "Dota 2",
+     "extract": "Dota 2 is a 2013 multiplayer online battle arena (MOBA) video game by Valve. The game is a sequel to Defense of the Ancients (DotA), a community-created mod for Blizzard Entertainment's Warcraft III: "
+    }
+   },
+   "verdict": "SHARED REALM KB ONLY — general tips, no game-specific lessons yet"
+  },
+  {
+   "gameId": "elden-ring",
+   "game": "Elden Ring",
+   "local": {
+    "interactiveLessons": 0,
+    "kbTopicsShared": 4,
+    "skillCategories": [],
+    "canAnswerFreeQuestions": false
+   },
+   "internet": {
+    "skillGuideRepos": 6,
+    "glitchExploitRepos": 2,
+    "cheatTrainerRepos": 59,
+    "wikipedia": {
+     "title": "Elden Ring",
+     "extract": "Elden Ring is a 2022 action role-playing game directed by Hidetaka Miyazaki with worldbuilding provided by the American fantasy writer George R. R. Martin. Developed by FromSoftware and published by B"
+    }
+   },
+   "verdict": "SHARED REALM KB ONLY — general tips, no game-specific lessons yet"
+  },
+  {
+   "gameId": "gta",
+   "game": "GTA V Online",
+   "local": {
+    "interactiveLessons": 4,
+    "kbTopicsShared": 4,
+    "skillCategories": [
+     "heists",
+     "money",
+     "driving",
+     "survival"
+    ],
+    "canAnswerFreeQuestions": true
+   },
+   "internet": {
+    "skillGuideRepos": 0,
+    "glitchExploitRepos": 13,
+    "cheatTrainerRepos": 16,
+    "wikipedia": {
+     "title": "Grand Theft Auto V",
+     "extract": "Grand Theft Auto V is a 2013 action-adventure game developed by Rockstar North and published by Rockstar Games. It is the seventh main entry in the Grand Theft Auto series, following 2008's Grand Thef"
+    }
+   },
+   "verdict": "FULL COACH — real lessons + free-question engine"
+  }
+ ],
+ "summaryLine": "EA Sports FC 27: 6 lessons, 0 skill repos, 6 glitch repos | eFootball: 0 lessons, 1 skill repos, 0 glitch repos | NBA 2K: 0 lessons, 1 skill repos, 1 glitch repos | MLB The Show: 0 lessons, 0 skill repos, 0 glitch repos | Counter-Strike 2: 4 lessons, 0 skill repos, 2 glitch repos | Valorant: 4 lessons, 1 skill repos, 10 glitch repos | Call of Duty: 0 lessons, 1 skill repos, 4 glitch repos | F1 25: 0 lessons, 0 skill repos, 0 glitch repos | Dota 2: 0 lessons, ? skill repos, 19 glitch repos | Elden Ring: 0 lessons, 6 skill repos, 2 glitch repos | GTA V Online: 4 lessons, 0 skill repos, 13 glitch repos"
+}

@@ -1,0 +1,27 @@
+{
+ "totalRuns": 6,
+ "okRuns": 6,
+ "passRatePct": 100,
+ "mastraStatuses": [
+  {
+   "scenario": "onboarding-journey",
+   "status": "success"
+  },
+  {
+   "scenario": "security-hardening",
+   "status": "success"
+  },
+  {
+   "scenario": "coach-marathon",
+   "status": "success"
+  },
+  {
+   "scenario": "chat-social-exchange",
+   "status": "success"
+  },
+  {
+   "scenario": "media-ingest-hologram",
+   "status": "success"
+  }
+ ]
+}

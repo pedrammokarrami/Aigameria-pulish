@@ -1,0 +1,58 @@
+{
+  "sports": {
+    "cards": 979,
+    "trends": 0,
+    "tricks": 0,
+    "cheatAwareness": 1,
+    "tutorials": 10
+  },
+  "shooter": {
+    "cards": 831,
+    "trends": 0,
+    "tricks": 0,
+    "cheatAwareness": 9,
+    "tutorials": 10
+  },
+  "battle-royale": {
+    "cards": 40,
+    "trends": 0,
+    "tricks": 0,
+    "cheatAwareness": 0,
+    "tutorials": 10
+  },
+  "open-world-story": {
+    "cards": 503,
+    "trends": 0,
+    "tricks": 0,
+    "cheatAwareness": 10,
+    "tutorials": 10
+  },
+  "racing": {
+    "cards": 166,
+    "trends": 0,
+    "tricks": 0,
+    "cheatAwareness": 6,
+    "tutorials": 10
+  },
+  "survival-sandbox": {
+    "cards": 96,
+    "trends": 0,
+    "tricks": 0,
+    "cheatAwareness": 0,
+    "tutorials": 10
+  },
+  "mmo-moba": {
+    "cards": 276,
+    "trends": 0,
+    "tricks": 0,
+    "cheatAwareness": 0,
+    "tutorials": 10
+  },
+  "horror": {
+    "cards": 32,
+    "trends": 0,
+    "tricks": 0,
+    "cheatAwareness": 0,
+    "tutorials": 10
+  }
+}

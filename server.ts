@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import { spawn } from 'child_process';
 import os from 'os';
+import httpModule from 'http';
 // ---- Aigameria Social Club (Petros-connection) backend engines ----
 import { LocalNodeStore } from './src/server/connection/personal-server/localStore';
 import { P2PSignalingServer } from './src/server/connection/p2p/signalingServer';
@@ -145,6 +146,22 @@ async function startServer() {
   app.use(corsGuard(corsOrigins));
   app.use(optionalAuth);
   app.use(express.json({ limit: '12mb' }));
+
+  // AIGAMERIA FastAPI backend (:8090) — API-driven frontend data
+  // (menu/games/coach/stream/stage/gamepad/ava/training) proxies same-origin.
+  const aigameriaUpstream = process.env.AIGAMERIA_API_UPSTREAM || 'http://127.0.0.1:8090';
+  app.use('/api/v1', (req, res, next) => {
+    if (!/^\/(games|coach|media\/stream|media\/analyze|stage|gamepad|ava|training|menu|health)(\/|$)/.test(req.path)) {
+      return next();
+    }
+    const target = new URL(req.originalUrl, aigameriaUpstream);
+    const proxyReq = httpModule.request(target, { method: req.method, headers: { ...req.headers, host: target.host } }, (proxyRes) => {
+      res.writeHead(proxyRes.statusCode || 502, proxyRes.headers);
+      proxyRes.pipe(res);
+    });
+    proxyReq.on('error', () => res.status(502).json({ error: 'aigameria-api unreachable' }));
+    req.pipe(proxyReq);
+  });
 
   // Versioned REST API v1 + top-level health check
   app.use('/api/v1', apiV1);

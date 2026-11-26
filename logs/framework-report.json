@@ -1,0 +1,276 @@
+{
+ "startedAt": "2026-11-25T09:20:12.937Z",
+ "finishedAt": "2026-11-25T09:21:39.206Z",
+ "framework": {
+  "langgraph": "@langchain/langgraph",
+  "mastra": "@mastra/core"
+ },
+ "scenarios": [
+  {
+   "scenario": "onboarding-journey",
+   "engine": "langgraph",
+   "users": 1,
+   "okRuns": 1,
+   "failRuns": 0,
+   "passRatePct": 100,
+   "stepBuckets": {
+    "register": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    },
+    "login": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    },
+    "users/me": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    },
+    "security-log": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    },
+    "accounts-link": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    }
+   }
+  },
+  {
+   "scenario": "coach-marathon",
+   "engine": "langgraph",
+   "users": 1,
+   "okRuns": 1,
+   "failRuns": 0,
+   "passRatePct": 100,
+   "stepBuckets": {
+    "register": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    },
+    "coach-fc27": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    },
+    "coach-cs2": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    },
+    "coach-valorant": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    },
+    "coach-gta": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    },
+    "coach-symbiote": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    }
+   }
+  },
+  {
+   "scenario": "chat-social-exchange",
+   "engine": "langgraph",
+   "users": 1,
+   "okRuns": 1,
+   "failRuns": 0,
+   "passRatePct": 100,
+   "stepBuckets": {
+    "register": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    },
+    "chat-room-create": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    },
+    "chat-post": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    },
+    "chat-read-persisted": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    },
+    "club-members": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    },
+    "club-chat": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    }
+   }
+  },
+  {
+   "scenario": "media-ingest-hologram",
+   "engine": "langgraph",
+   "users": 1,
+   "okRuns": 1,
+   "failRuns": 0,
+   "passRatePct": 100,
+   "stepBuckets": {
+    "register": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    },
+    "ingest-text": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    },
+    "hologram-interact": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    },
+    "health": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    }
+   }
+  },
+  {
+   "scenario": "security-hardening",
+   "engine": "langgraph",
+   "users": 1,
+   "okRuns": 1,
+   "failRuns": 0,
+   "passRatePct": 100,
+   "stepBuckets": {
+    "register": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    },
+    "bad-token-401": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    },
+    "notfound-404": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    },
+    "ssrf-blocked": {
+     "total": 1,
+     "ok": 1,
+     "fail": 0,
+     "errors": {}
+    }
+   }
+  },
+  {
+   "scenario": "rate-limit-guard",
+   "engine": "langgraph",
+   "okRuns": 1,
+   "failRuns": 0,
+   "passRatePct": 100,
+   "steps": [
+    {
+     "name": "ratelimit-guard",
+     "ok": true,
+     "latencyMs": 4916
+    }
+   ]
+  },
+  {
+   "scenario": "onboarding-journey",
+   "engine": "mastra",
+   "status": "success"
+  },
+  {
+   "scenario": "security-hardening",
+   "engine": "mastra",
+   "status": "success"
+  },
+  {
+   "scenario": "coach-marathon",
+   "engine": "mastra",
+   "status": "success"
+  },
+  {
+   "scenario": "chat-social-exchange",
+   "engine": "mastra",
+   "status": "success"
+  },
+  {
+   "scenario": "media-ingest-hologram",
+   "engine": "mastra",
+   "status": "success"
+  }
+ ],
+ "headline": {
+  "totalRuns": 6,
+  "okRuns": 6,
+  "passRatePct": 100,
+  "mastraStatuses": [
+   {
+    "scenario": "onboarding-journey",
+    "status": "success"
+   },
+   {
+    "scenario": "security-hardening",
+    "status": "success"
+   },
+   {
+    "scenario": "coach-marathon",
+    "status": "success"
+   },
+   {
+    "scenario": "chat-social-exchange",
+    "status": "success"
+   },
+   {
+    "scenario": "media-ingest-hologram",
+    "status": "success"
+   }
+  ]
+ }
+}

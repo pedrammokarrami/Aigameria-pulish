@@ -5,7 +5,7 @@ from typing import Any
 import httpx
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 
-from . import avatars, cache, config, isolation, puzzles, screen_analyze, training_ingest
+from . import avatars, cache, config, isolation, menu_api, puzzles, screen_analyze, training_ingest
 from .db import get_db
 
 router = APIRouter(prefix="/api/v1")
@@ -50,6 +50,14 @@ def _localize(item: dict[str, Any], lang: str, fields: list[tuple[str, str]]) ->
             val = isolation.sanitize_en_text(val)
         out[en_field.replace("_en", "").replace("_fa", "")] = val
     return out
+
+
+@router.get("/menu")
+def menu(lang: str = Query(default="en")) -> dict[str, Any]:
+    """API-driven menu: every tile, label, brand name and version the frontend
+    shows comes from here — zero hardcoded UI data in the frontend."""
+    lang = _lang(lang)
+    return {"success": True, "data": menu_api.get_menu(lang)}
 
 
 @router.get("/health")

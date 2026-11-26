@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Ps5GameControlCenter } from './HubQuickMenuOverlays';
 import { CoachStage3D } from './CoachStage3D';
@@ -23,6 +23,19 @@ interface PetrosCleanLobbyProps {
  * backdrop — zero data, zero lists, zero docks. Only the left-side quick-menu
  * button (PlayStation 5 Control Center style) remains.
  */
+interface ApiMenuPayload {
+  version: string;
+  brand: { name: string; tagline: string };
+  items: Array<{
+    id: string;
+    title: string;
+    subtitle: string;
+    accent_hex: string;
+    badge: string;
+    action: string;
+  }>;
+}
+
 export const PetrosCleanLobby: React.FC<PetrosCleanLobbyProps> = ({
   realm,
   manifest,
@@ -37,6 +50,38 @@ export const PetrosCleanLobby: React.FC<PetrosCleanLobbyProps> = ({
 }) => {
   const { copy } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [apiMenu, setApiMenu] = useState<ApiMenuPayload | null>(null);
+  const [menuFailed, setMenuFailed] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const resp = await fetch('/api/v1/menu?lang=en', { headers: { Accept: 'application/json' } });
+        if (!resp.ok) throw new Error(`menu HTTP ${resp.status}`);
+        const json = await resp.json();
+        if (!alive) return;
+        const payload = json && typeof json === 'object' && 'data' in json ? (json as { data: ApiMenuPayload }).data : (json as unknown as ApiMenuPayload);
+        setApiMenu(payload);
+        setMenuFailed(false);
+      } catch {
+        if (alive) setMenuFailed(true);
+      }
+    };
+    load();
+    return () => { alive = false; };
+  }, []);
+
+  // Every tile, label and version comes from the API — zero hardcoded data.
+  const apiMenuDescriptors: import('../../utils/hubQuickMenu').HubMenuDescriptor[] | null = apiMenu
+    ? apiMenu.items.map((item) => ({
+        id: item.action || item.id,
+        titleFa: item.title,
+        subtitleFa: item.subtitle,
+        accentHex: item.accent_hex || '#38BDF8',
+        badgeText: item.badge,
+      }))
+    : null;
 
   return (
     <div className="absolute inset-0" data-testid="clean-lobby-root">
@@ -73,16 +118,27 @@ export const PetrosCleanLobby: React.FC<PetrosCleanLobbyProps> = ({
               letterSpacing: '0.18em',
             }}
           >
-            AIGAMERIA
+            {apiMenu?.brand.name || ''}
           </h1>
-          <p className="mt-3 text-[11px] sm:text-sm font-bold tracking-[0.4em] text-white/55 uppercase">
-            play · learn · win
-          </p>
+          {apiMenu?.brand.tagline ? (
+            <p className="mt-3 text-[11px] sm:text-sm font-bold tracking-[0.4em] text-white/55 uppercase">
+              {apiMenu.brand.tagline}
+            </p>
+          ) : null}
+          {apiMenu?.version ? (
+            <p className="mt-2 text-[10px] font-bold tracking-[0.3em] text-white/35 uppercase">
+              v{apiMenu.version}
+            </p>
+          ) : null}
+          {menuFailed && !apiMenu ? (
+            <p className="mt-4 text-[11px] text-white/45">menu service unreachable — retry shortly</p>
+          ) : null}
         </div>
       </div>
 
       {/* PlayStation 5 Control Center quick menu (PS-style) */}
       <Ps5GameControlCenter
+        apiMenuItems={apiMenuDescriptors}
         open={menuOpen}
         hasVideoBackdrop={Boolean(manifest.lobbyVideoUrl)}
         useVideoBackdrop={useVideoBackdrop}

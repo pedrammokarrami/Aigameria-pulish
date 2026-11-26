@@ -61,6 +61,22 @@ CREATE TABLE IF NOT EXISTS topics (
   stage_markers TEXT NOT NULL,    -- JSON array
   updated_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS menu_items (
+  id TEXT PRIMARY KEY,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  title_en TEXT NOT NULL,
+  title_fa TEXT NOT NULL,
+  subtitle_en TEXT NOT NULL DEFAULT '',
+  subtitle_fa TEXT NOT NULL DEFAULT '',
+  accent_hex TEXT NOT NULL DEFAULT '#38BDF8',
+  badge_en TEXT NOT NULL DEFAULT '',
+  badge_fa TEXT NOT NULL DEFAULT '',
+  action TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS brand_meta (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS stream_cache (
   cache_key TEXT PRIMARY KEY,
   game_id TEXT NOT NULL,
