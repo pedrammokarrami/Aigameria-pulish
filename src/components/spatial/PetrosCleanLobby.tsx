@@ -53,6 +53,12 @@ export const PetrosCleanLobby: React.FC<PetrosCleanLobbyProps> = ({
   const [apiMenu, setApiMenu] = useState<ApiMenuPayload | null>(null);
   const [menuFailed, setMenuFailed] = useState(false);
 
+  // The PS5 Control Center auto-opens as soon as the API menu arrives —
+  // the user lands directly on the live menu tiles (no hidden buttons).
+  useEffect(() => {
+    if (apiMenu && !menuOpen) setMenuOpen(true);
+  }, [apiMenu]);
+
   useEffect(() => {
     let alive = true;
     const load = async () => {
